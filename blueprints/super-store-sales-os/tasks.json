@@ -86,7 +86,7 @@
     ],
     "checkpoint": "step-04-app-shell",
     "files": ["src/app/globals.css", "src/app/(app)/layout.tsx", "src/components/layout/nav-items.ts", "tests/unit/", "tests/e2e/app-shell.spec.ts"],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T5",

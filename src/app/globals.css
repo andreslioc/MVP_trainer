@@ -1,26 +1,155 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  --primary: #5b21b6;
+  --primary-deep: #4c1d95;
+  --primary-fg: #ffffff;
+  --support-blue: #1e3a8a;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --border-control: #64748b;
+  --fg: #0f172a;
+  --fg-muted: #475569;
+  --destructive: #dc2626;
+  --success: #16a34a;
+  --warning: #ca8a04;
+  --warning-border: #a16207;
+  --confidence-high-bg: #dcfce7;
+  --confidence-high-fg: #14532d;
+  --confidence-mid-bg: #fef9c3;
+  --confidence-mid-fg: #713f12;
+  --confidence-low-bg: #fee2e2;
+  --confidence-low-fg: #7f1d1d;
+  --radius: 0.75rem;
+  --shadow-popover: 0 4px 12px rgb(15 23 42 / 0.08);
 
-@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-deep: var(--primary-deep);
+  --color-primary-fg: var(--primary-fg);
+  --color-support-blue: var(--support-blue);
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-border-control: var(--border-control);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-warning-border: var(--warning-border);
+  --color-confidence-high-bg: var(--confidence-high-bg);
+  --color-confidence-high-fg: var(--confidence-high-fg);
+  --color-confidence-mid-bg: var(--confidence-mid-bg);
+  --color-confidence-mid-fg: var(--confidence-mid-fg);
+  --color-confidence-low-bg: var(--confidence-low-bg);
+  --color-confidence-low-fg: var(--confidence-low-fg);
+  --font-sans:
+    var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --radius-card: var(--radius);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
 }
 
 body {
+  min-width: 20rem;
+  margin: 0;
+  overflow-x: hidden;
   background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+a,
+button,
+input,
+select,
+textarea,
+summary {
+  transition-duration: 100ms;
+  transition-property: color, background-color, border-color, outline-color, opacity, transform;
+  transition-timing-function: ease-out;
+}
+
+input,
+select,
+textarea {
+  border-color: var(--border-control);
+}
+
+:focus-visible {
+  outline: 3px solid var(--primary-deep);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0;
+  left: 1rem;
+  z-index: 50;
+  transform: translateY(-150%);
+  border-radius: var(--radius);
+  background: var(--primary-deep);
+  color: var(--primary-fg);
+  padding: 0.5rem 0.75rem;
+}
+
+.skip-link:focus {
+  transform: translateY(0.5rem);
+}
+
+.mobile-navigation-panel {
+  box-shadow: var(--shadow-popover);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.confidence-badge {
+  display: inline-flex;
+  min-height: 1.5rem;
+  align-items: center;
+  border: 1px solid;
+  border-radius: 9999px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.confidence-badge-high {
+  border-color: var(--success);
+  background: var(--confidence-high-bg);
+  color: var(--confidence-high-fg);
+}
+
+.confidence-badge-mid {
+  border-color: var(--warning-border);
+  background: var(--confidence-mid-bg);
+  color: var(--confidence-mid-fg);
+}
+
+.confidence-badge-low {
+  border-color: var(--destructive);
+  background: var(--confidence-low-bg);
+  color: var(--confidence-low-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto;
+    transition-duration: 0ms;
+  }
 }
