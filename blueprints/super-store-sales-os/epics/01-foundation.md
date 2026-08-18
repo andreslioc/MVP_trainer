@@ -270,7 +270,7 @@ git tag step-06-business-brain
 
 **Depends on:** `E1-T6` · **Priority:** p0
 
-Encapsula el SDK, inyecta cliente falso y registra uso reportado. Revisa `stop_reason` antes de tocar
+Encapsula el proveedor, inyecta cliente falso y registra uso reportado. Revisa `finishReason` antes de tocar
 content; un refusal con HTTP 200 no es exito normal.
 
 **Files:** `src/lib/ai/config.ts`, `src/lib/ai/gateway.ts`, `src/server/llm-calls.ts`,
@@ -279,7 +279,7 @@ content; un refusal con HTTP 200 no es exito normal.
 **Acceptance**
 
 1. CUANDO una respuesta del proveedor termina normalmente EL SISTEMA DEBERA persistir modelo, proposito, latencia, tokens, cache, costo y finish reason en una fila de `llm_calls`.
-2. CUANDO `stop_reason` es `refusal` EL SISTEMA DEBERA detectarlo antes de leer `content` y devolver un resultado tipado que obliga al consumidor a degradar con cautela.
+2. CUANDO `finishReason` es `refusal` EL SISTEMA DEBERA detectarlo antes de leer el texto y devolver un resultado tipado que obliga al consumidor a degradar con cautela.
 3. CUANDO se busca el header del proveedor en archivos fuente EL SISTEMA DEBERA encontrar coincidencias en exactamente un archivo: `src/lib/ai/gateway.ts`.
 
 **Verify**
@@ -302,7 +302,7 @@ git tag step-07-ai-gateway
 
 **Depends on:** `E1-T7` · **Priority:** p0
 
-Usa Zod structured output, no JSON pedido en prosa. `parsed_output=null` permite exactamente un
+Usa Zod structured output, no JSON pedido en prosa. `parsedOutput` nulo permite exactamente un
 repair; despues falla tipado y nunca entrega un objeto parcial.
 
 **Files:** `src/lib/ai/schemas.ts`, `src/lib/ai/structured.ts`,

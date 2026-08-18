@@ -630,9 +630,9 @@ existen, y existen porque algo fuera del navegador los llama.
 | `FORBIDDEN` | Hay sesion pero el rol no alcanza | 403 |
 | `NOT_FOUND` | El recurso no existe o no es de esta asesora | 404 |
 | `CONFLICT` | Choque con un unique, o una transicion de estado invalida | 409 |
-| `PROVIDER_REFUSAL` | El modelo rehuso (`stop_reason: "refusal"`) | 200 con `ok: false` |
+| `PROVIDER_REFUSAL` | El modelo rehuso (`finishReason: "refusal"`) | 200 con `ok: false` |
 | `PROVIDER_UNAVAILABLE` | Timeout, 429 o sobrecarga del proveedor. Reintentable | 503 |
-| `PROVIDER_MALFORMED` | `parsed_output` nulo tras el reintento de reparacion | 502 |
+| `PROVIDER_MALFORMED` | `parsedOutput` nulo tras el reintento de reparacion | 502 |
 | `INTERNAL` | Todo lo demas. Se registra con id de peticion y no se detalla a la UI | 500 |
 
 - **Validacion:** `zod`. Los esquemas de entrada viven en `src/lib/validation/`; los de salida del
@@ -1363,7 +1363,7 @@ git tag step-06-business-brain
 **Do**
 
 - Crear `src/lib/ai/config.ts`, `gateway.ts` y el unico escritor `src/server/llm-calls.ts`.
-- El gateway recibe un cliente inyectable, mide latencia, revisa `stop_reason` antes de leer
+- El gateway recibe un cliente inyectable, mide latencia, revisa `finishReason` antes de leer
   `content`, persiste el uso reportado y calcula costo desde la tabla de precios configurada.
 - Ningun test usa `ANTHROPIC_API_KEY`; un cliente falso entrega respuestas y uso deterministas.
 
@@ -1371,7 +1371,7 @@ git tag step-06-business-brain
 
 1. **CUANDO** una respuesta del proveedor termina normalmente **EL SISTEMA DEBERA** persistir modelo,
    proposito, latencia, tokens, cache, costo y finish reason en una fila de `llm_calls`.
-2. **CUANDO** `stop_reason` es `refusal` **EL SISTEMA DEBERA** detectarlo antes de leer `content` y
+2. **CUANDO** `finishReason` es `refusal` **EL SISTEMA DEBERA** detectarlo antes de leer el texto y
    devolver un resultado tipado que obliga al consumidor a degradar con cautela.
 3. **CUANDO** se busca el header del proveedor en archivos fuente **EL SISTEMA DEBERA** encontrar coincidencias
    en exactamente un archivo: `src/lib/ai/gateway.ts`.
@@ -1379,7 +1379,7 @@ git tag step-06-business-brain
 **Verify**
 
 ```bash
-pnpm test tests/unit/ai-gateway.test.ts # pasa: orden de stop_reason, uso, costo y errores estan probados con cliente falso
+pnpm test tests/unit/ai-gateway.test.ts # pasa: orden de finishReason, uso, costo y errores estan probados con cliente falso
 pnpm test tests/integration/llm-calls.test.ts # pasa: una traza completa queda persistida y atribuida
 test "$(rg -l 'x-goog-api-key' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1" && rg -q 'x-goog-api-key' src/lib/ai/gateway.ts # pasa: exactamente un archivo importa el SDK
 pnpm typecheck && pnpm lint && pnpm test # pasa: gate comun en verde
@@ -1397,7 +1397,7 @@ git tag step-07-ai-gateway
 **Do**
 
 - Crear los schemas Zod de salida en `src/lib/ai/schemas.ts` y el wrapper en `structured.ts`.
-- Usar `messages.parse()` y `zodOutputFormat()` desde el gateway. Si `parsed_output` es null, ejecutar
+- Usar `responseJsonSchema` con `z.toJSONSchema()` desde el gateway. Si `parsedOutput` es null, ejecutar
   un solo reintento de reparacion con el error de validacion; nunca un loop abierto.
 - Persistir las dos llamadas si hubo reparacion, cada una con su uso real.
 
@@ -2286,7 +2286,7 @@ Checklist de lanzamiento humano — deliberadamente fuera del gate autonomo:
 |---|---|---|---:|
 | La asesora no puede leer mientras esta en camara | abandona/copía menos respuestas largas; duracion excede el rango | Express 15–20 s por defecto, 20px, streaming sin movimiento | 11–12 |
 | Latencia del Copilot | TTFT p95 ≥2.5 s | streaming, effort bajo/medio, caching estable, metrica por llamada | 7, 11 |
-| Claims de salud o refusals | claim prohibido, pregunta cautelosa o `stop_reason=refusal` | gate determinista, profesional de salud, confianza `revisar` | 7, 13 |
+| Claims de salud o refusals | claim prohibido, pregunta cautelosa o `finishReason=refusal` | gate determinista, profesional de salud, confianza `revisar` | 7, 13 |
 | STT falla con español colombiano, ruido o varias voces | WER cualitativo impide extraer preguntas correctas | piloto real, diarizacion, estado fallido recuperable; no promover automaticamente | 14–15 |
 | PII en transcripciones | aparecen nombres, telefonos o salud en texto | bucket privado, redaccion de derivados, retencion 90 dias y cron idempotente | 14–16 |
 | Costo por live analizado | suma por grabacion ≥USD 3.00 | ledger desde primera llamada, caching y analisis por bloques medidos | 7, 15–16 |

@@ -83,7 +83,7 @@ SDK) → `src/server/llm-calls.ts` persiste el uso → `src/db/client.ts` → Po
    `{ ok: true, data } | { ok: false, error: { code, message, field? } }`.
 7. **Ningun modulo inventa informacion fuera del Knowledge Hub.** Si el dato no esta en `products`
    ni en `commercial_rules`, la respuesta lo dice; no lo rellena.
-8. **`stop_reason` se revisa antes de leer `content`.** Siempre. Un refusal llega con HTTP 200.
+8. **`finishReason` se revisa antes de leer el texto.** Siempre. Un bloqueo llega con HTTP 200.
 9. **El uso de tokens se persiste desde lo que reporta el proveedor**, nunca contando caracteres.
 
 ## Sistema de diseno
