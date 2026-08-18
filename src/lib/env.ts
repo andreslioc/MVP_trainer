@@ -5,6 +5,8 @@ const optionalString = z.preprocess(
   z.string().min(1).optional(),
 );
 
+const positiveInteger = z.coerce.number().int().positive();
+
 const serverEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.string().min(1),
@@ -15,6 +17,10 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: optionalString,
   SUPABASE_SECRET_KEY: optionalString,
   SUPABASE_RECORDINGS_BUCKET: optionalString,
+  ANTHROPIC_API_KEY: optionalString,
+  AI_MODEL_DEFAULT: z.string().min(1),
+  AI_MODEL_SMALL: z.string().min(1),
+  AI_MAX_CONCURRENCY: positiveInteger.default(4),
   VERCEL_GIT_COMMIT_SHA: optionalString,
 });
 
