@@ -1,0 +1,23 @@
+allowBuilds:
+  '@biomejs/biome': true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - '@biomejs/biome@2.5.9'
+  - '@biomejs/cli-darwin-arm64@2.5.9'
+  - '@biomejs/cli-darwin-x64@2.5.9'
+  - '@biomejs/cli-linux-arm64-musl@2.5.9'
+  - '@biomejs/cli-linux-arm64@2.5.9'
+  - '@biomejs/cli-linux-x64-musl@2.5.9'
+  - '@biomejs/cli-linux-x64@2.5.9'
+  - '@biomejs/cli-win32-arm64@2.5.9'
+  - '@biomejs/cli-win32-x64@2.5.9'
+  - '@vitest/expect@4.1.11'
+  - '@vitest/mocker@4.1.11'
+  - '@vitest/pretty-format@4.1.11'
+  - '@vitest/runner@4.1.11'
+  - '@vitest/snapshot@4.1.11'
+  - '@vitest/spy@4.1.11'
+  - '@vitest/utils@4.1.11'
+  - vitest@4.1.11

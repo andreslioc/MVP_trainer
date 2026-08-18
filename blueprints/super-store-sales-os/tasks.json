@@ -1,0 +1,351 @@
+[
+  {
+    "id": "E1-T1",
+    "title": "Scaffold toolchain and health endpoint",
+    "epic": "01-foundation",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO el servidor arranca en el puerto 3100 EL SISTEMA DEBERA responder en `/health` con HTTP 200 y JSON que contenga `\"ok\":true`.",
+      "CUANDO Biome analiza `src/app/health/route.ts` EL SISTEMA DEBERA salir 0 usando la configuracion que reconoce directivas de Tailwind v4.",
+      "CUANDO se inspeccionan los pines EL SISTEMA DEBERA reportar Node 24.19.0, pnpm 11.22.0 y TypeScript 6.0.3, sin resolver TypeScript 7."
+    ],
+    "verify": [
+      "test -f package.json && test -f pnpm-lock.yaml && test -f postcss.config.mjs",
+      "pnpm exec biome check src/app/health/route.ts",
+      "test \"$(node -p \"require('./package.json').devDependencies.typescript\")\" = \"6.0.3\"",
+      "(pnpm exec next dev --port 3100 >/tmp/super-store-health.log 2>&1 & app_pid=$!; trap 'kill \"$app_pid\" 2>/dev/null || true' EXIT; for attempt in $(seq 1 90); do curl -sf http://127.0.0.1:3100/health | grep -q '\"ok\":true' && exit 0; sleep 1; done; cat /tmp/super-store-health.log; exit 1)",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-01-scaffold-health",
+    "files": ["src/lib/env.ts", "src/app/health/route.ts", "tests/unit/health.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T2",
+    "title": "Create Drizzle schema migrations and seed",
+    "epic": "01-foundation",
+    "dependencies": ["E1-T1"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO las migraciones corren sobre una base de pruebas vacia EL SISTEMA DEBERA crear por nombre `advisors`, `products`, `commercial_rules`, `training_questions`, `training_sessions`, `training_answers`, `live_sessions`, `copilot_exchanges`, `live_recordings`, `insights`, `llm_calls` y `prompts`, mas sus enums.",
+      "CUANDO `pnpm db:seed` corre dos veces EL SISTEMA DEBERA conservar una sola fila por cada clave natural sembrada y salir 0 ambas veces.",
+      "CUANDO una prueba crea un advisor desde el escritor autorizado EL SISTEMA DEBERA guardar exactamente el UUID recibido como `advisors.id`."
+    ],
+    "verify": [
+      "pnpm db:up && pnpm db:migrate:test",
+      "pnpm test tests/integration/schema.test.ts",
+      "pnpm db:seed && pnpm db:seed",
+      "pnpm test tests/integration/seed-idempotency.test.ts",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-02-database-schema",
+    "files": ["src/db/schema.ts", "src/db/client.ts", "scripts/seed.ts", "tests/integration/schema.test.ts", "tests/integration/seed-idempotency.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T3",
+    "title": "Add invitation auth roles proxy and RLS",
+    "epic": "01-foundation",
+    "dependencies": ["E1-T2"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO una peticion sin sesion entra a `/app` EL SISTEMA DEBERA redirigirla a `/login?next=/app`.",
+      "CUANDO credenciales validas pertenecen a un advisor inactivo EL SISTEMA DEBERA cerrar la sesion y retornar `FORBIDDEN` sin renderizar `/app`.",
+      "CUANDO se consulta `pg_class` y `pg_policies` en Supabase local EL SISTEMA DEBERA mostrar RLS habilitado y politicas nombradas para cada tabla protegida.",
+      "CUANDO el proxy autoriza una peticion EL SISTEMA DEBERA basar la identidad en claims JWT verificados, no en datos de sesion sin revalidar."
+    ],
+    "verify": [
+      "pnpm supabase:start && pnpm env:local:supabase && pnpm db:migrate",
+      "pnpm test tests/integration/auth-rls.test.ts",
+      "pnpm test:e2e tests/e2e/auth.spec.ts",
+      "test -f proxy.ts && test ! -f middleware.ts",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-03-auth-rls",
+    "files": ["src/lib/auth.ts", "proxy.ts", "src/app/login/", "tests/integration/auth-rls.test.ts", "tests/e2e/auth.spec.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T4",
+    "title": "Build authenticated shell and design tokens",
+    "epic": "01-foundation",
+    "dependencies": ["E1-T3"],
+    "priority": "p1",
+    "acceptance": [
+      "CUANDO una asesora abre `/app` EL SISTEMA DEBERA mostrar Training, Copilot, Intelligence y Knowledge, y ocultar Settings.",
+      "CUANDO un admin abre `/app` EL SISTEMA DEBERA mostrar tambien Settings.",
+      "CUANDO una prueba estatica inspecciona los controles EL SISTEMA DEBERA encontrar el token `--border-control: #64748B`, foco visible y texto para cada estado que usa color.",
+      "CUANDO el viewport mide 767px EL SISTEMA DEBERA colapsar la navegacion sin scroll horizontal en la pagina."
+    ],
+    "verify": [
+      "pnpm test tests/unit/nav.test.ts",
+      "pnpm test tests/unit/design-tokens.test.ts",
+      "pnpm test:e2e tests/e2e/app-shell.spec.ts",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-04-app-shell",
+    "files": ["src/app/globals.css", "src/app/(app)/layout.tsx", "src/components/layout/nav-items.ts", "tests/unit/", "tests/e2e/app-shell.spec.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T5",
+    "title": "Build Knowledge Hub CRUD",
+    "epic": "01-foundation",
+    "dependencies": ["E1-T4"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO un admin envia una ficha valida EL SISTEMA DEBERA persistir todos los campos del Knowledge Hub y devolver un resultado tipado `ok: true`.",
+      "CUANDO una ficha trae menos o mas de tres beneficios EL SISTEMA DEBERA rechazarla antes de escribir y nombrar el campo `benefits`.",
+      "CUANDO una asesora intenta escribir `products` por Server Action o Data API EL SISTEMA DEBERA denegar ambas rutas y dejar las filas sin cambios.",
+      "CUANDO cualquier rol autenticado lista fichas EL SISTEMA DEBERA recibir los productos ordenados con los no verificados primero."
+    ],
+    "verify": [
+      "pnpm test tests/unit/product-validation.test.ts",
+      "pnpm test tests/integration/products.test.ts",
+      "pnpm test tests/integration/products-rls.test.ts",
+      "pnpm test:e2e tests/e2e/knowledge-hub.spec.ts",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-05-knowledge-hub",
+    "files": ["src/lib/validation/product.ts", "src/server/products.ts", "src/app/(app)/app/knowledge/", "tests/unit/product-validation.test.ts", "tests/"],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T6",
+    "title": "Build configurable Business Brain",
+    "epic": "01-foundation",
+    "dependencies": ["E1-T5"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO un admin cambia el umbral de `envio_gratis` EL SISTEMA DEBERA devolver el nuevo valor desde la siguiente lectura sin reiniciar la app.",
+      "CUANDO `promo_live.active` es false EL SISTEMA DEBERA excluirla de las reglas disponibles para composicion.",
+      "CUANDO una asesora intenta modificar una regla EL SISTEMA DEBERA retornar `FORBIDDEN` y escribir cero filas."
+    ],
+    "verify": [
+      "pnpm test tests/unit/commercial-rule-validation.test.ts",
+      "pnpm test tests/integration/commercial-rules.test.ts",
+      "! rg -n '120000|envio gratis' src --glob '!src/server/commercial-rules.ts' --glob '!src/app/**'",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-06-business-brain",
+    "files": ["src/lib/validation/commercial-rule.ts", "src/server/commercial-rules.ts", "src/app/(app)/app/settings/page.tsx", "tests/unit/commercial-rule-validation.test.ts", "tests/integration/commercial-rules.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T7",
+    "title": "Create AI gateway and usage ledger",
+    "epic": "01-foundation",
+    "dependencies": ["E1-T6"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO una respuesta del proveedor termina normalmente EL SISTEMA DEBERA persistir modelo, proposito, latencia, tokens, cache, costo y finish reason en una fila de `llm_calls`.",
+      "CUANDO `stop_reason` es `refusal` EL SISTEMA DEBERA detectarlo antes de leer `content` y devolver un resultado tipado que obliga al consumidor a degradar con cautela.",
+      "CUANDO se busca `@anthropic-ai/sdk` en archivos fuente EL SISTEMA DEBERA encontrar imports en exactamente un archivo: `src/lib/ai/gateway.ts`."
+    ],
+    "verify": [
+      "pnpm test tests/unit/ai-gateway.test.ts",
+      "pnpm test tests/integration/llm-calls.test.ts",
+      "test \"$(rg -l '@anthropic-ai/sdk' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')\" = \"1\" && rg -q '@anthropic-ai/sdk' src/lib/ai/gateway.ts",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-07-ai-gateway",
+    "files": ["src/lib/ai/config.ts", "src/lib/ai/gateway.ts", "src/server/llm-calls.ts", "tests/unit/ai-gateway.test.ts", "tests/integration/llm-calls.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T8",
+    "title": "Add structured output and one repair retry",
+    "epic": "01-foundation",
+    "dependencies": ["E1-T7"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO el modelo retorna una salida valida EL SISTEMA DEBERA entregar el objeto tipado sin reintento.",
+      "CUANDO la primera salida no cumple el schema EL SISTEMA DEBERA realizar exactamente un reintento de reparacion y entregar la segunda si es valida.",
+      "CUANDO ambas salidas fallan EL SISTEMA DEBERA devolver `AI_INVALID_OUTPUT` sin entregar JSON parcial al consumidor."
+    ],
+    "verify": [
+      "pnpm test tests/unit/structured-output.test.ts",
+      "! rg -n 'output_format|budget_tokens|assistant.*prefill' src/lib/ai src/server",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-08-structured-output",
+    "files": ["src/lib/ai/schemas.ts", "src/lib/ai/structured.ts", "tests/unit/structured-output.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T1",
+    "title": "Generate Simulator questions",
+    "epic": "02-product-loop",
+    "dependencies": ["E1-T8"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO una asesora genera preguntas para un producto verificado EL SISTEMA DEBERA persistir preguntas con `product_id`, intent, difficulty, ideal answer y criteria validos.",
+      "CUANDO el cliente falso intenta incluir un claim ausente de `products` EL SISTEMA DEBERA rechazar esa salida y persistir cero preguntas de la tanda.",
+      "CUANDO una asesora abre una sesion EL SISTEMA DEBERA asignarla al `advisor_id` verificado del servidor, ignorando cualquier UUID enviado por el cliente."
+    ],
+    "verify": [
+      "pnpm test tests/unit/generate-questions.test.ts",
+      "pnpm test tests/integration/training-questions.test.ts",
+      "pnpm test:e2e tests/e2e/training-start.spec.ts",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-09-simulator-questions",
+    "files": ["src/lib/ai/prompts/generate-questions.ts", "src/server/training/questions.ts", "src/app/(app)/app/training/page.tsx", "tests/unit/generate-questions.test.ts", "tests/"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T2",
+    "title": "Evaluate Simulator answers",
+    "epic": "02-product-loop",
+    "dependencies": ["E2-T1"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO una asesora envia una respuesta EL SISTEMA DEBERA persistir su texto y una evaluacion con las nueve dimensiones nombradas, razon por puntaje y version mejorada.",
+      "CUANDO la evaluacion externa falla EL SISTEMA DEBERA conservar `advisor_answer` y mostrar un error recuperable sin fabricar scores.",
+      "CUANDO otra asesora intenta abrir el `sessionId` EL SISTEMA DEBERA responder 404 y no revelar si la sesion existe."
+    ],
+    "verify": [
+      "pnpm test tests/unit/evaluate-answer.test.ts",
+      "pnpm test tests/integration/training-evaluation.test.ts",
+      "pnpm test:e2e tests/e2e/training-session.spec.ts",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-10-simulator-evaluation",
+    "files": ["src/lib/ai/prompts/evaluate-answer.ts", "src/server/training/evaluate.ts", "src/app/(app)/app/training/[sessionId]/page.tsx", "tests/unit/evaluate-answer.test.ts", "tests/"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T3",
+    "title": "Compose streaming Copilot answers",
+    "epic": "02-product-loop",
+    "dependencies": ["E2-T2"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO una asesora abre `/app/copilot` EL SISTEMA DEBERA seleccionar `express` como vista inicial y mostrar su objetivo de 15–20 segundos.",
+      "CUANDO se envia una pregunta EL SISTEMA DEBERA clasificarla, transmitir una respuesta con las seis partes aplicables y emitir el primer token en menos de 250 ms con el cliente falso local.",
+      "CUANDO el Knowledge Hub o Business Brain no contiene un dato EL SISTEMA DEBERA decir que no esta verificado y no citar ni completar informacion externa.",
+      "CUANDO termina la composicion EL SISTEMA DEBERA persistir un `copilot_exchange` con variante, duracion, confianza, CTA, regla y alertas."
+    ],
+    "verify": [
+      "pnpm test tests/unit/copilot-compose.test.ts",
+      "pnpm test tests/integration/copilot-session.test.ts",
+      "pnpm test:e2e tests/e2e/copilot.spec.ts",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-11-copilot-compose",
+    "files": ["src/server/copilot/compose.ts", "src/server/copilot/session.ts", "src/lib/ai/prompts/copilot.ts", "src/app/(app)/app/copilot/page.tsx", "tests/"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T4",
+    "title": "Add Copilot orchestration and memory",
+    "epic": "02-product-loop",
+    "dependencies": ["E2-T3"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO el CTA anterior vuelve a ser candidato y existe una alternativa EL SISTEMA DEBERA seleccionar una alternativa.",
+      "CUANDO solo existe un CTA valido EL SISTEMA DEBERA poder repetirlo y nunca inventar otro.",
+      "CUANDO una regla comercial esta inactiva EL SISTEMA DEBERA excluirla de incentivos y de `promos_mentioned`.",
+      "CUANDO una composicion falla EL SISTEMA DEBERA dejar intacta la memoria de la sesion."
+    ],
+    "verify": [
+      "pnpm test tests/unit/copilot-orchestrator.test.ts",
+      "pnpm test tests/unit/copilot-view-defaults.test.ts",
+      "pnpm test tests/integration/copilot-memory.test.ts",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-12-copilot-orchestration",
+    "files": ["src/server/copilot/orchestrator.ts", "src/lib/copilot/view-defaults.ts", "src/components/copilot/answer-panel.tsx", "tests/unit/", "tests/integration/copilot-memory.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T5",
+    "title": "Enforce responsible communication",
+    "epic": "02-product-loop",
+    "dependencies": ["E2-T4"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO una pregunta menciona embarazo, lactancia, medicamentos o enfermedad EL SISTEMA DEBERA evitar una recomendacion afirmativa, sugerir consulta profesional y marcar `revisar`.",
+      "CUANDO una respuesta contiene un claim prohibido o terapeutico EL SISTEMA DEBERA bloquearlo antes de persistir `answer_text` y devolver una alerta nombrada.",
+      "CUANDO la ficha no esta verificada o falta una fuente EL SISTEMA DEBERA impedir confianza `alto`.",
+      "CUANDO el proveedor retorna refusal EL SISTEMA DEBERA entregar una respuesta segura de cautela y conservar el refusal en `llm_calls.finish_reason`."
+    ],
+    "verify": [
+      "pnpm test tests/unit/responsible-communication.test.ts",
+      "pnpm test tests/integration/copilot-responsible.test.ts",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-13-responsible-communication",
+    "files": ["src/server/copilot/responsible.ts", "src/lib/ai/prompts/copilot.ts", "tests/unit/responsible-communication.test.ts", "tests/integration/copilot-responsible.test.ts"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T6",
+    "title": "Upload recordings and handle transcription callbacks",
+    "epic": "02-product-loop",
+    "dependencies": ["E2-T5"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO una asesora sube un archivo permitido EL SISTEMA DEBERA guardarlo en un bucket privado bajo su UUID y crear una fila `uploaded` con expiracion.",
+      "CUANDO se encola la transcripcion EL SISTEMA DEBERA enviar callback, diarizacion, idioma y modelo configurados, y pasar la fila a `transcribing`.",
+      "CUANDO el callback lleva secreto invalido EL SISTEMA DEBERA responder 401 sin leer el body ni escribir filas.",
+      "CUANDO el mismo callback valido llega dos veces EL SISTEMA DEBERA responder 200 ambas veces y efectuar la transicion `transcribing → transcribed` una sola vez."
+    ],
+    "verify": [
+      "pnpm test tests/unit/deepgram-request.test.ts",
+      "pnpm test tests/integration/recording-upload.test.ts",
+      "pnpm test tests/integration/transcription-callback.test.ts",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-14-live-transcription",
+    "files": ["src/server/recordings/upload.ts", "src/server/recordings/transcription.ts", "src/app/api/transcription-callback/route.ts", "tests/fixtures/deepgram-callback.json", "tests/"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T7",
+    "title": "Analyze recordings and promote insights",
+    "epic": "02-product-loop",
+    "dependencies": ["E2-T6"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO una grabacion transcrita se analiza EL SISTEMA DEBERA pasar por `analyzing`, crear insights validos y terminar en `analyzed`.",
+      "CUANDO se promueve un insight elegible EL SISTEMA DEBERA crear una pregunta con `source = 'live_insight'` y enlazar ambos registros en una transaccion.",
+      "CUANDO el mismo insight se promueve otra vez EL SISTEMA DEBERA devolver la pregunta ya enlazada y no crear otra.",
+      "CUANDO una transcripcion contiene PII EL SISTEMA DEBERA evitar copiar nombres o telefonos literales al texto del insight o a la pregunta promovida."
+    ],
+    "verify": [
+      "pnpm test tests/unit/analyze-transcript.test.ts",
+      "pnpm test tests/integration/live-insights.test.ts",
+      "pnpm test:e2e tests/e2e/live-intelligence.spec.ts",
+      "pnpm typecheck && pnpm lint && pnpm test"
+    ],
+    "checkpoint": "step-15-live-insights",
+    "files": ["src/server/recordings/analyze.ts", "src/server/insights.ts", "src/lib/ai/prompts/analyze-transcript.ts", "src/app/(app)/app/intelligence/page.tsx", "tests/"],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T8",
+    "title": "Add dashboard retention CI and deployment",
+    "epic": "02-product-loop",
+    "dependencies": ["E2-T7"],
+    "priority": "p0",
+    "acceptance": [
+      "CUANDO una asesora abre el dashboard EL SISTEMA DEBERA calcular metricas solo sobre su `advisor_id`; un admin recibe agregados de la organizacion y costo total.",
+      "CUANDO el cron recibe un bearer invalido EL SISTEMA DEBERA responder 401 y borrar cero objetos y filas.",
+      "CUANDO el cron procesa una grabacion vencida EL SISTEMA DEBERA borrar objeto, transcripcion, fila e insights, y una segunda ejecucion debera procesar cero.",
+      "CUANDO dos ejecuciones se solapan EL SISTEMA DEBERA permitir una y devolver `skipped: true` en la otra.",
+      "CUANDO CI corre sobre un checkout limpio EL SISTEMA DEBERA instalar el lockfile, migrar la base de pruebas y pasar typecheck, lint y tests antes de construir."
+    ],
+    "verify": [
+      "pnpm test tests/integration/dashboard.test.ts",
+      "pnpm test tests/integration/retention.test.ts",
+      "pnpm test:e2e tests/e2e/dashboard.spec.ts",
+      "pnpm build",
+      "pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e"
+    ],
+    "checkpoint": "step-16-deploy",
+    "files": ["src/app/(app)/app/page.tsx", "src/app/api/cron/retention/route.ts", ".github/workflows/ci.yml", "vercel.json", "tests/"],
+    "status": "pending"
+  }
+]

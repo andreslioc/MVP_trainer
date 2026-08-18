@@ -1,0 +1,46 @@
+# Configuracion del stack local de Supabase.
+#
+# ESCRITO PARA EL CLI DE SUPABASE >= 2.115.0. El esquema de este archivo cambia
+# entre versiones del CLI: uno viejo rechaza claves nuevas y uno nuevo renombra
+# claves viejas. `pnpm supabase:check` verifica la version antes de arrancar el
+# stack y falla con un mensaje accionable (blueprint.md §10, paso 3).
+#
+# Solo se declaran claves estables de la linea 2.x. Todo lo demas queda en los
+# valores por omision del CLI a proposito: cada clave declarada es una clave que
+# puede romperse en una actualizacion.
+project_id = "super-store-sales-os"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+file_size_limit = "200MiB"
+
+[auth]
+enabled = true
+site_url = "http://127.0.0.1:3000"
+additional_redirect_urls = ["http://127.0.0.1:3101"]
+jwt_expiry = 3600
+# Solo por invitacion: no existe registro publico en este producto.
+# Las cuentas las crea un admin desde Configuracion (blueprint.md §8).
+enable_signup = false
+
+[auth.email]
+enable_confirmations = false

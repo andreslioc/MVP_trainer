@@ -1,0 +1,35 @@
+# Postgres puro para migraciones y pruebas.
+#
+# Existe por dos razones (blueprint.md §10, §12):
+#   1. Las pruebas nunca comparten base con desarrollo.
+#   2. `supabase start` levanta Postgres + Auth + Storage + Studio + Realtime y
+#      descarga varios GB la primera vez. Los pasos 1 y 2 solo necesitan
+#      Postgres, asi que arrancan con este servicio y en segundos.
+#
+# El stack completo de Supabase se necesita desde el paso 3 (Auth) en adelante.
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: super-store-test-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: super_store_test
+    ports:
+      # 55432 en el host para no chocar con un Postgres local (5432) ni con el
+      # Postgres de Supabase local (54322).
+      - "55432:5432"
+    volumes:
+      - super-store-test-db:/var/lib/postgresql/data
+    healthcheck:
+      # El comando `up --wait` solo retorna cuando esto pasa: sin healthcheck la
+      # primera migracion compite con el arranque del servidor.
+      test: ["CMD-SHELL", "pg_isready -U postgres -d super_store_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+volumes:
+  super-store-test-db:
