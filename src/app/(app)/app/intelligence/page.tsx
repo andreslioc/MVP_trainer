@@ -1,7 +1,9 @@
 import { getSession } from "../../../../lib/auth.ts";
 import { listInsights } from "../../../../server/insights.ts";
 import { listAnalyzableRecordings } from "../../../../server/recordings/analyze.ts";
+import { env } from "../../../../lib/env.ts";
 import { InsightsPanel } from "./insights-panel.tsx";
+import { RecordingIntake } from "./recording-intake.tsx";
 
 export default async function IntelligencePage() {
   const session = await getSession();
@@ -9,6 +11,16 @@ export default async function IntelligencePage() {
   const authorize = async () => session;
 
   const recordings = await listAnalyzableRecordings({ authorize });
+  // El callback solo puede llegar si el proveedor alcanza esta app desde fuera.
+  // En local no puede, y la pantalla debe decirlo en vez de dejar una grabacion
+  // esperando para siempre en `transcribing`.
+  const callbackReady = Boolean(
+    env.DEEPGRAM_API_KEY &&
+      env.DEEPGRAM_CALLBACK_SECRET &&
+      env.PUBLIC_BASE_URL &&
+      !env.PUBLIC_BASE_URL.includes("127.0.0.1") &&
+      !env.PUBLIC_BASE_URL.includes("localhost"),
+  );
   const rows = recordings.ok ? recordings.data : [];
   const selected = rows.find((recording) => recording.status === "analyzed") ?? null;
   const insights = selected ? await listInsights(selected.id, { authorize }) : null;
@@ -31,11 +43,16 @@ export default async function IntelligencePage() {
           No se pudieron cargar las grabaciones.
         </p>
       ) : (
-        <InsightsPanel
-          insights={insights?.ok ? insights.data : []}
-          recordings={rows}
-          selectedId={selected?.id ?? null}
-        />
+        <>
+          <div className="mt-8">
+            <RecordingIntake callbackReady={callbackReady} />
+          </div>
+          <InsightsPanel
+            insights={insights?.ok ? insights.data : []}
+            recordings={rows}
+            selectedId={selected?.id ?? null}
+          />
+        </>
       )}
     </section>
   );
