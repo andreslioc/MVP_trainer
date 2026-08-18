@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
@@ -32,6 +32,7 @@ import {
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { writeLlmCall } from "../llm-calls.ts";
 import { availableCtasFromRules, orchestrateCopilot } from "./orchestrator.ts";
+import { applyResponsibleCommunication, type ResponsibleAlert } from "./responsible.ts";
 
 const composeInputSchema = z
   .object({
@@ -106,46 +107,15 @@ export function asksForMissingSensitiveFact(
 
 function validateComposition(
   value: unknown,
-  product: typeof products.$inferSelect,
   expectedIntent: CopilotIntent["intent"],
   orchestration: ReturnType<typeof orchestrateCopilot>,
 ) {
   const parsed = copilotCompositionSchema.safeParse(value);
   if (!parsed.success) return null;
   if (parsed.data.intent !== expectedIntent) return null;
-  const combined = normalize(
-    [parsed.data.express, parsed.data.estandar, parsed.data.profunda].join(" "),
-  );
-  if (product.claimsForbidden.some((claim) => combined.includes(normalize(claim)))) return null;
   if (parsed.data.cta_used !== (orchestration.cta?.text ?? null)) return null;
   if (parsed.data.rule_applied !== orchestration.ruleApplied) return null;
   return parsed.data;
-}
-
-function partialJsonString(buffer: string, key: string) {
-  const marker = `"${key}"`;
-  const markerIndex = buffer.indexOf(marker);
-  if (markerIndex < 0) return null;
-  const colonIndex = buffer.indexOf(":", markerIndex + marker.length);
-  const quoteIndex = buffer.indexOf('"', colonIndex + 1);
-  if (colonIndex < 0 || quoteIndex < 0) return null;
-  let consecutiveBackslashes = 0;
-  for (let index = quoteIndex + 1; index < buffer.length; index += 1) {
-    const character = buffer[index];
-    if (character === '"' && consecutiveBackslashes % 2 === 0) {
-      try {
-        return JSON.parse(buffer.slice(quoteIndex, index + 1)) as string;
-      } catch {
-        return null;
-      }
-    }
-    consecutiveBackslashes = character === "\\" ? consecutiveBackslashes + 1 : 0;
-  }
-  try {
-    return JSON.parse(`${buffer.slice(quoteIndex)}"`) as string;
-  } catch {
-    return null;
-  }
 }
 
 export async function composeCopilotAnswer(input: unknown, options: ComposeDependencies = {}) {
@@ -187,11 +157,7 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
           ),
         )
         .limit(1),
-      database
-        .select()
-        .from(products)
-        .where(and(eq(products.id, parsedInput.data.productId), isNotNull(products.verifiedAt)))
-        .limit(1),
+      database.select().from(products).where(eq(products.id, parsedInput.data.productId)).limit(1),
       database
         .select({
           key: commercialRules.key,
@@ -248,12 +214,13 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
     }
 
     let composition: CopilotComposition;
+    let alerts: ResponsibleAlert[] = [];
     let timeToFirstTokenMs: number;
     let appliedOrchestration = orchestration;
+    let providerRefusal = false;
     if (asksForMissingSensitiveFact(parsedInput.data.customerQuestion, product)) {
       composition = safeCopilotFallback(classified.data.value.intent);
       appliedOrchestration = { cta: null, incentive: null, ruleApplied: null };
-      await onChunk(composition[parsedInput.data.lengthVariant]);
       timeToFirstTokenMs = Math.max(0, now() - startedAt);
     } else {
       const rendered = buildCopilotComposePrompt({
@@ -265,8 +232,6 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
         tone: parsedInput.data.tone,
         orchestration,
       });
-      let partialJson = "";
-      let emitted = "";
       const generated = await stream({
         advisorId: authorization.data.id,
         purpose: "copilot_compose",
@@ -276,40 +241,51 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
         messages: rendered.messages,
         maxTokens: 64_000,
         effort: "low",
-        onDelta: async (delta) => {
-          partialJson += delta;
-          const current = partialJsonString(partialJson, parsedInput.data.lengthVariant);
-          if (current?.startsWith(emitted)) {
-            const next = current.slice(emitted.length);
-            emitted = current;
-            if (next) await onChunk(next);
-          }
-        },
+        onDelta: () => undefined,
       });
       if (!generated.ok) {
-        return {
-          ok: false as const,
-          error: { code: "COPILOT_FAILED", message: "No se pudo generar. Intenta de nuevo." },
-        };
+        if (generated.error.code !== "AI_REFUSAL") {
+          return {
+            ok: false as const,
+            error: { code: "COPILOT_FAILED", message: "No se pudo generar. Intenta de nuevo." },
+          };
+        }
+        composition = safeCopilotFallback(classified.data.value.intent);
+        providerRefusal = true;
+        appliedOrchestration = { cta: null, incentive: null, ruleApplied: null };
+        timeToFirstTokenMs = Math.max(0, now() - startedAt);
+      } else {
+        const safe = validateComposition(
+          generated.data.value,
+          classified.data.value.intent,
+          orchestration,
+        );
+        if (!safe) {
+          return {
+            ok: false as const,
+            error: { code: "COPILOT_FAILED", message: "No se pudo generar. Intenta de nuevo." },
+          };
+        }
+        composition = safe;
+        timeToFirstTokenMs = generated.data.timeToFirstTokenMs;
       }
-      const safe = validateComposition(
-        generated.data.value,
-        product,
-        classified.data.value.intent,
-        orchestration,
-      );
-      if (!safe) {
-        return {
-          ok: false as const,
-          error: { code: "COPILOT_FAILED", message: "No se pudo generar. Intenta de nuevo." },
-        };
-      }
-      composition = safe;
-      timeToFirstTokenMs = generated.data.timeToFirstTokenMs;
-      if (!emitted) await onChunk(composition[parsedInput.data.lengthVariant]);
+    }
+
+    const responsible = applyResponsibleCommunication({
+      question: parsedInput.data.customerQuestion,
+      composition,
+      product,
+      refusal: providerRefusal,
+    });
+    if (!responsible.ok) return responsible;
+    composition = responsible.data.composition;
+    alerts = responsible.data.alerts;
+    if (!composition.cta_used || !composition.rule_applied) {
+      appliedOrchestration = { cta: null, incentive: null, ruleApplied: null };
     }
 
     const answerText = composition[parsedInput.data.lengthVariant];
+    await onChunk(answerText);
     const recordedAt = new Date().toISOString();
     const ctaEntries = appliedOrchestration.cta
       ? [{ cta: appliedOrchestration.cta.text, at: recordedAt }]
@@ -346,7 +322,7 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
           confidence: composition.confidence,
           ctaUsed: composition.cta_used,
           ruleApplied: composition.rule_applied,
-          alerts: [],
+          alerts,
         })
         .returning();
       if (!createdExchange) throw new Error("No se guardo el intercambio.");

@@ -7,6 +7,7 @@ import {
   AnswerPanel,
   type CopilotCompositionView,
   type CopilotVariant,
+  type ResponsibleAlertView,
 } from "../../../../components/copilot/answer-panel.tsx";
 import { COPILOT_VIEW_DEFAULTS } from "../../../../lib/copilot/view-defaults.ts";
 import { endLiveSessionAction, startLiveSessionAction } from "./actions.ts";
@@ -22,12 +23,19 @@ type CopilotFormValues = {
 type CompleteData = {
   composition: CopilotCompositionView;
   durations: Record<CopilotVariant, number>;
+  exchange?: { alerts: ResponsibleAlertView[] };
 };
 
 type StreamEvent =
   | { type: "chunk"; chunk: string }
   | { type: "complete"; result: { ok: true; data: CompleteData } }
-  | { type: "error"; result: { ok: false; error: { message: string } } };
+  | {
+      type: "error";
+      result: {
+        ok: false;
+        error: { code: string; message: string; alerts?: ResponsibleAlertView[] };
+      };
+    };
 
 export function CopilotForm({
   products,
@@ -83,7 +91,10 @@ export function CopilotForm({
         } else if (streamEvent.type === "complete" && streamEvent.result.ok) {
           setComplete(streamEvent.result.data);
         } else if (streamEvent.type === "error") {
-          throw new Error(streamEvent.result.error.message);
+          const alertCode = streamEvent.result.error.alerts?.[0]?.code;
+          throw new Error(
+            `${alertCode ?? streamEvent.result.error.code}: ${streamEvent.result.error.message}`,
+          );
         }
       }
       if (done) break;
@@ -262,6 +273,7 @@ export function CopilotForm({
       </form>
 
       <AnswerPanel
+        alerts={complete?.exchange?.alerts}
         composition={complete?.composition}
         durations={complete?.durations}
         error={error}

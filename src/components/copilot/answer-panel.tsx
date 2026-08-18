@@ -11,6 +11,8 @@ export type CopilotCompositionView = {
   rule_applied: string | null;
 };
 
+export type ResponsibleAlertView = { code: string; message: string };
+
 const confidenceClass = {
   alto: "confidence-badge-high",
   medio: "confidence-badge-mid",
@@ -24,6 +26,7 @@ export function AnswerPanel({
   durations,
   isStreaming,
   error,
+  alerts,
 }: {
   variant: CopilotVariant;
   streamedText: string;
@@ -31,6 +34,7 @@ export function AnswerPanel({
   durations?: Record<CopilotVariant, number>;
   isStreaming: boolean;
   error?: string;
+  alerts?: ResponsibleAlertView[];
 }) {
   const answer = composition?.[variant] ?? streamedText;
 
@@ -70,6 +74,19 @@ export function AnswerPanel({
       )}
 
       {isStreaming ? <p className="mt-4 text-sm text-fg-muted">Generando en vivo…</p> : null}
+
+      {alerts?.length ? (
+        <div className="mt-5 rounded-card border border-warning-border bg-confidence-mid-bg p-4">
+          <p className="font-semibold text-confidence-mid-fg">Revisión responsable</p>
+          <ul className="mt-2 space-y-1 text-sm text-confidence-mid-fg">
+            {alerts.map((alert) => (
+              <li key={alert.code}>
+                {alert.code}: {alert.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       {composition && durations ? (
         <>
