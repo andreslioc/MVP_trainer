@@ -1414,7 +1414,7 @@ git tag step-07-ai-gateway
 
 ```bash
 pnpm test tests/unit/structured-output.test.ts # pasa: 0, 1 y nunca mas de 1 reparacion estan afirmadas
-rg -n 'output_format|budget_tokens|assistant.*prefill' src/lib/ai src/server; test $? -eq 1 # pasa: no aparecen parametros incompatibles o deprecados
+rg -n 'Authorization.*Bearer|gemini-[0-9]' src/lib/ai src/server --glob '!src/lib/ai/config.ts'; test $? -eq 1 # pasa: ni Bearer (devuelve 401 con esta llave) ni ids de modelo fuera de configuracion
 pnpm typecheck && pnpm lint && pnpm test # pasa: gate comun en verde
 ```
 

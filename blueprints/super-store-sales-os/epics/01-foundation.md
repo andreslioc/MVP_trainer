@@ -318,7 +318,7 @@ repair; despues falla tipado y nunca entrega un objeto parcial.
 
 ```bash
 pnpm test tests/unit/structured-output.test.ts
-rg -n 'output_format|budget_tokens|assistant.*prefill' src/lib/ai src/server; test $? -eq 1
+rg -n 'Authorization.*Bearer|gemini-[0-9]' src/lib/ai src/server --glob '!src/lib/ai/config.ts'; test $? -eq 1
 pnpm typecheck && pnpm lint && pnpm test
 ```
 
