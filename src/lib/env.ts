@@ -23,6 +23,7 @@ const serverEnvSchema = z.object({
   DEEPGRAM_LANGUAGE: optionalString,
   DEEPGRAM_CALLBACK_SECRET: optionalString,
   PUBLIC_BASE_URL: optionalString,
+  CRON_SECRET: optionalString,
   RECORDING_RETENTION_DAYS: positiveInteger.default(90),
   ANTHROPIC_API_KEY: optionalString,
   AI_MODEL_DEFAULT: z.string().min(1),
