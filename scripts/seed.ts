@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { COPILOT_CLASSIFY_PROMPT, COPILOT_COMPOSE_PROMPT } from "../src/lib/ai/prompts/copilot.ts";
 import { GENERATE_QUESTIONS_PROMPT } from "../src/lib/ai/prompts/generate-questions.ts";
 import { EVALUATE_ANSWER_PROMPT } from "../src/lib/ai/prompts/evaluate-answer.ts";
+import { ANALYZE_TRANSCRIPT_PROMPT } from "../src/lib/ai/prompts/analyze-transcript.ts";
 import { loadEnv } from "../src/lib/load-env.ts";
 
 loadEnv();
@@ -88,7 +89,9 @@ async function main(): Promise<void> {
                     ? COPILOT_CLASSIFY_PROMPT
                     : name.startsWith("copilot_compose_")
                       ? COPILOT_COMPOSE_PROMPT
-                      : `Plantilla inicial versionada para ${name}.`,
+                      : name === "analyze_transcript"
+                        ? ANALYZE_TRANSCRIPT_PROMPT
+                        : `Plantilla inicial versionada para ${name}.`,
             active: true,
           })),
         )
