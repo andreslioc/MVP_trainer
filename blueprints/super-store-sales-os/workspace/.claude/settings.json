@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(bash blueprints/super-store-sales-os/bootstrap.sh)",
       "Bash(bash scripts/check-supabase-cli.sh)",
       "Bash(cat:*)",
       "Bash(corepack:*)",

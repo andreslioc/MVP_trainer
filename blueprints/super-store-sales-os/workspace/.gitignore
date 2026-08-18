@@ -24,8 +24,6 @@ yarn-error.log*
 !.env.example
 .supabase-status.env
 
-# marcador del copiado idempotente de workspace/ (ver blueprint.md §10)
-.workspace-applied
 
 # supabase CLI
 supabase/.temp/
