@@ -41,7 +41,7 @@
     ],
     "checkpoint": "step-02-database-schema",
     "files": ["src/db/schema.ts", "src/db/client.ts", "scripts/seed.ts", "tests/integration/schema.test.ts", "tests/integration/seed-idempotency.test.ts"],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T3",
