@@ -1168,6 +1168,10 @@ este paso: el esquema portable se prueba contra Postgres puro; Supabase completo
   `scripts/seed.ts` idempotente. El script carga entorno mediante `src/lib/load-env.ts`.
 - Sembrar producto, reglas, prompts y preguntas definidas en §4. El usuario de Auth y el bucket se
   omiten limpiamente mientras Supabase no este arriba.
+- Completar el contrato de `/health` de §5 agregando el campo `db`: `select 1` contra la conexion de
+  la aplicacion, `"up"` si responde y `"down"` si falla. **`ok` sigue en `true` en ambos casos** — un
+  liveness que se cae con la base hace que el orquestador reinicie el contenedor equivocado. El paso
+  1 dejo la forma minima; este paso la completa sin romperla.
 
 **Done when**
 
@@ -1179,6 +1183,9 @@ este paso: el esquema portable se prueba contra Postgres puro; Supabase completo
    clave natural sembrada y salir 0 ambas veces.
 3. **CUANDO** una prueba crea un advisor desde el escritor autorizado **EL SISTEMA DEBERA** guardar
    exactamente el UUID recibido como `advisors.id`.
+4. **CUANDO** se pide `/health` con la base arriba **EL SISTEMA DEBERA** responder
+   `{ "ok": true, "db": "up", "commit": ... }`, y **CUANDO** la base no responde **EL SISTEMA
+   DEBERA** seguir devolviendo `"ok": true` con `"db": "down"`.
 
 **Verify**
 
@@ -1187,6 +1194,7 @@ pnpm db:up && pnpm db:migrate:test # pasa: Postgres esta saludable y todas las m
 pnpm test tests/integration/schema.test.ts # pasa: cada tabla, enum, FK e indice requerido existe por nombre
 pnpm db:seed && pnpm db:seed # pasa: las dos ejecuciones salen 0
 pnpm test tests/integration/seed-idempotency.test.ts # pasa: no hay duplicados por clave natural
+pnpm test tests/unit/health.test.ts # pasa: /health responde ok, db y commit segun el contrato de §5
 pnpm typecheck && pnpm lint && pnpm test # pasa: gate comun en verde
 ```
 
@@ -2090,8 +2098,11 @@ luego el `.env.local` existente. `--from-supabase` refresca deliberadamente las 
 de Supabase y escribe el resultado en `.env.local`.
 
 `.env` y `.env.local` pueden contener secretos y no se versionan. `.env.example` es la unica plantilla
-exceptuada por `.gitignore`. El `.env` ya presente en este bundle contiene configuracion del usuario;
-se preserva, se mantiene ignorado y no se copia a reportes.
+exceptuada por `.gitignore`, y por lo tanto **lo unico que el bundle entrega**: si existe un `.env`
+en la copia de trabajo de quien genero el bundle, ese archivo es suyo, queda fuera del control de
+versiones y no viaja a nadie mas. Un clon del repositorio recibe `.env.example` y nada mas, que es
+justo lo que debe pasar cuando el original lleva credenciales reales dentro. El primer paso de
+cualquier maquina nueva es copiar la plantilla y llenarla.
 
 ### Variables
 
@@ -2200,8 +2211,7 @@ aplicacion y repiten solo los invariantes que deben estar presentes mientras se 
 | `src/lib/load-env.ts` | shell/CI > `.env.local` > `.env`; example no se carga |
 | `scripts/write-env-local.ts` | genera `.env.local` y mapea keys nuevas/legadas |
 | `scripts/check-supabase-cli.sh` | falla temprano si el CLI no entiende config.toml |
-| `.env.example` | unica plantilla versionada, sin secretos |
-| `.env` | configuracion real ignorada; encabezado corregido para decirlo |
+| `.env.example` | unica plantilla versionada, sin secretos, y lo unico que el bundle entrega |
 | `.gitignore` | `.env*` ignorado y solo `!.env.example` exceptuado |
 | `.nvmrc` | Node 24.19.0 |
 

@@ -102,15 +102,17 @@ git tag step-01-scaffold-health
 
 Carga `supabase-postgres-best-practices` antes de escribir tablas. Implementa el esquema de doce
 entidades, indices de FKs/aislamiento, conexion unica y seed idempotente. El paso usa Postgres puro.
+Tambien completa el contrato de `/health` de §5 con el campo `db`, que el paso 1 dejo pendiente.
 
 **Files:** `src/db/schema.ts`, `src/db/client.ts`, `scripts/seed.ts`,
-`tests/integration/schema.test.ts`, `tests/integration/seed-idempotency.test.ts`.
+`src/app/health/route.ts`, `tests/`.
 
 **Acceptance**
 
 1. CUANDO las migraciones corren sobre una base de pruebas vacia EL SISTEMA DEBERA crear por nombre `advisors`, `products`, `commercial_rules`, `training_questions`, `training_sessions`, `training_answers`, `live_sessions`, `copilot_exchanges`, `live_recordings`, `insights`, `llm_calls` y `prompts`, mas sus enums.
 2. CUANDO `pnpm db:seed` corre dos veces EL SISTEMA DEBERA conservar una sola fila por cada clave natural sembrada y salir 0 ambas veces.
 3. CUANDO una prueba crea un advisor desde el escritor autorizado EL SISTEMA DEBERA guardar exactamente el UUID recibido como `advisors.id`.
+4. CUANDO se pide `/health` con la base arriba EL SISTEMA DEBERA responder `{ "ok": true, "db": "up", "commit": ... }`, y CUANDO la base no responde EL SISTEMA DEBERA seguir devolviendo `"ok": true` con `"db": "down"`.
 
 **Verify**
 
@@ -119,6 +121,7 @@ pnpm db:up && pnpm db:migrate:test
 pnpm test tests/integration/schema.test.ts
 pnpm db:seed && pnpm db:seed
 pnpm test tests/integration/seed-idempotency.test.ts
+pnpm test tests/unit/health.test.ts
 pnpm typecheck && pnpm lint && pnpm test
 ```
 
