@@ -528,7 +528,7 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
       const costUsd = pricing ? calculateCostUsd(usage, pricing) : 0;
       const finishReason = response.finishReason;
 
-      // Igual que en texto libre: stop_reason decide antes de inspeccionar content.
+      // Igual que en texto libre: el rechazo decide antes de inspeccionar la salida.
       if (response.finishReason === "refusal") {
         const ledger = await dependencies.writeCall({
           advisorId: input.advisorId,

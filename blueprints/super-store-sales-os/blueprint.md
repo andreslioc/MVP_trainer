@@ -214,7 +214,7 @@ super-store-sales-os/
       ai/
         config.ts                   # ids de modelo y precios, leidos de env. Nunca en un call site
         gateway.ts                  # UNICO archivo que habla con el proveedor
-        structured.ts               # messages.parse() + un reintento de reparacion
+        structured.ts               # salida estructurada + un reintento de reparacion
         schemas.ts                  # esquemas zod de salida del modelo
         prompts/
           generate-questions.ts

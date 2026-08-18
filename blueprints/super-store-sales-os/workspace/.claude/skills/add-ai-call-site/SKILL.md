@@ -50,8 +50,9 @@ pnpm typecheck                                   # expect: exit 0
 - No escribir un id de modelo en el call site. Van en `src/lib/ai/config.ts`, leidos de env.
 - No escribir `budget_tokens`: esta eliminado en Opus 5 y devuelve 400.
 - No poner `effort` en el nivel superior. Va dentro de `output_config`.
-- No usar `output_format` (deprecado) ni pedir JSON en prosa. Se usa `messages.parse()` con
-  `zodOutputFormat`.
+- No pedir JSON en prosa. El esquema viaja como `responseJsonSchema`, generado con
+  `z.toJSONSchema()` desde el mismo esquema de Zod que valida la respuesta: una sola definicion,
+  nunca dos copias que se desincronizan.
 - No hacer prefill de un mensaje assistant: devuelve 400 en Opus 5.
 - No estimar tokens ni costo contando caracteres. Se persiste lo que reporta el proveedor.
 - No bajar a `AI_MODEL_SMALL` sin un eval del golden set que lo respalde.
