@@ -69,6 +69,46 @@ NODE
 
 pnpm add --save-exact next@16.3.1 react@19.2.8 react-dom@19.2.8 tailwindcss@4.3.3 @tailwindcss/postcss@4.3.3 drizzle-orm@0.45.2 postgres@3.4.9 @supabase/supabase-js@2.112.3 @supabase/ssr@0.12.4 @anthropic-ai/sdk@0.117.1 zod@4.4.3 react-hook-form@7.85.0 @hookform/resolvers@5.9.1 @tanstack/react-query@5.101.4
 pnpm add --save-dev --save-exact typescript@6.0.3 @types/node@24.13.3 @types/react@19.2.18 @types/react-dom@19.2.4 @biomejs/biome@2.5.9 drizzle-kit@0.31.10 vitest@4.1.11 @playwright/test@1.62.1 tsx@4.23.12
+node <<'NODE'
+const fs = require("node:fs");
+const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+const pinned = {
+  dependencies: {
+    "@anthropic-ai/sdk": "0.117.1",
+    "@hookform/resolvers": "5.9.1",
+    "@supabase/ssr": "0.12.4",
+    "@supabase/supabase-js": "2.112.3",
+    "@tanstack/react-query": "5.101.4",
+    "@tailwindcss/postcss": "4.3.3",
+    "drizzle-orm": "0.45.2",
+    next: "16.3.1",
+    postgres: "3.4.9",
+    react: "19.2.8",
+    "react-dom": "19.2.8",
+    "react-hook-form": "7.85.0",
+    tailwindcss: "4.3.3",
+    zod: "4.4.3",
+  },
+  devDependencies: {
+    "@biomejs/biome": "2.5.9",
+    "@playwright/test": "1.62.1",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "drizzle-kit": "0.31.10",
+    tsx: "4.23.12",
+    typescript: "6.0.3",
+    vitest: "4.1.11",
+  },
+};
+
+packageJson.dependencies = { ...packageJson.dependencies, ...pinned.dependencies };
+packageJson.devDependencies = { ...packageJson.devDependencies, ...pinned.devDependencies };
+for (const name of Object.keys(pinned.dependencies)) delete packageJson.devDependencies[name];
+for (const name of Object.keys(pinned.devDependencies)) delete packageJson.dependencies[name];
+fs.writeFileSync("package.json", `${JSON.stringify(packageJson, null, 2)}\n`);
+NODE
+pnpm install --lockfile-only
 pnpm approve-builds --all
 pnpm install --frozen-lockfile
 

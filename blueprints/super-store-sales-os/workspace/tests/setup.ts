@@ -17,6 +17,8 @@ if (!process.env.TEST_DATABASE_URL) {
 // El codigo de servidor lee DATABASE_URL. Dentro de las pruebas la apuntamos a
 // la base de pruebas para que ningun modulo pueda tocar la base de desarrollo,
 // ni por descuido ni por un import transitivo.
-process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
-process.env.DIRECT_DATABASE_URL = process.env.TEST_DATABASE_URL;
-process.env.NODE_ENV = "test";
+Object.assign(process.env, {
+  DATABASE_URL: process.env.TEST_DATABASE_URL,
+  DIRECT_DATABASE_URL: process.env.TEST_DATABASE_URL,
+  NODE_ENV: "test",
+});

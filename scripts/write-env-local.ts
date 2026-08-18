@@ -51,11 +51,7 @@ const SUPABASE_ALIASES: Record<string, string[]> = {
     "SUPABASE_ANON_KEY",
     "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   ],
-  SUPABASE_SECRET_KEY: [
-    "SECRET_KEY",
-    "SERVICE_ROLE_KEY",
-    "SUPABASE_SECRET_KEY",
-  ],
+  SUPABASE_SECRET_KEY: ["SECRET_KEY", "SERVICE_ROLE_KEY", "SUPABASE_SECRET_KEY"],
 };
 
 function readExisting(): Record<string, string> {
@@ -105,9 +101,7 @@ function main(): void {
 
   if (fromSupabase) {
     if (!existsSync(STATUS_FILE)) {
-      throw new Error(
-        `${STATUS_FILE} no existe. Corre: supabase status -o env > ${STATUS_FILE}`,
-      );
+      throw new Error(`${STATUS_FILE} no existe. Corre: supabase status -o env > ${STATUS_FILE}`);
     }
     Object.assign(merged, resolveSupabase(parseEnvFile(readFileSync(STATUS_FILE, "utf8"))));
   } else {
@@ -118,7 +112,12 @@ function main(): void {
     }
   }
 
-  for (const key of ["ANTHROPIC_API_KEY", "DEEPGRAM_API_KEY", "DEEPGRAM_CALLBACK_SECRET", "CRON_SECRET"]) {
+  for (const key of [
+    "ANTHROPIC_API_KEY",
+    "DEEPGRAM_API_KEY",
+    "DEEPGRAM_CALLBACK_SECRET",
+    "CRON_SECRET",
+  ]) {
     if (merged[key] === undefined) merged[key] = "";
   }
 
@@ -127,7 +126,10 @@ function main(): void {
     .map((key) => `${key}="${merged[key]}"`)
     .join("\n");
 
-  writeFileSync(ENV_LOCAL, `# Generado por \`pnpm env:local\`. Editable a mano: se preserva.\n${body}\n`);
+  writeFileSync(
+    ENV_LOCAL,
+    `# Generado por \`pnpm env:local\`. Editable a mano: se preserva.\n${body}\n`,
+  );
   const mode = fromSupabase ? "con llaves de Supabase" : "sin llaves de Supabase (aun)";
   console.log(`${ENV_LOCAL} escrito ${mode}: ${Object.keys(merged).length} variables.`);
 }

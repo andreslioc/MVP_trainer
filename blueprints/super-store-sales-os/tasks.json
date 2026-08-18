@@ -19,7 +19,7 @@
     ],
     "checkpoint": "step-01-scaffold-health",
     "files": ["src/lib/env.ts", "src/app/health/route.ts", "tests/unit/health.test.ts"],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T2",
