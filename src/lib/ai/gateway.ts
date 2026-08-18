@@ -24,9 +24,19 @@ export type AiProviderResponse = Pick<
 export type AiProviderClient = {
   createMessage: (request: MessageCreateParamsNonStreaming) => Promise<AiProviderResponse>;
   parseMessage?: (request: MessageCreateParamsNonStreaming) => Promise<AiParsedProviderResponse>;
+  streamMessage?: (request: MessageCreateParamsNonStreaming) => AiProviderStream;
 };
 
 export type AiParsedProviderResponse = AiProviderResponse & { parsed_output: unknown };
+
+export type AiProviderStreamEvent = {
+  type: string;
+  delta?: { type: string; partial_json?: string };
+};
+
+export type AiProviderStream = AsyncIterable<AiProviderStreamEvent> & {
+  finalMessage: () => Promise<AiParsedProviderResponse>;
+};
 
 export type AiLedgerInput = AiUsage & {
   advisorId: string | null;
@@ -61,6 +71,9 @@ export type GenerateTextInput = {
 };
 
 export type GenerateStructuredInput<T> = GenerateTextInput & { schema: ZodType<T> };
+export type GenerateStructuredStreamInput<T> = GenerateStructuredInput<T> & {
+  onDelta: (partialJson: string) => void | Promise<void>;
+};
 
 export type AiGatewayError =
   | {
@@ -112,6 +125,26 @@ export type StructuredAttemptResult<T> =
           };
     };
 
+export type StructuredStreamResult<T> =
+  | {
+      ok: true;
+      data: {
+        value: T;
+        model: string;
+        usage: AiUsage;
+        costUsd: number;
+        timeToFirstTokenMs: number;
+        time_to_first_token_ms: number;
+      };
+    }
+  | {
+      ok: false;
+      error:
+        | AiGatewayError
+        | { code: "AI_INVALID_OUTPUT"; message: string }
+        | { code: "AI_NO_STREAM_TOKEN"; message: string };
+    };
+
 function defaultClient(): AiProviderClient {
   if (!env.ANTHROPIC_API_KEY) {
     throw new Error("ANTHROPIC_API_KEY no esta definida.");
@@ -120,6 +153,7 @@ function defaultClient(): AiProviderClient {
   return {
     createMessage: (request) => client.beta.messages.create(request),
     parseMessage: (request) => client.beta.messages.parse(request),
+    streamMessage: (request) => client.beta.messages.stream(request) as AiProviderStream,
   };
 }
 
@@ -382,6 +416,139 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
         };
       }
       return { ok: true, data: { value: parsed.data, model: response.model, usage, costUsd } };
+    },
+
+    async generateStructuredStream<T>(
+      input: GenerateStructuredStreamInput<T>,
+    ): Promise<StructuredStreamResult<T>> {
+      const startedAt = now();
+      let firstTokenAt: number | undefined;
+      let response: AiParsedProviderResponse;
+
+      try {
+        const client = dependencies.client ?? defaultClient();
+        if (!client.streamMessage) throw new Error("El cliente no implementa streaming.");
+        const request = requestParameters(input);
+        const stream = client.streamMessage({
+          ...request,
+          output_config: {
+            ...request.output_config,
+            format: zodOutputFormat(input.schema),
+          },
+        });
+        for await (const event of stream) {
+          const partialJson =
+            event.type === "content_block_delta" && event.delta?.type === "input_json_delta"
+              ? event.delta.partial_json
+              : undefined;
+          if (!partialJson) continue;
+          firstTokenAt ??= now();
+          await input.onDelta(partialJson);
+        }
+        response = await stream.finalMessage();
+      } catch (error) {
+        const latencyMs = Math.max(0, Math.round(now() - startedAt));
+        const message = providerErrorMessage(error);
+        const ledger = await dependencies.writeCall({
+          advisorId: input.advisorId,
+          purpose: input.purpose,
+          model: AI_MODELS.default,
+          latencyMs,
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          costUsd: 0,
+          finishReason: "error",
+          error: message,
+          promptId: input.promptId ?? null,
+        });
+        if (!ledger.ok) {
+          return {
+            ok: false,
+            error: { code: "AI_LEDGER_FAILED", message: "No se pudo auditar la llamada de IA." },
+          };
+        }
+        return {
+          ok: false,
+          error: { code: "AI_PROVIDER_ERROR", message: "El proveedor de IA no respondio." },
+        };
+      }
+
+      const latencyMs = Math.max(0, Math.round(now() - startedAt));
+      const usage = providerUsage(response);
+      const pricing = pricingTable[response.model];
+      const costUsd = pricing ? calculateCostUsd(usage, pricing) : 0;
+      const finishReason = response.stop_reason ?? "unknown";
+      if (response.stop_reason === "refusal") {
+        const ledger = await dependencies.writeCall({
+          advisorId: input.advisorId,
+          purpose: input.purpose,
+          model: response.model,
+          latencyMs,
+          ...usage,
+          costUsd,
+          finishReason,
+          error: null,
+          promptId: input.promptId ?? null,
+        });
+        if (!ledger.ok) {
+          return {
+            ok: false,
+            error: { code: "AI_LEDGER_FAILED", message: "No se pudo auditar la llamada de IA." },
+          };
+        }
+        return {
+          ok: false,
+          error: {
+            code: "AI_REFUSAL",
+            message: "El modelo rechazo responder; usa una degradacion segura.",
+            category: response.stop_details?.category ?? null,
+          },
+        };
+      }
+      const parsed = input.schema.safeParse(response.parsed_output);
+      const validationError = parsed.success ? null : parsed.error.message;
+      const ledger = await dependencies.writeCall({
+        advisorId: input.advisorId,
+        purpose: input.purpose,
+        model: response.model,
+        latencyMs,
+        ...usage,
+        costUsd,
+        finishReason,
+        error: validationError,
+        promptId: input.promptId ?? null,
+      });
+      if (!ledger.ok) {
+        return {
+          ok: false,
+          error: { code: "AI_LEDGER_FAILED", message: "No se pudo auditar la llamada de IA." },
+        };
+      }
+      if (!firstTokenAt) {
+        return {
+          ok: false,
+          error: { code: "AI_NO_STREAM_TOKEN", message: "La respuesta no produjo contenido." },
+        };
+      }
+      if (!parsed.success) {
+        return {
+          ok: false,
+          error: { code: "AI_INVALID_OUTPUT", message: "La salida no cumple el contrato." },
+        };
+      }
+      return {
+        ok: true,
+        data: {
+          value: parsed.data,
+          model: response.model,
+          usage,
+          costUsd,
+          timeToFirstTokenMs: Math.max(0, Math.round(firstTokenAt - startedAt)),
+          time_to_first_token_ms: Math.max(0, Math.round(firstTokenAt - startedAt)),
+        },
+      };
     },
   };
 }

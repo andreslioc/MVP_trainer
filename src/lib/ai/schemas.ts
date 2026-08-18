@@ -80,6 +80,12 @@ export const copilotCompositionSchema = z
   })
   .strict();
 
+export const copilotIntentSchema = z
+  .object({
+    intent: questionIntentSchema,
+  })
+  .strict();
+
 export const transcriptInsightsSchema = z
   .object({
     insights: z.array(
@@ -105,4 +111,5 @@ export const transcriptInsightsSchema = z
 export type GeneratedQuestions = z.infer<typeof generatedQuestionsSchema>;
 export type Evaluation = z.infer<typeof evaluationSchema>;
 export type CopilotComposition = z.infer<typeof copilotCompositionSchema>;
+export type CopilotIntent = z.infer<typeof copilotIntentSchema>;
 export type TranscriptInsights = z.infer<typeof transcriptInsightsSchema>;

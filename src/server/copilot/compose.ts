@@ -1,0 +1,347 @@
+import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { z } from "zod";
+
+import { db } from "../../db/client.ts";
+import {
+  commercialRules,
+  copilotExchanges,
+  liveSessions,
+  products,
+  prompts,
+} from "../../db/schema.ts";
+import {
+  createAiGateway,
+  type GenerateStructuredStreamInput,
+  type StructuredStreamResult,
+} from "../../lib/ai/gateway.ts";
+import {
+  buildCopilotClassifyPrompt,
+  buildCopilotComposePrompt,
+} from "../../lib/ai/prompts/copilot.ts";
+import {
+  type CopilotComposition,
+  copilotCompositionSchema,
+  type CopilotIntent,
+  copilotIntentSchema,
+} from "../../lib/ai/schemas.ts";
+import {
+  generateStructured,
+  type StructuredOutputInput,
+  type StructuredOutputResult,
+} from "../../lib/ai/structured.ts";
+import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
+import { writeLlmCall } from "../llm-calls.ts";
+
+const composeInputSchema = z
+  .object({
+    liveSessionId: z.uuid(),
+    productId: z.uuid(),
+    customerQuestion: z.string().trim().min(1).max(2_000),
+    lengthVariant: z.enum(["express", "estandar", "profunda"]),
+    objective: z.string().trim().min(1).max(100),
+    tone: z.string().trim().min(1).max(100),
+  })
+  .strict();
+
+type CopilotDatabase = Pick<typeof db, "insert" | "select">;
+type AuthorizationResult =
+  | { ok: true; data: { id: string; role: AdvisorRole } }
+  | { ok: false; error: { code: string; message: string } };
+type Classify = (
+  input: StructuredOutputInput<CopilotIntent>,
+) => Promise<StructuredOutputResult<CopilotIntent>>;
+type StreamComposition = (
+  input: GenerateStructuredStreamInput<CopilotComposition>,
+) => Promise<StructuredStreamResult<CopilotComposition>>;
+
+export type ComposeDependencies = {
+  authorize?: (role: AdvisorRole) => Promise<AuthorizationResult>;
+  database?: CopilotDatabase;
+  classify?: Classify;
+  stream?: StreamComposition;
+  now?: () => number;
+  onChunk?: (chunk: string) => void | Promise<void>;
+};
+
+const aiGateway = createAiGateway({ writeCall: writeLlmCall });
+
+function normalize(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es");
+}
+
+export function estimateDurationSeconds(text: string) {
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(words / 2.5));
+}
+
+export function safeCopilotFallback(intent: CopilotIntent["intent"]): CopilotComposition {
+  const answer =
+    "Ese dato no está verificado en nuestra ficha. Para darte una respuesta responsable, revisemos la etiqueta o consultemos con un profesional antes de afirmarlo.";
+  return {
+    intent,
+    express: answer,
+    estandar: answer,
+    profunda: answer,
+    confidence: "revisar",
+    cta_used: null,
+    rule_applied: null,
+  };
+}
+
+export function asksForMissingSensitiveFact(
+  question: string,
+  product: typeof products.$inferSelect,
+) {
+  const normalizedQuestion = normalize(question);
+  const knowledge = normalize(JSON.stringify(product));
+  if (/\b(precio|cuanto cuesta|cuanto vale)\b/.test(normalizedQuestion)) return true;
+  return ["fda", "certificacion", "estudio", "porcentaje", "dosis"]
+    .filter((term) => normalizedQuestion.includes(term))
+    .some((term) => !knowledge.includes(term));
+}
+
+function activeRuleStrings(rules: Array<{ value: Record<string, unknown> }>) {
+  const strings = new Set<string>();
+  const visit = (value: unknown) => {
+    if (typeof value === "string") strings.add(normalize(value).trim());
+    else if (Array.isArray(value)) value.forEach(visit);
+    else if (value && typeof value === "object") Object.values(value).forEach(visit);
+  };
+  for (const rule of rules) visit(rule.value);
+  return strings;
+}
+
+function validateComposition(
+  value: unknown,
+  product: typeof products.$inferSelect,
+  rules: Array<{ key: string; value: Record<string, unknown> }>,
+  expectedIntent: CopilotIntent["intent"],
+) {
+  const parsed = copilotCompositionSchema.safeParse(value);
+  if (!parsed.success) return null;
+  if (parsed.data.intent !== expectedIntent) return null;
+  const combined = normalize(
+    [parsed.data.express, parsed.data.estandar, parsed.data.profunda].join(" "),
+  );
+  if (product.claimsForbidden.some((claim) => combined.includes(normalize(claim)))) return null;
+  if (parsed.data.rule_applied && !rules.some((rule) => rule.key === parsed.data.rule_applied)) {
+    return null;
+  }
+  if (
+    parsed.data.cta_used &&
+    !activeRuleStrings(rules).has(normalize(parsed.data.cta_used).trim())
+  ) {
+    return null;
+  }
+  return parsed.data;
+}
+
+function partialJsonString(buffer: string, key: string) {
+  const marker = `"${key}"`;
+  const markerIndex = buffer.indexOf(marker);
+  if (markerIndex < 0) return null;
+  const colonIndex = buffer.indexOf(":", markerIndex + marker.length);
+  const quoteIndex = buffer.indexOf('"', colonIndex + 1);
+  if (colonIndex < 0 || quoteIndex < 0) return null;
+  let consecutiveBackslashes = 0;
+  for (let index = quoteIndex + 1; index < buffer.length; index += 1) {
+    const character = buffer[index];
+    if (character === '"' && consecutiveBackslashes % 2 === 0) {
+      try {
+        return JSON.parse(buffer.slice(quoteIndex, index + 1)) as string;
+      } catch {
+        return null;
+      }
+    }
+    consecutiveBackslashes = character === "\\" ? consecutiveBackslashes + 1 : 0;
+  }
+  try {
+    return JSON.parse(`${buffer.slice(quoteIndex)}"`) as string;
+  } catch {
+    return null;
+  }
+}
+
+export async function composeCopilotAnswer(input: unknown, options: ComposeDependencies = {}) {
+  const authorization = await (options.authorize ?? requireRole)("asesor");
+  if (!authorization.ok) return authorization;
+  const parsedInput = composeInputSchema.safeParse(input);
+  if (!parsedInput.success) {
+    return {
+      ok: false as const,
+      error: { code: "VALIDATION", message: "Revisa la pregunta y las opciones del Copilot." },
+    };
+  }
+
+  const database = options.database ?? db;
+  const classify =
+    options.classify ??
+    ((request: Parameters<Classify>[0]) => generateStructured(request, aiGateway));
+  const stream =
+    options.stream ??
+    ((request: Parameters<StreamComposition>[0]) => aiGateway.generateStructuredStream(request));
+  const onChunk = options.onChunk ?? (() => undefined);
+  const now = options.now ?? Date.now;
+  const startedAt = now();
+
+  try {
+    const [[session], [product], activeRules, promptRows] = await Promise.all([
+      database
+        .select({ id: liveSessions.id })
+        .from(liveSessions)
+        .where(
+          and(
+            eq(liveSessions.id, parsedInput.data.liveSessionId),
+            eq(liveSessions.advisorId, authorization.data.id),
+            isNull(liveSessions.endedAt),
+          ),
+        )
+        .limit(1),
+      database
+        .select()
+        .from(products)
+        .where(and(eq(products.id, parsedInput.data.productId), isNotNull(products.verifiedAt)))
+        .limit(1),
+      database
+        .select({ key: commercialRules.key, value: commercialRules.value })
+        .from(commercialRules)
+        .where(eq(commercialRules.active, true)),
+      database
+        .select({ id: prompts.id, name: prompts.name })
+        .from(prompts)
+        .where(eq(prompts.active, true))
+        .orderBy(desc(prompts.version)),
+    ]);
+    if (!session || !product) {
+      return { ok: false as const, error: { code: "NOT_FOUND", message: "El live no existe." } };
+    }
+    const classifyPrompt = promptRows.find((prompt) => prompt.name === "copilot_classify");
+    const composePrompt = promptRows.find(
+      (prompt) => prompt.name === `copilot_compose_${parsedInput.data.lengthVariant}`,
+    );
+    if (!classifyPrompt || !composePrompt) {
+      return {
+        ok: false as const,
+        error: { code: "COPILOT_PROMPT_MISSING", message: "El Copilot no esta configurado." },
+      };
+    }
+
+    const classifyRendered = buildCopilotClassifyPrompt(parsedInput.data.customerQuestion);
+    const classified = await classify({
+      advisorId: authorization.data.id,
+      purpose: "copilot_classify",
+      promptId: classifyPrompt.id,
+      schema: copilotIntentSchema,
+      system: classifyRendered.system,
+      messages: classifyRendered.messages,
+      maxTokens: 256,
+      effort: "low",
+    });
+    if (!classified.ok) {
+      return {
+        ok: false as const,
+        error: { code: "COPILOT_FAILED", message: "No se pudo generar. Intenta de nuevo." },
+      };
+    }
+
+    let composition: CopilotComposition;
+    let timeToFirstTokenMs: number;
+    if (asksForMissingSensitiveFact(parsedInput.data.customerQuestion, product)) {
+      composition = safeCopilotFallback(classified.data.value.intent);
+      await onChunk(composition[parsedInput.data.lengthVariant]);
+      timeToFirstTokenMs = Math.max(0, now() - startedAt);
+    } else {
+      const rendered = buildCopilotComposePrompt({
+        product,
+        activeRules,
+        customerQuestion: parsedInput.data.customerQuestion,
+        intent: classified.data.value.intent,
+        objective: parsedInput.data.objective,
+        tone: parsedInput.data.tone,
+      });
+      let partialJson = "";
+      let emitted = "";
+      const generated = await stream({
+        advisorId: authorization.data.id,
+        purpose: "copilot_compose",
+        promptId: composePrompt.id,
+        schema: copilotCompositionSchema,
+        system: rendered.system,
+        messages: rendered.messages,
+        maxTokens: 64_000,
+        effort: "low",
+        onDelta: async (delta) => {
+          partialJson += delta;
+          const current = partialJsonString(partialJson, parsedInput.data.lengthVariant);
+          if (current?.startsWith(emitted)) {
+            const next = current.slice(emitted.length);
+            emitted = current;
+            if (next) await onChunk(next);
+          }
+        },
+      });
+      if (!generated.ok) {
+        return {
+          ok: false as const,
+          error: { code: "COPILOT_FAILED", message: "No se pudo generar. Intenta de nuevo." },
+        };
+      }
+      const safe = validateComposition(
+        generated.data.value,
+        product,
+        activeRules,
+        classified.data.value.intent,
+      );
+      if (!safe) {
+        return {
+          ok: false as const,
+          error: { code: "COPILOT_FAILED", message: "No se pudo generar. Intenta de nuevo." },
+        };
+      }
+      composition = safe;
+      timeToFirstTokenMs = generated.data.timeToFirstTokenMs;
+      if (!emitted) await onChunk(composition[parsedInput.data.lengthVariant]);
+    }
+
+    const answerText = composition[parsedInput.data.lengthVariant];
+    const [exchange] = await database
+      .insert(copilotExchanges)
+      .values({
+        liveSessionId: session.id,
+        productId: product.id,
+        customerQuestion: parsedInput.data.customerQuestion,
+        intent: composition.intent,
+        answerText,
+        lengthVariant: parsedInput.data.lengthVariant,
+        durationEstimateS: estimateDurationSeconds(answerText),
+        confidence: composition.confidence,
+        ctaUsed: composition.cta_used,
+        ruleApplied: composition.rule_applied,
+        alerts: [],
+      })
+      .returning();
+    if (!exchange) throw new Error("No se guardo el intercambio.");
+    return {
+      ok: true as const,
+      data: {
+        exchange,
+        composition,
+        durations: {
+          express: estimateDurationSeconds(composition.express),
+          estandar: estimateDurationSeconds(composition.estandar),
+          profunda: estimateDurationSeconds(composition.profunda),
+        },
+        timeToFirstTokenMs,
+        time_to_first_token_ms: timeToFirstTokenMs,
+      },
+    };
+  } catch {
+    return {
+      ok: false as const,
+      error: { code: "COPILOT_FAILED", message: "No se pudo generar. Intenta de nuevo." },
+    };
+  }
+}
