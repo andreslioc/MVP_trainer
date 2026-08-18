@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 
+import { GENERATE_QUESTIONS_PROMPT } from "../src/lib/ai/prompts/generate-questions.ts";
 import { loadEnv } from "../src/lib/load-env.ts";
 
 loadEnv();
@@ -76,7 +77,10 @@ async function main(): Promise<void> {
           promptNames.map((name) => ({
             name,
             version: 1,
-            body: `Plantilla inicial versionada para ${name}.`,
+            body:
+              name === "generate_questions"
+                ? GENERATE_QUESTIONS_PROMPT
+                : `Plantilla inicial versionada para ${name}.`,
             active: true,
           })),
         )

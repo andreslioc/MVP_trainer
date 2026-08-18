@@ -25,7 +25,7 @@ export const generatedQuestionSchema = z
 
 export const generatedQuestionsSchema = z
   .object({
-    questions: z.array(generatedQuestionSchema).min(1),
+    questions: z.array(generatedQuestionSchema).length(6),
   })
   .strict();
 

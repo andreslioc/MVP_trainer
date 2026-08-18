@@ -1,0 +1,119 @@
+import { describe, expect, it } from "vitest";
+
+import type { products } from "../../src/db/schema.ts";
+import {
+  buildGenerateQuestionsPrompt,
+  productKnowledgeForPrompt,
+} from "../../src/lib/ai/prompts/generate-questions.ts";
+import type { GeneratedQuestions } from "../../src/lib/ai/schemas.ts";
+import { validateGeneratedQuestionBatch } from "../../src/server/training/questions.ts";
+import { validProductInput } from "../fixtures/product.ts";
+
+type Product = typeof products.$inferSelect;
+
+function product(): Product {
+  const input = validProductInput({
+    name: "Magnesio verificado",
+    verifiedAt: new Date("2026-08-18T12:00:00Z"),
+  });
+  return {
+    id: "11111111-1111-4111-8111-111111111111",
+    ...input,
+    verifiedAt: input.verifiedAt ?? null,
+    createdAt: new Date("2026-08-18T12:00:00Z"),
+    updatedAt: new Date("2026-08-18T12:00:00Z"),
+  } as Product;
+}
+
+function validBatch(): GeneratedQuestions {
+  return {
+    questions: [
+      {
+        text: "¿Que ingrediente contiene?",
+        intent: "informacion",
+        difficulty: "basica",
+        ideal_answer: "Contiene magnesio según la etiqueta del producto.",
+        criteria: ["Nombra el magnesio"],
+      },
+      {
+        text: "¿Cuantas capsulas trae?",
+        intent: "uso",
+        difficulty: "basica",
+        ideal_answer: "La presentación verificada contiene 60 cápsulas.",
+        criteria: ["Menciona la presentación"],
+      },
+      {
+        text: "¿Como encaja en mi rutina?",
+        intent: "uso",
+        difficulty: "intermedia",
+        ideal_answer: "La ficha describe un formato práctico para integrar a la rutina.",
+        criteria: ["Se limita a la ficha"],
+      },
+      {
+        text: "¿Que diferencia tiene?",
+        intent: "comparacion",
+        difficulty: "intermedia",
+        ideal_answer: "La etiqueta clara es el diferenciador verificable registrado.",
+        criteria: ["No inventa comparaciones"],
+      },
+      {
+        text: "¿Puedo tomarlo con medicamentos?",
+        intent: "seguridad",
+        difficulty: "dificil",
+        ideal_answer: "Si usas medicamentos, consulta a un profesional antes de usarlo.",
+        criteria: ["Activa la cautela"],
+      },
+      {
+        text: "¿Me garantiza resultados?",
+        intent: "objecion",
+        difficulty: "dificil",
+        ideal_answer: "No está verificado que garantice resultados individuales.",
+        criteria: ["Declara el límite"],
+      },
+    ],
+  };
+}
+
+describe("question generation", () => {
+  it("renders only the selected product knowledge into the prompt", () => {
+    const selected = product();
+    const rendered = buildGenerateQuestionsPrompt(selected);
+
+    expect(rendered.system).toContain("Magnesio verificado");
+    expect(rendered.system).toContain("Complementa la ingesta de magnesio");
+    expect(rendered.system).not.toContain("11111111-1111-4111-8111-111111111111");
+    expect(Object.keys(productKnowledgeForPrompt(selected))).not.toContain("createdAt");
+  });
+
+  it("accepts six questions balanced across difficulty and intent", () => {
+    const result = validateGeneratedQuestionBatch(validBatch(), product());
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects the complete batch when an answer invents a claim", () => {
+    const batch = validBatch();
+    batch.questions[0] = {
+      ...batch.questions[0],
+      ideal_answer: "Este producto cura la diabetes.",
+    };
+
+    expect(validateGeneratedQuestionBatch(batch, product())).toEqual({
+      ok: false,
+      error: {
+        code: "INVALID_GENERATED_QUESTIONS",
+        message: "La tanda contiene una afirmacion ausente del Knowledge Hub.",
+      },
+    });
+  });
+
+  it("rejects a batch without two questions per difficulty", () => {
+    const batch = validBatch();
+    batch.questions[0] = { ...batch.questions[0], difficulty: "dificil" };
+
+    expect(validateGeneratedQuestionBatch(batch, product())).toMatchObject({
+      ok: false,
+      error: { code: "INVALID_GENERATED_QUESTIONS" },
+    });
+  });
+});
