@@ -311,6 +311,7 @@ pnpm test tests/integration/dashboard.test.ts
 pnpm test tests/integration/retention.test.ts
 pnpm test:e2e tests/e2e/dashboard.spec.ts
 pnpm build
+pnpm exec next start --port 3102 & SRV=$!; for i in $(seq 1 30); do curl -sf http://127.0.0.1:3102/health >/dev/null && break; sleep 1; done; curl -sf http://127.0.0.1:3102/health | grep -q '"ok":true'; RC=$?; kill $SRV; exit $RC
 pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e
 ```
 

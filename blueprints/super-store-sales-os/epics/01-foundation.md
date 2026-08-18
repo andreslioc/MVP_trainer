@@ -252,7 +252,7 @@ la composicion; no hardcodees el umbral sembrado ni el texto de promociones.
 ```bash
 pnpm test tests/unit/commercial-rule-validation.test.ts
 pnpm test tests/integration/commercial-rules.test.ts
-! rg -n '120000|envio gratis' src --glob '!src/server/commercial-rules.ts' --glob '!src/app/**'
+rg -n '120000|envio gratis' src --glob '!src/server/commercial-rules.ts' --glob '!src/app/**'; test $? -eq 1
 pnpm typecheck && pnpm lint && pnpm test
 ```
 
@@ -315,7 +315,7 @@ repair; despues falla tipado y nunca entrega un objeto parcial.
 
 ```bash
 pnpm test tests/unit/structured-output.test.ts
-! rg -n 'output_format|budget_tokens|assistant.*prefill' src/lib/ai src/server
+rg -n 'output_format|budget_tokens|assistant.*prefill' src/lib/ai src/server; test $? -eq 1
 pnpm typecheck && pnpm lint && pnpm test
 ```
 

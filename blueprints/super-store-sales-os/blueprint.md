@@ -671,8 +671,10 @@ Sin request body. Respuesta 200, exactamente esta forma:
 
 `db` es `"up"` si `select 1` contra `DATABASE_URL` retorna, `"down"` si falla. **`ok` es `true`
 mientras el proceso responda, incluso con `db: "down"`** — un liveness que se cae cuando la base se
-cae hace que el orquestador reinicie el contenedor equivocado. `commit` es `process.env.VERCEL_GIT_COMMIT_SHA`
-o `"unknown"` en local.
+cae hace que el orquestador reinicie el contenedor equivocado. `commit` es `env.VERCEL_GIT_COMMIT_SHA`
+o `"unknown"` en local — la inyecta la plataforma en el build, y como toda variable pasa por
+`src/lib/env.ts`, que es el unico lugar que lee `process.env` (§3). El route handler la importa
+desde ahi, no desde el entorno.
 
 Efectos secundarios: ninguno. Nunca requiere sesion, porque es lo que el gate del paso 1 y el
 `webServer` de Playwright usan para saber que el servidor arranco.
@@ -761,9 +763,13 @@ esas paginas sin cambiar sus URLs.
   declara `cacheComponents`.
 - `/health` es un route handler dinamico, `export const dynamic = "force-dynamic"`, porque un
   liveness cacheado no es un liveness.
-- El **Dashboard de KPIs** es la unica excepcion: usa `"use cache"` con una vida corta, porque son
-  cinco agregados que no cambian entre dos recargas y cargarlos en cada navegacion pesa. Se
-  invalida por tiempo, no por tag.
+- El **Dashboard de KPIs** tampoco se cachea. La tentacion es `"use cache"`, porque son agregados
+  que no cambian entre dos recargas — pero esa directiva la habilita justamente el flag
+  `cacheComponents` que el punto anterior dice que no se declara, y el `next.config.ts` emitido en
+  §19.6 no lo declara. Mandar la directiva y no habilitar el flag es pedirle al builder que escriba
+  codigo que la propia configuracion de este blueprint rechaza. Los agregados se calculan por
+  consulta directa en cada carga: con seis tablas y decenas de filas el costo es despreciable, y
+  cachear se evalua cuando exista una medicion que lo justifique.
 - El Copilot **transmite** la respuesta. La accion devuelve un stream que la pagina consume; el panel
   de salida es un componente cliente que lo lee. La clave de Anthropic nunca sale del servidor.
 - `next/font` carga Inter en el root layout. Nota del track que se respeta: `next/font` emite reglas
@@ -1332,7 +1338,7 @@ git tag step-05-knowledge-hub
 ```bash
 pnpm test tests/unit/commercial-rule-validation.test.ts # pasa: cada clave conocida acepta solo su forma valida
 pnpm test tests/integration/commercial-rules.test.ts # pasa: admin configura, asesora solo lee y reglas inactivas se excluyen
-! rg -n '120000|envio gratis' src --glob '!src/server/commercial-rules.ts' --glob '!src/app/**' # pasa: no hay umbral comercial incrustado en logica consumidora
+rg -n '120000|envio gratis' src --glob '!src/server/commercial-rules.ts' --glob '!src/app/**'; test $? -eq 1 # pasa: no hay umbral comercial incrustado en logica consumidora
 pnpm typecheck && pnpm lint && pnpm test # pasa: gate comun en verde
 ```
 
@@ -1399,7 +1405,7 @@ git tag step-07-ai-gateway
 
 ```bash
 pnpm test tests/unit/structured-output.test.ts # pasa: 0, 1 y nunca mas de 1 reparacion estan afirmadas
-! rg -n 'output_format|budget_tokens|assistant.*prefill' src/lib/ai src/server # pasa: no aparecen parametros incompatibles o deprecados
+rg -n 'output_format|budget_tokens|assistant.*prefill' src/lib/ai src/server; test $? -eq 1 # pasa: no aparecen parametros incompatibles o deprecados
 pnpm typecheck && pnpm lint && pnpm test # pasa: gate comun en verde
 ```
 
@@ -1702,6 +1708,7 @@ pnpm test tests/integration/dashboard.test.ts # pasa: alcance de KPIs, latencia 
 pnpm test tests/integration/retention.test.ts # pasa: 401, lock, borrado reconciliatorio e idempotencia
 pnpm test:e2e tests/e2e/dashboard.spec.ts # pasa: tarjetas, estados independientes y rol son observables
 pnpm build # pasa: Next produce el build sin ejecutar migraciones
+pnpm exec next start --port 3102 & SRV=$!; for i in $(seq 1 30); do curl -sf http://127.0.0.1:3102/health >/dev/null && break; sleep 1; done; curl -sf http://127.0.0.1:3102/health | grep -q '"ok":true'; RC=$?; kill $SRV; exit $RC # pasa: el artefacto compilado arranca y responde /health, no solo compila
 pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e # pasa: puerta local completa en verde
 ```
 
@@ -1741,6 +1748,7 @@ usa `cp -Rn`, porque su camino de no-op no es portable. El scaffold corre en un 
 y solo sus archivos base faltantes entran al arbol existente.
 
 ```bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 mkdir -p "$HOME/.local/bin"
@@ -1763,36 +1771,94 @@ done < <(find "$BUNDLE_DIR/workspace" -type f -print)
 chmod +x scripts/check-supabase-cli.sh
 pnpm supabase:check 2>/dev/null || scripts/check-supabase-cli.sh
 
-if [ ! -f package.json ]; then
+if [ ! -f package.json ] || [ ! -f src/app/layout.tsx ] || [ ! -f src/app/page.tsx ] || [ ! -f src/app/globals.css ]; then
   scaffold_dir="$(mktemp -d)"
   trap 'rm -rf "$scaffold_dir"' EXIT
   pnpm create next-app@16.3.1 "$scaffold_dir/app" --ts --tailwind --biome --app --src-dir --import-alias '@/*' --use-pnpm --yes
   cp "$scaffold_dir/app/package.json" package.json
   cp "$scaffold_dir/app/postcss.config.mjs" postcss.config.mjs
+  mkdir -p src/app
   test -f src/app/layout.tsx || cp "$scaffold_dir/app/src/app/layout.tsx" src/app/layout.tsx
   test -f src/app/page.tsx || cp "$scaffold_dir/app/src/app/page.tsx" src/app/page.tsx
   test -f src/app/globals.css || cp "$scaffold_dir/app/src/app/globals.css" src/app/globals.css
 fi
 
-pnpm pkg set packageManager="pnpm@11.22.0"
-pnpm pkg set engines.node=">=24.19.0 <25"
-pnpm pkg set scripts.dev="next dev" scripts.build="next build" scripts.typecheck="tsc --noEmit"
-pnpm pkg set scripts.lint="biome check ." scripts.format="biome check --write ."
-pnpm pkg set scripts.test="vitest run" scripts.test:e2e="playwright test"
-pnpm pkg set scripts.db:up="docker compose up -d --wait" scripts.db:down="docker compose down"
-pnpm pkg set scripts.db:reset="docker compose down -v && docker compose up -d --wait"
-pnpm pkg set scripts.db:generate="drizzle-kit generate" scripts.db:generate:custom="drizzle-kit generate --custom"
-pnpm pkg set scripts.db:migrate="drizzle-kit migrate" scripts.db:migrate:test="DRIZZLE_TARGET=test drizzle-kit migrate"
-pnpm pkg set scripts.db:studio="drizzle-kit studio" scripts.db:seed="tsx scripts/seed.ts"
-pnpm pkg set scripts.env:local="tsx scripts/write-env-local.ts"
-pnpm pkg set scripts.env:local:supabase="supabase status -o env > .supabase-status.env && tsx scripts/write-env-local.ts --from-supabase"
-pnpm pkg set scripts.supabase:check="bash scripts/check-supabase-cli.sh"
-pnpm pkg set scripts.supabase:start="pnpm supabase:check && supabase start" scripts.supabase:stop="supabase stop"
+node <<'NODE'
+const fs = require("node:fs");
+const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
 
-node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));p.pnpm={...(p.pnpm||{}),allowBuilds:{...(p.pnpm?.allowBuilds||{}),"@biomejs/biome":true,sharp:true,"unrs-resolver":true}};fs.writeFileSync("package.json",JSON.stringify(p,null,2)+"\n")'
+packageJson.packageManager = "pnpm@11.22.0";
+packageJson.engines = { ...packageJson.engines, node: ">=24.19.0 <25" };
+packageJson.scripts = {
+  ...packageJson.scripts,
+  dev: "next dev",
+  build: "next build",
+  typecheck: "tsc --noEmit",
+  lint: "biome check .",
+  format: "biome check --write .",
+  test: "vitest run",
+  "test:e2e": "playwright test",
+  "db:up": "docker compose up -d --wait",
+  "db:down": "docker compose down",
+  "db:reset": "docker compose down -v && docker compose up -d --wait",
+  "db:generate": "drizzle-kit generate",
+  "db:generate:custom": "drizzle-kit generate --custom",
+  "db:migrate": "drizzle-kit migrate",
+  "db:migrate:test": "DRIZZLE_TARGET=test drizzle-kit migrate",
+  "db:studio": "drizzle-kit studio",
+  "db:seed": "tsx scripts/seed.ts",
+  "env:local": "tsx scripts/write-env-local.ts",
+  "env:local:supabase": "supabase status -o env > .supabase-status.env && tsx scripts/write-env-local.ts --from-supabase",
+  "supabase:check": "bash scripts/check-supabase-cli.sh",
+  "supabase:start": "pnpm supabase:check && supabase start",
+  "supabase:stop": "supabase stop",
+};
+
+fs.writeFileSync("package.json", `${JSON.stringify(packageJson, null, 2)}\n`);
+NODE
 
 pnpm add --save-exact next@16.3.1 react@19.2.8 react-dom@19.2.8 tailwindcss@4.3.3 @tailwindcss/postcss@4.3.3 drizzle-orm@0.45.2 postgres@3.4.9 @supabase/supabase-js@2.112.3 @supabase/ssr@0.12.4 @anthropic-ai/sdk@0.117.1 zod@4.4.3 react-hook-form@7.85.0 @hookform/resolvers@5.9.1 @tanstack/react-query@5.101.4
 pnpm add --save-dev --save-exact typescript@6.0.3 @types/node@24.13.3 @types/react@19.2.18 @types/react-dom@19.2.4 @biomejs/biome@2.5.9 drizzle-kit@0.31.10 vitest@4.1.11 @playwright/test@1.62.1 tsx@4.23.12
+node <<'NODE'
+const fs = require("node:fs");
+const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+const pinned = {
+  dependencies: {
+    "@anthropic-ai/sdk": "0.117.1",
+    "@hookform/resolvers": "5.9.1",
+    "@supabase/ssr": "0.12.4",
+    "@supabase/supabase-js": "2.112.3",
+    "@tanstack/react-query": "5.101.4",
+    "@tailwindcss/postcss": "4.3.3",
+    "drizzle-orm": "0.45.2",
+    next: "16.3.1",
+    postgres: "3.4.9",
+    react: "19.2.8",
+    "react-dom": "19.2.8",
+    "react-hook-form": "7.85.0",
+    tailwindcss: "4.3.3",
+    zod: "4.4.3",
+  },
+  devDependencies: {
+    "@biomejs/biome": "2.5.9",
+    "@playwright/test": "1.62.1",
+    "@types/node": "24.13.3",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "drizzle-kit": "0.31.10",
+    tsx: "4.23.12",
+    typescript: "6.0.3",
+    vitest: "4.1.11",
+  },
+};
+
+packageJson.dependencies = { ...packageJson.dependencies, ...pinned.dependencies };
+packageJson.devDependencies = { ...packageJson.devDependencies, ...pinned.devDependencies };
+for (const name of Object.keys(pinned.dependencies)) delete packageJson.devDependencies[name];
+for (const name of Object.keys(pinned.devDependencies)) delete packageJson.dependencies[name];
+fs.writeFileSync("package.json", `${JSON.stringify(packageJson, null, 2)}\n`);
+NODE
+pnpm install --lockfile-only
 pnpm approve-builds --all
 pnpm install --frozen-lockfile
 
@@ -2050,6 +2116,7 @@ se preserva, se mantiene ignorado y no se copia a reportes.
 | `PUBLIC_BASE_URL` | servidor | paso 14 | callback publico |
 | `CRON_SECRET` | secreto | paso 16 | bearer del cron |
 | `RECORDING_RETENTION_DAYS` | servidor | paso 16 | default 90 |
+| `VERCEL_GIT_COMMIT_SHA` | servidor | ninguno | la inyecta la plataforma en el build; opcional en `env.ts`, `"unknown"` en local |
 
 El CLI local historicamente emite `ANON_KEY` y `SERVICE_ROLE_KEY`; el proyecto los mapea al escribir
 `.env.local` a los nombres canonicos `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` y
@@ -2179,6 +2246,7 @@ pnpm typecheck # pasa: cero errores TypeScript 6
 pnpm lint # pasa: cero errores Biome, incluido Tailwind v4
 pnpm test # pasa: cero fallos y cero pruebas skipped
 pnpm build # pasa: build de produccion sin migracion implicita
+pnpm exec next start --port 3102 & SRV=$!; for i in $(seq 1 30); do curl -sf http://127.0.0.1:3102/health >/dev/null && break; sleep 1; done; curl -sf http://127.0.0.1:3102/health | grep -q '"ok":true'; RC=$?; kill $SRV; exit $RC # pasa: el artefacto compilado arranca y responde
 pnpm test:e2e # pasa: flujos criticos locales en Chromium
 pnpm db:seed && pnpm db:seed # pasa: ambas ejecuciones salen 0
 test "$(rg -l '@anthropic-ai/sdk' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1" # pasa: un solo archivo importa el SDK

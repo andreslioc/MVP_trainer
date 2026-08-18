@@ -24,7 +24,7 @@ const EMAIL = /\b[\w.+-]+@[\w-]+\.[\w.-]{2,}\b/g;
 const PHONE = /(?:\+?57[\s.-]*)?\d(?:[\s.-]?\d){6,13}/g;
 
 /**
- * Un precio no es un telefono. "120000" y "1200000" son cifras en pesos y deben
+ * Un precio no es un telefono. Un monto en pesos de seis o siete cifras debe
  * sobrevivir; "300 123 4567" y "+57 3001234567" no. La regla: diez o mas
  * digitos siempre, y de siete a nueve solo cuando vienen separados o con
  * indicativo, que es como se escribe un telefono y no como se escribe un monto.

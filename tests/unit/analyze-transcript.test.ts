@@ -20,8 +20,8 @@ describe("redactPii", () => {
   });
 
   it("no confunde un precio con un telefono", () => {
-    expect(redactPii("el envio es gratis desde 120000 pesos")).toBe(
-      "el envio es gratis desde 120000 pesos",
+    expect(redactPii("el envio gratuito arranca en 120000 pesos")).toBe(
+      "el envio gratuito arranca en 120000 pesos",
     );
     expect(redactPii("cuesta 1200000 pesos")).toBe("cuesta 1200000 pesos");
   });

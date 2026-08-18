@@ -163,7 +163,7 @@
     "verify": [
       "pnpm test tests/unit/commercial-rule-validation.test.ts",
       "pnpm test tests/integration/commercial-rules.test.ts",
-      "! rg -n '120000|envio gratis' src --glob '!src/server/commercial-rules.ts' --glob '!src/app/**'",
+      "rg -n '120000|envio gratis' src --glob '!src/server/commercial-rules.ts' --glob '!src/app/**'; test $? -eq 1",
       "pnpm typecheck && pnpm lint && pnpm test"
     ],
     "checkpoint": "step-06-business-brain",
@@ -220,7 +220,7 @@
     ],
     "verify": [
       "pnpm test tests/unit/structured-output.test.ts",
-      "! rg -n 'output_format|budget_tokens|assistant.*prefill' src/lib/ai src/server",
+      "rg -n 'output_format|budget_tokens|assistant.*prefill' src/lib/ai src/server; test $? -eq 1",
       "pnpm typecheck && pnpm lint && pnpm test"
     ],
     "checkpoint": "step-08-structured-output",
@@ -457,6 +457,7 @@
       "pnpm test tests/integration/retention.test.ts",
       "pnpm test:e2e tests/e2e/dashboard.spec.ts",
       "pnpm build",
+      "pnpm exec next start --port 3102 & SRV=$!; for i in $(seq 1 30); do curl -sf http://127.0.0.1:3102/health >/dev/null && break; sleep 1; done; curl -sf http://127.0.0.1:3102/health | grep -q '\"ok\":true'; RC=$?; kill $SRV; exit $RC",
       "pnpm typecheck && pnpm lint && pnpm test && pnpm test:e2e"
     ],
     "checkpoint": "step-16-deploy",
