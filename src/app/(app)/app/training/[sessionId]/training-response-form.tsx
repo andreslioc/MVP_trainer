@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { evaluationDimensionKeys } from "../../../../../lib/ai/schemas.ts";
@@ -29,10 +30,13 @@ export function TrainingResponseForm({
   sessionId,
   questionId,
   savedAnswer,
+  nextHref,
 }: {
   sessionId: string;
   questionId: string;
   savedAnswer?: SavedAnswer;
+  /** `null` en la ultima pregunta de la tanda. */
+  nextHref: string | null;
 }) {
   const [advisorAnswer, setAdvisorAnswer] = useState(savedAnswer?.advisorAnswer ?? "");
   const [evaluation, setEvaluation] = useState<EvaluationView | undefined>(savedAnswer);
@@ -102,9 +106,16 @@ export function TrainingResponseForm({
       ) : null}
 
       {complete && evaluation?.scores ? (
-        <section aria-labelledby="evaluation-title" className="space-y-5">
+        <section
+          aria-labelledby="evaluation-title"
+          className={`space-y-5 ${isSubmitting ? "opacity-50" : ""}`}
+        >
           <div>
-            <p className="text-sm font-semibold text-primary">Evaluación completada</p>
+            <p className="text-sm font-semibold text-primary">
+              {isSubmitting
+                ? "Evaluación anterior — calculando la nueva…"
+                : "Evaluación completada"}
+            </p>
             <h3 className="mt-1 text-2xl font-semibold text-fg" id="evaluation-title">
               Tus nueve dimensiones
             </h3>
@@ -134,6 +145,18 @@ export function TrainingResponseForm({
             <h4 className="font-semibold text-confidence-high-fg">Versión mejorada</h4>
             <p className="mt-2 text-fg">{evaluation.improvedAnswer}</p>
           </article>
+          {nextHref ? (
+            <Link
+              className="inline-flex min-h-11 items-center rounded-card bg-primary px-5 font-semibold text-primary-fg hover:bg-primary-deep"
+              href={nextHref}
+            >
+              Siguiente pregunta →
+            </Link>
+          ) : (
+            <p className="font-semibold text-fg">
+              Era la última pregunta de la tanda. Vuelve a Training para practicar otro producto.
+            </p>
+          )}
         </section>
       ) : null}
     </div>
