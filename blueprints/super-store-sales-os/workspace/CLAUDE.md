@@ -36,7 +36,7 @@ leelo, nunca adivines una.
 ## Stack
 
 Next.js 16 (App Router, Turbopack) · TypeScript · Tailwind CSS v4 · Drizzle ORM · Postgres
-(Supabase) · Supabase Auth · Supabase Storage · Anthropic SDK · Vercel. Gestor: `pnpm`.
+(Supabase) · Supabase Auth · Supabase Storage · Gemini REST · Vercel. Gestor: `pnpm`.
 
 ## Arquitectura
 
@@ -52,7 +52,7 @@ SDK) → `src/server/llm-calls.ts` persiste el uso → `src/db/client.ts` → Po
 | `src/components/**` | `lib`, otros componentes | `server/` o `db/` |
 | `src/server/**` | `db`, `lib` | React o `components/` |
 | `src/db/**` | nada interno | `server/` |
-| todo excepto `src/lib/ai/gateway.ts` | — | `@anthropic-ai/sdk` |
+| todo excepto `src/lib/ai/gateway.ts` | — | llamar al proveedor de IA |
 
 **Donde vive cada cosa.**
 
@@ -63,7 +63,7 @@ SDK) → `src/server/llm-calls.ts` persiste el uso → `src/db/client.ts` → Po
 | Carga de `.env` fuera de Next | `src/lib/load-env.ts` — lo importan drizzle.config, tests/setup y los scripts |
 | Tokens de diseno | `src/app/globals.css`, bloque `@theme` — sin hex ni px sueltos en componentes |
 | Sesion | `src/lib/auth.ts` — un `getSession()` de dominio respaldado por `auth.getClaims()`, y un solo `requireRole()` |
-| SDK de Anthropic | `src/lib/ai/gateway.ts` — un solo import en todo el repo |
+| Acoplamiento al proveedor de IA | `src/lib/ai/gateway.ts` — un solo lugar en todo el repo |
 | Ids de modelo y precios | `src/lib/ai/config.ts`, leidos de env — nunca en un call site |
 | Reglas comerciales | tabla `commercial_rules` — configurables, nunca hardcodeadas |
 

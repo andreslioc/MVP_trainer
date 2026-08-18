@@ -4,7 +4,7 @@ import { z } from "zod";
 import { AI_MODELS } from "../../src/lib/ai/config.ts";
 import {
   type AiLedgerInput,
-  type AiParsedProviderResponse,
+  type AiProviderResponse,
   type AiProviderClient,
   createAiGateway,
 } from "../../src/lib/ai/gateway.ts";
@@ -12,21 +12,21 @@ import { generateStructured } from "../../src/lib/ai/structured.ts";
 
 const answerSchema = z.object({ answer: z.string().trim().min(1) });
 
-function parsedResponse(parsedOutput: unknown, rawText: string): AiParsedProviderResponse {
+function parsedResponse(parsedOutput: unknown, rawText: string): AiProviderResponse {
   return {
     id: "msg_structured",
     model: AI_MODELS.default,
-    stop_reason: "end_turn",
-    stop_details: null,
-    content: [{ type: "text", text: rawText, citations: null }],
-    parsed_output: parsedOutput,
+    finishReason: "stop",
+    refusalCategory: null,
+    text: rawText,
+    parsedOutput,
     usage: {
-      input_tokens: 100,
-      output_tokens: 20,
-      cache_read_input_tokens: 30,
-      cache_creation_input_tokens: 40,
+      inputTokens: 100,
+      outputTokens: 20,
+      cacheReadTokens: 30,
+      cacheWriteTokens: 40,
     },
-  } as AiParsedProviderResponse;
+  };
 }
 
 function input() {
@@ -41,7 +41,7 @@ function input() {
   };
 }
 
-function harness(responses: AiParsedProviderResponse[]) {
+function harness(responses: AiProviderResponse[]) {
   const requests: Parameters<NonNullable<AiProviderClient["parseMessage"]>>[0][] = [];
   const ledgerCalls: AiLedgerInput[] = [];
   const client: AiProviderClient = {
@@ -78,7 +78,8 @@ describe("structured AI output", () => {
     });
     expect(test.requests).toHaveLength(1);
     expect(test.ledgerCalls).toHaveLength(1);
-    expect(test.requests[0]?.output_config?.format).toMatchObject({ type: "json_schema" });
+    // El esquema viaja como JSON Schema neutral, no como envoltorio de un vendor.
+    expect(test.requests[0]?.jsonSchema).toMatchObject({ type: "object" });
   });
 
   it("repairs once with the validation error and persists both attempts", async () => {

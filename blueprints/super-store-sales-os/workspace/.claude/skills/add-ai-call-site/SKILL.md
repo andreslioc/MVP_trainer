@@ -21,7 +21,7 @@ Cada vez que aparece una necesidad nueva de generar, clasificar, evaluar o extra
    prompt exacto que la produjo.
 4. Define el esquema de salida en `src/lib/ai/schemas.ts` con Zod. Plano y con pocos campos
    requeridos: el anidamiento profundo degrada la calidad de forma medible.
-5. Llama **solo** a `src/lib/ai/gateway.ts`. No importes `@anthropic-ai/sdk` — hay una prueba que
+5. Llama **solo** a `src/lib/ai/gateway.ts`. No hables con el proveedor directamente — hay una prueba que
    cuenta los archivos que lo importan y espera exactamente uno.
 6. Elige `effort` por requisito de producto: `low` o `medium` en el Live Copilot porque ahi la
    latencia es el producto; `high` (el default) en Simulator y Live Intelligence.
@@ -48,5 +48,5 @@ pnpm typecheck                                   # expect: exit 0
   `zodOutputFormat`.
 - No hacer prefill de un mensaje assistant: devuelve 400 en Opus 5.
 - No estimar tokens ni costo contando caracteres. Se persiste lo que reporta el proveedor.
-- No bajar a `claude-haiku-4-5` sin un eval del golden set que lo respalde.
+- No bajar a `AI_MODEL_SMALL` sin un eval del golden set que lo respalde.
 - No dejar que el modelo aporte informacion que no este en `products` ni en `commercial_rules`.

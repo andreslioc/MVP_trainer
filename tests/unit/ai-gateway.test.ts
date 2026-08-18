@@ -10,22 +10,22 @@ import {
 } from "../../src/lib/ai/gateway.ts";
 
 const usage = {
-  input_tokens: 1_000,
-  output_tokens: 200,
-  cache_read_input_tokens: 300,
-  cache_creation_input_tokens: 400,
+  inputTokens: 1_000,
+  outputTokens: 200,
+  cacheReadTokens: 300,
+  cacheWriteTokens: 400,
 };
 
 function providerResponse(overrides: Partial<AiProviderResponse> = {}): AiProviderResponse {
   return {
     id: "msg_test",
     model: AI_MODELS.default,
-    stop_reason: "end_turn",
-    stop_details: null,
-    content: [{ type: "text", text: "Respuesta segura", citations: null }],
+    finishReason: "stop",
+    refusalCategory: null,
+    text: "Respuesta segura",
     usage,
     ...overrides,
-  } as AiProviderResponse;
+  };
 }
 
 function request() {
@@ -38,6 +38,16 @@ function request() {
     maxTokens: 500,
   };
 }
+
+/**
+ * Precios inyectados a proposito. El despliegue actual corre en un tier gratuito
+ * y su tabla real esta en cero, asi que asertar contra ella no probaria nada: la
+ * aritmetica de costos pasaria aunque estuviera rota. Con precios propios la
+ * prueba sigue verificando la formula el dia que se pase a un plan pago.
+ */
+const testPricing = {
+  [AI_MODELS.default]: { input: 5, output: 25, cacheRead: 0.5, cacheWrite: 6.25 },
+};
 
 function successfulLedger() {
   const calls: AiLedgerInput[] = [];
@@ -66,6 +76,7 @@ describe("AI gateway", () => {
       client,
       writeCall: ledger.writeCall,
       now: () => times[timeIndex++] ?? 1_042,
+      pricing: testPricing,
     });
 
     const result = await gateway.generateText(request());
@@ -76,7 +87,7 @@ describe("AI gateway", () => {
         id: "msg_test",
         text: "Respuesta segura",
         model: AI_MODELS.default,
-        finishReason: "end_turn",
+        finishReason: "stop",
         usage: {
           inputTokens: 1_000,
           outputTokens: 200,
@@ -97,36 +108,39 @@ describe("AI gateway", () => {
         cacheReadTokens: 300,
         cacheWriteTokens: 400,
         costUsd: 0.01265,
-        finishReason: "end_turn",
+        finishReason: "stop",
         error: null,
         promptId: null,
       },
     ]);
+    // La peticion que sale del gateway es NEUTRAL de proveedor: si algun dia
+    // vuelve a filtrarse un campo especifico de un vendor, esta asercion lo ve.
     expect(requests[0]).toMatchObject({
       model: AI_MODELS.default,
-      fallbacks: "default",
-      betas: ["server-side-fallback-2026-07-01"],
-      thinking: { type: "adaptive" },
-      output_config: { effort: "high" },
-      system: [{ cache_control: { type: "ephemeral" } }],
+      system: "Responde solo con informacion verificada.",
+      maxTokens: 500,
+      effort: "high",
     });
+    expect(Object.keys(requests[0] ?? {}).sort()).toEqual([
+      "effort",
+      "maxTokens",
+      "messages",
+      "model",
+      "system",
+    ]);
   });
 
   it("detects a refusal before reading content and returns a discriminated error", async () => {
     const refused = providerResponse({
-      stop_reason: "refusal",
-      stop_details: {
-        category: "general_harms",
-        explanation: "Solicitud rechazada",
-        fallback_credit_token: null,
-        fallback_has_prefill_claim: null,
-        recommended_model: null,
-        type: "refusal",
-      },
+      finishReason: "refusal",
+      refusalCategory: "SAFETY",
     });
-    Object.defineProperty(refused, "content", {
+    // El texto no debe leerse antes de resolver el rechazo: en este dominio la
+    // respuesta bloqueada suele ser sobre embarazo o medicamentos, y usarla
+    // igual seria justo el fallo que la ruta de rechazo existe para evitar.
+    Object.defineProperty(refused, "text", {
       get: () => {
-        throw new Error("content se leyo antes de manejar refusal");
+        throw new Error("text se leyo antes de manejar refusal");
       },
     });
     const ledger = successfulLedger();
@@ -143,7 +157,7 @@ describe("AI gateway", () => {
       error: {
         code: "AI_REFUSAL",
         message: "El modelo rechazo responder; usa una degradacion segura.",
-        category: "general_harms",
+        category: "SAFETY",
       },
     });
     expect(ledger.calls[0]?.finishReason).toBe("refusal");

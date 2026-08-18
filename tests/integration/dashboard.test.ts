@@ -104,7 +104,7 @@ beforeAll(async () => {
   await connection.db.insert(llmCalls).values({
     advisorId: mineId,
     purpose: "analyze_transcript",
-    model: "claude-opus-5",
+    model: "gemini-3-flash-preview",
     latencyMs: 1200,
     inputTokens: 1000,
     outputTokens: 500,

@@ -1,67 +1,37 @@
 ---
-description: Uso del SDK de Anthropic, parametros de la API, caching y persistencia de uso
+description: Uso de la API de Gemini, parametros, razonamiento y persistencia de uso
 paths:
   - "src/lib/ai/**"
-  - "src/server/copilot/**"
-  - "src/server/training/**"
-  - "src/server/recordings/**"
-  - "src/server/llm-calls.ts"
+  - "src/server/**"
 ---
 
-# Capa de IA
+# Gateway de IA
 
-## El gateway es el unico import
-
-- `@anthropic-ai/sdk` y `@anthropic-ai/sdk/helpers/zod` se importan **solo** en
-  `src/lib/ai/gateway.ts`. Cualquier otro modulo importa del gateway. Hay una prueba que lo verifica
-  contando archivos, no lineas: `tests/unit/sdk-single-import.test.ts`.
-- Los ids de modelo y los precios viven en `src/lib/ai/config.ts`, leidos de env. **Jamas un id de
-  modelo en un call site.**
-- Las funciones del gateway aceptan un cliente opcional. Las pruebas inyectan un cliente falso; por
-  eso ningun gate del §9 necesita `ANTHROPIC_API_KEY`.
-
-## Parametros — exactos, no aproximados
-
-- **Modelo por defecto en todos los call sites: `claude-opus-5`** (contexto 1M, USD 5/25 por MTok).
-- `claude-haiku-4-5` esta declarado y **no se usa todavia**. La regla es empezar un tier arriba y
-  bajar solo con un eval que lo respalde. El candidato a bajar es el clasificador de intencion.
-- `thinking: { type: "adaptive" }`. **`budget_tokens` esta eliminado en Opus 5 y devuelve 400** — no
-  se escribe en ningun lado.
-- Profundidad: `output_config: { effort: "low" | "medium" | "high" | "xhigh" | "max" }`, **dentro de
-  `output_config`**, nunca top-level. Default `high`. El Live Copilot usa `low` o `medium`: ahi la
-  latencia es el requisito de producto.
-- Structured output: `client.messages.parse()` con `zodOutputFormat(Schema)` pasado como
-  `output_config: { format: zodOutputFormat(Schema) }`. **Nunca** el parametro `output_format`
-  (deprecado) y **nunca** pedir JSON en prosa.
-- `response.parsed_output` es `null` si el parseo fallo. Se afirma o se guarda; no se asume.
-- **El prefill de mensaje assistant devuelve 400 en Opus 5.** No existe como tecnica aqui.
-- `max_tokens`: ~16000 sin streaming, ~64000 con streaming, ~256 para clasificacion.
-- Streaming obligatorio donde una persona lee la salida y para cualquier `max_tokens` grande. Se
-  consume con `.finalMessage()`.
-
-## Refusals — este dominio los necesita
-
-- Suplementos mas preguntas de embarazo, medicamentos o enfermedad pueden disparar
-  `stop_reason: "refusal"` con **HTTP 200** y un `stop_details.category`.
-- Se activan `betas: ["server-side-fallback-2026-07-01"]` y `fallbacks: "default"`.
-- **Siempre se revisa `stop_reason` antes de leer `content`.** Un refusal no leido se convierte en una
-  respuesta vacia que la asesora lee en camara.
-
-## Prompt caching
-
-- `cache_control: { type: "ephemeral" }` sobre los bloques `system`.
-- Orden de render: `tools` → `system` → `messages`. Lo estable primero (instrucciones, ficha del
-  producto, reglas comerciales), lo volatil despues del ultimo breakpoint.
-- Prefijo minimo cacheable ~1024 tokens. Se verifica con `usage.cache_read_input_tokens`.
-- Un timestamp o un id de request dentro del prefijo estable invalida todo lo que sigue. No se ponen.
-
-## Costo
-
-- Cada llamada escribe una fila en `llm_calls` con el uso **reportado por el proveedor**:
-  `input_tokens`, `output_tokens`, `cache_read_tokens`, `cache_write_tokens`, `cost_usd`,
-  `latency_ms`, `finish_reason`.
-- El costo se calcula con `MODEL_PRICING_USD_PER_MTOK` de `src/lib/ai/config.ts`, nunca contando
-  caracteres.
-- Cada fila es atribuible a un `advisor_id` y a un `purpose`. Sin eso no hay economia unitaria.
-- `prompts` guarda nombre, version y cuerpo activo para que una traza pueda nombrar el prompt exacto
-  que la produjo.
+- El proveedor se habla **solo** desde `src/lib/ai/gateway.ts`, por REST con `fetch`. No hay SDK.
+  Un gate cuenta el header `x-goog-api-key` y falla si aparece en mas de un archivo.
+- Los tipos de la costura son **neutrales**: `AiProviderRequest` y `AiProviderResponse` no contienen
+  nada especifico del vendor. Si un tipo del proveedor cruza hacia `src/server/`, la costura dejo de
+  serlo — que es exactamente como estaba antes de migrar de proveedor.
+- Autenticacion por header `x-goog-api-key`. Un `Authorization: Bearer` con la misma llave devuelve
+  401 UNAUTHENTICATED.
+- **Modelo por defecto en todos los call sites: `AI_MODEL_DEFAULT`.** Ningun call site escribe un id
+  de modelo literal; viven en configuracion.
+- `AI_MODEL_SMALL` esta declarado y **no se usa todavia**. La regla es empezar un tier arriba y bajar
+  solo con un eval del golden set que lo respalde.
+- **Razonamiento:** `thinkingConfig.thinkingBudget` sale del esfuerzo. `low` es 0 y es una decision
+  medida, no una intuicion: una clasificacion de intencion gastaba 983 tokens de razonamiento para
+  producir 6 de salida, y con presupuesto 0 acierta igual en 29 tokens totales. Donde la salida tiene
+  forma fija y respuesta correcta, pensar no compra nada.
+- **Salida estructurada:** `responseJsonSchema` recibe el JSON Schema que emite `z.toJSONSchema()`
+  tal cual. El proveedor acepta `$schema` y `additionalProperties`; no hay que sanear nada. Nunca
+  pedir JSON en prosa.
+- **Rechazo:** `finishReason` SAFETY / PROHIBITED_CONTENT / BLOCKLIST / SPII y
+  `promptFeedback.blockReason` se normalizan a `refusal`. Se revisa **antes** de leer el texto: en
+  este dominio la respuesta bloqueada suele ser sobre embarazo, medicamentos o enfermedad, y usarla
+  igual seria el fallo que la ruta de rechazo existe para evitar.
+- **Timeout de 60 s por llamada.** Sin el, una respuesta que no llega cuelga la peticion para
+  siempre. El tier gratuito devuelve 503 con frecuencia; medido, 11 de 14 peticiones seguidas.
+- Toda llamada escribe una fila en `llm_calls` con el uso reportado por el proveedor, nunca estimado.
+  Los tokens de razonamiento cuentan como salida, o el ledger subestima justo lo que mas gasta.
+- El costo esta en cero porque el tier es gratuito. La tabla de precios se conserva: el dia que se
+  pase a un plan pago el unico cambio es esa tabla, y el historico ya existe.

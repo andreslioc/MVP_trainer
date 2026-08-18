@@ -89,23 +89,20 @@ describe("Copilot composition", () => {
     const response = {
       id: "msg_stream",
       model: AI_MODELS.default,
-      stop_reason: "end_turn",
-      stop_details: null,
-      content: [],
+      finishReason: "stop",
+      refusalCategory: null,
+      text: JSON.stringify(composition),
       usage: {
-        input_tokens: 100,
-        output_tokens: 40,
-        cache_read_input_tokens: 0,
-        cache_creation_input_tokens: 0,
+        inputTokens: 100,
+        outputTokens: 40,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
       },
-      parsed_output: composition,
-    } as unknown as AiProviderResponse & { parsed_output: unknown };
+      parsedOutput: composition,
+    } satisfies AiProviderResponse;
     const stream = {
       async *[Symbol.asyncIterator]() {
-        yield {
-          type: "content_block_delta",
-          delta: { type: "input_json_delta", partial_json: JSON.stringify(composition) },
-        };
+        yield { partialJson: JSON.stringify(composition) };
       },
       finalMessage: async () => response,
     } satisfies AiProviderStream;

@@ -189,12 +189,12 @@
     "acceptance": [
       "CUANDO una respuesta del proveedor termina normalmente EL SISTEMA DEBERA persistir modelo, proposito, latencia, tokens, cache, costo y finish reason en una fila de `llm_calls`.",
       "CUANDO `stop_reason` es `refusal` EL SISTEMA DEBERA detectarlo antes de leer `content` y devolver un resultado tipado que obliga al consumidor a degradar con cautela.",
-      "CUANDO se busca `@anthropic-ai/sdk` en archivos fuente EL SISTEMA DEBERA encontrar imports en exactamente un archivo: `src/lib/ai/gateway.ts`."
+      "CUANDO se busca el header del proveedor en archivos fuente EL SISTEMA DEBERA encontrar imports en exactamente un archivo: `src/lib/ai/gateway.ts`."
     ],
     "verify": [
       "pnpm test tests/unit/ai-gateway.test.ts",
       "pnpm test tests/integration/llm-calls.test.ts",
-      "test \"$(rg -l '@anthropic-ai/sdk' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')\" = \"1\" && rg -q '@anthropic-ai/sdk' src/lib/ai/gateway.ts",
+      "test \"$(rg -l 'x-goog-api-key' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')\" = \"1\" && rg -q 'x-goog-api-key' src/lib/ai/gateway.ts",
       "pnpm typecheck && pnpm lint && pnpm test"
     ],
     "checkpoint": "step-07-ai-gateway",

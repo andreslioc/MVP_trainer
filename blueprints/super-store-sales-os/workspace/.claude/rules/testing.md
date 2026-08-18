@@ -28,7 +28,7 @@ paths:
 - Cada archivo de integracion limpia **solo** las tablas que toca, en `beforeEach`, y nunca depende
   del orden de ejecucion.
 - **Sin globals.** Se importa explicito: `import { describe, expect, it } from "vitest";`.
-- **Ningun gate llama a la API de Anthropic ni a Deepgram.** El gateway acepta un cliente inyectado y
+- **Ningun gate llama a la API de Gemini ni a Deepgram.** El gateway acepta un cliente inyectado y
   las pruebas le pasan uno falso. Un gate que necesita credenciales de un tercero no es un gate.
 - **Se afirman propiedades, no conteos.** "existe una fila con `status='transcribed'`" en vez de "hay
   3 filas"; `exit 0, 0 failed, 0 skipped` en vez de "42 passed". Un conteo se rompe en cada edicion.

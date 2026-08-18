@@ -14,7 +14,7 @@ import {
 } from "../../src/db/schema.ts";
 import {
   createAiGateway,
-  type AiParsedProviderResponse,
+  type AiProviderResponse,
   type AiProviderStream,
 } from "../../src/lib/ai/gateway.ts";
 import type { CopilotComposition } from "../../src/lib/ai/schemas.ts";
@@ -199,15 +199,15 @@ describe("Copilot responsible communication", () => {
   it("persists a safe answer while retaining provider refusal in the LLM ledger", async () => {
     const response = {
       id: `msg_${randomUUID()}`,
-      model: "claude-opus-4-6",
-      content: [],
-      stop_reason: "refusal",
-      stop_details: { type: "refusal", category: "safety" },
-      usage: { input_tokens: 2, output_tokens: 1 },
-    } as unknown as AiParsedProviderResponse;
-    Object.defineProperty(response, "parsed_output", {
+      model: "gemini-3-flash-preview",
+      text: "",
+      finishReason: "refusal",
+      refusalCategory: "SAFETY",
+      usage: { inputTokens: 2, outputTokens: 1, cacheReadTokens: 0, cacheWriteTokens: 0 },
+    } as unknown as AiProviderResponse;
+    Object.defineProperty(response, "parsedOutput", {
       get: () => {
-        throw new Error("parsed_output no debe leerse tras un rechazo");
+        throw new Error("parsedOutput no debe leerse tras un rechazo");
       },
     });
     const providerStream = {

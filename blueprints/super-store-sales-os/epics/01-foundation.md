@@ -18,7 +18,7 @@ actual de `tasks.json`. El estado y el orden viven en `tasks.json`; este archivo
 ## Stack y comandos
 
 Next 16.3.1 · React 19.2.8 · TypeScript 6.0.3 · Tailwind 4.3.3 · Drizzle/Postgres ·
-Supabase Auth/Storage · Anthropic SDK. Gestor `pnpm@11.22.0`; Node 24.19.0 en `.nvmrc`.
+Supabase Auth/Storage · Gemini REST. Gestor `pnpm@11.22.0`; Node 24.19.0 en `.nvmrc`.
 
 | Tarea | Comando |
 |---|---|
@@ -52,7 +52,7 @@ Contratos producidos para Epic 02:
 
 - `requireRole(role)` devuelve advisor activo derivado de claims verificados.
 - `products` y `commercial_rules` son las unicas fuentes de conocimiento/comercio.
-- `callModel()` es la unica costura Anthropic y siempre registra uso.
+- `callModel()` es la unica costura con el proveedor de IA y siempre registra uso.
 - `parseStructured()` entrega salida Zod o `AI_INVALID_OUTPUT` tras un solo repair.
 - `src/db/client.ts` es el unico modulo que abre Postgres.
 
@@ -280,14 +280,14 @@ content; un refusal con HTTP 200 no es exito normal.
 
 1. CUANDO una respuesta del proveedor termina normalmente EL SISTEMA DEBERA persistir modelo, proposito, latencia, tokens, cache, costo y finish reason en una fila de `llm_calls`.
 2. CUANDO `stop_reason` es `refusal` EL SISTEMA DEBERA detectarlo antes de leer `content` y devolver un resultado tipado que obliga al consumidor a degradar con cautela.
-3. CUANDO se busca `@anthropic-ai/sdk` en archivos fuente EL SISTEMA DEBERA encontrar imports en exactamente un archivo: `src/lib/ai/gateway.ts`.
+3. CUANDO se busca el header del proveedor en archivos fuente EL SISTEMA DEBERA encontrar coincidencias en exactamente un archivo: `src/lib/ai/gateway.ts`.
 
 **Verify**
 
 ```bash
 pnpm test tests/unit/ai-gateway.test.ts
 pnpm test tests/integration/llm-calls.test.ts
-test "$(rg -l '@anthropic-ai/sdk' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1" && rg -q '@anthropic-ai/sdk' src/lib/ai/gateway.ts
+test "$(rg -l 'x-goog-api-key' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1" && rg -q 'x-goog-api-key' src/lib/ai/gateway.ts
 pnpm typecheck && pnpm lint && pnpm test
 ```
 

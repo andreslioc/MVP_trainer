@@ -11,14 +11,14 @@
 | **Parallel with** | ninguno; las tareas comparten contratos secuenciales del loop |
 
 No necesitas leer `blueprint.md`. Lee `CLAUDE.md`, las reglas de IA/comunicacion/testing y la entrada
-actual de `tasks.json`. Los clientes Anthropic y Deepgram de todos los gates son falsos.
+actual de `tasks.json`. Los clientes de IA y Deepgram de todos los gates son falsos.
 
 ---
 
 ## Stack y comandos
 
 Next 16.3.1 · TypeScript 6.0.3 · Tailwind 4.3.3 · Drizzle/Postgres · Supabase Auth/Storage ·
-Anthropic 0.117.1 · Deepgram REST · Vercel. Gestor `pnpm@11.22.0`; Node 24.19.0.
+Gemini REST · Deepgram REST · Vercel. Gestor `pnpm@11.22.0`; Node 24.19.0.
 
 | Tarea | Comando |
 |---|---|

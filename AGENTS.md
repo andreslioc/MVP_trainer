@@ -29,7 +29,7 @@ Los pasos 1 y 2 solo necesitan `pnpm db:up`; `pnpm supabase:start` se requiere d
 1. **Drizzle es el unico dueno del esquema.** El editor del dashboard de Supabase es de solo lectura.
 2. **La app usa el pooler; migraciones y scripts usan la URL directa.**
 3. **Las migraciones son un paso explicito de despliegue, jamas al arrancar la app.**
-4. **`@anthropic-ai/sdk` se importa en exactamente un archivo:** `src/lib/ai/gateway.ts`.
+4. **El header del proveedor (`x-goog-api-key`) aparece en exactamente un archivo:** `src/lib/ai/gateway.ts`.
 5. **Ningun suplemento cura, trata ni previene enfermedades.** Nada de estudios, certificaciones,
    porcentajes ni aprobaciones inventadas. Embarazo, lactancia, medicamentos o enfermedad entran por
    la ruta de cautela obligatoria.

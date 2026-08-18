@@ -100,7 +100,7 @@ salvedades no verificadas se arrastran textualmente.
 | Capa | Eleccion | Por que esta, y no la otra |
 |---|---|---|
 | Lenguaje / runtime | TypeScript sobre Node.js LTS | Un solo lenguaje en servidor, cliente, scripts y pruebas. Se rechazo Python: el producto es UI mas llamadas a un modelo, no trabajo numerico |
-| Framework | Next.js App Router | Server Components dejan la clave de Anthropic y la conexion a Postgres del lado servidor sin escribir una capa de API. Se rechazo Vite+Hono: dos deploys y un contrato HTTP que aqui no aporta nada |
+| Framework | Next.js App Router | Server Components dejan la clave del proveedor y la conexion a Postgres del lado servidor sin escribir una capa de API. Se rechazo Vite+Hono: dos deploys y un contrato HTTP que aqui no aporta nada |
 | Estilos | Tailwind CSS v4, configurado en CSS | Densidad y velocidad, que es lo que pide una herramienta interna. v4 mueve los tokens al bloque `@theme`: una sola fuente de verdad en CSS en vez de un archivo JS paralelo |
 | Capa de componentes | Componentes propios sobre los tokens de `@theme` | Se rechazo shadcn/ui: su `init` reescribe `globals.css` y `tsconfig.json`, que este blueprint emite, y arrastra cuatro paquetes que esta sesion no verifico. Ver §20.3 decision 8 |
 | Base de datos | Postgres, hospedado en Supabase | Necesitamos `jsonb` para las fichas y `uuid[]` para complementos, mas RLS por fila. Se rechazo SQLite: RLS y la API de Storage son parte del producto |
@@ -111,7 +111,7 @@ salvedades no verificadas se arrastran textualmente.
 | Almacenamiento de archivos | Supabase Storage, bucket privado | Ya esta en la plataforma que tiene la identidad y las politicas. Se rechazo S3: una credencial y un proveedor mas para el mismo archivo |
 | Email / notificaciones | Email transaccional de Supabase Auth (solo invitaciones) | Es lo unico que se necesita en v1. Se rechazo Resend: no hay ningun correo de producto todavia |
 | Transcripcion (STT) | Deepgram REST, espanol LatAm, con diarizacion y callback | Claude no transcribe audio. Se rechazo Whisper autohospedado: seria operar GPUs para tres grabaciones por semana |
-| Modelo de lenguaje | Anthropic SDK detras de un unico modulo gateway | Features del proveedor el dia que salen, y portabilidad real porque la costura es *nuestra* interfaz. Se rechazo un router multi-proveedor: parametros al minimo comun denominador y un dominio de fallo mas |
+| Modelo de lenguaje | Gemini por REST detras de un unico modulo gateway | La costura es *nuestra* interfaz, con tipos neutrales de proveedor: cambiar de vendor es reescribir un adaptador, no la capa. Se rechazo un router multi-proveedor: parametros al minimo comun denominador y un dominio de fallo mas. Se rechazo el SDK oficial por el mismo motivo que en Deepgram: `fetch` basta y no suma dependencia |
 | Hosting | Vercel | Cero configuracion para Next, y cron nativo para el job de retencion. Se rechazo autohospedar: no hay quien opere el contenedor |
 | Gestor de paquetes | pnpm | `node_modules` estricto: atrapa dependencias fantasma antes del deploy |
 
@@ -213,7 +213,7 @@ super-store-sales-os/
         commercial-rule.ts          # esquemas zod del Business Brain
       ai/
         config.ts                   # ids de modelo y precios, leidos de env. Nunca en un call site
-        gateway.ts                  # UNICO archivo que importa @anthropic-ai/sdk
+        gateway.ts                  # UNICO archivo que habla con el proveedor
         structured.ts               # messages.parse() + un reintento de reparacion
         schemas.ts                  # esquemas zod de salida del modelo
         prompts/
@@ -272,7 +272,8 @@ super-store-sales-os/
   `src/components/`.
 - `src/db/client.ts` es el unico lugar que abre una conexion a Postgres.
 - `src/lib/env.ts` es el unico lugar que lee `process.env`. Todo lo demas importa de ahi.
-- `src/lib/ai/gateway.ts` es el unico archivo que importa `@anthropic-ai/sdk`. Una prueba lo verifica.
+- `src/lib/ai/gateway.ts` es el unico archivo que envia el header del proveedor. Una prueba lo verifica.
+  Los tipos de la costura son neutrales: ningun tipo de vendor cruza hacia el resto de la capa.
 - `src/server/**` nunca importa React ni nada de `src/components/`.
 - `src/components/**` nunca importa `src/server/` ni `src/db/`.
 - **Especificadores de import:** relativos, siempre con extension `.ts` / `.tsx`. Esta es una
@@ -771,7 +772,7 @@ esas paginas sin cambiar sus URLs.
   consulta directa en cada carga: con seis tablas y decenas de filas el costo es despreciable, y
   cachear se evalua cuando exista una medicion que lo justifique.
 - El Copilot **transmite** la respuesta. La accion devuelve un stream que la pagina consume; el panel
-  de salida es un componente cliente que lo lee. La clave de Anthropic nunca sale del servidor.
+  de salida es un componente cliente que lo lee. La clave del proveedor nunca sale del servidor.
 - `next/font` carga Inter en el root layout. Nota del track que se respeta: `next/font` emite reglas
   `@font-face` de respaldo **sin** `font-display` y ninguna opcion lo cambia, asi que ningun criterio
   de aceptacion de este blueprint exige `font-display` sobre el CSS construido. Se afirma
@@ -1109,7 +1110,7 @@ Reglas para los dieciseis pasos:
 3. Todo `Verify` se corre desde la raiz del proyecto destino, no desde el directorio del bundle.
 4. Cada linea de `Verify` sale 0 cuando la propiedad es correcta. Los caminos de error esperados se
    envuelven en una asercion que convierte el resultado esperado en salida 0.
-5. Ningun gate llama a Anthropic, Deepgram, Vercel ni a un proyecto hospedado. Los clientes falsos,
+5. Ningun gate llama al proveedor de IA, a Deepgram, a Vercel ni a un proyecto hospedado. Los clientes falsos,
    Postgres de Docker y Supabase local cubren la construccion.
 6. Antes de marcar un paso hecho tambien pasa el gate comun:
    `pnpm typecheck && pnpm lint && pnpm test`.
@@ -1372,7 +1373,7 @@ git tag step-06-business-brain
    proposito, latencia, tokens, cache, costo y finish reason en una fila de `llm_calls`.
 2. **CUANDO** `stop_reason` es `refusal` **EL SISTEMA DEBERA** detectarlo antes de leer `content` y
    devolver un resultado tipado que obliga al consumidor a degradar con cautela.
-3. **CUANDO** se busca `@anthropic-ai/sdk` en archivos fuente **EL SISTEMA DEBERA** encontrar imports
+3. **CUANDO** se busca el header del proveedor en archivos fuente **EL SISTEMA DEBERA** encontrar coincidencias
    en exactamente un archivo: `src/lib/ai/gateway.ts`.
 
 **Verify**
@@ -1380,7 +1381,7 @@ git tag step-06-business-brain
 ```bash
 pnpm test tests/unit/ai-gateway.test.ts # pasa: orden de stop_reason, uso, costo y errores estan probados con cliente falso
 pnpm test tests/integration/llm-calls.test.ts # pasa: una traza completa queda persistida y atribuida
-test "$(rg -l '@anthropic-ai/sdk' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1" && rg -q '@anthropic-ai/sdk' src/lib/ai/gateway.ts # pasa: exactamente un archivo importa el SDK
+test "$(rg -l 'x-goog-api-key' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1" && rg -q 'x-goog-api-key' src/lib/ai/gateway.ts # pasa: exactamente un archivo importa el SDK
 pnpm typecheck && pnpm lint && pnpm test # pasa: gate comun en verde
 ```
 
@@ -1745,7 +1746,7 @@ reemplaza las etiquetas `step-01-*`…`step-16-*`; ambas se copian literalmente.
 - Supabase CLI **>= 2.115.0**. El instalado hoy en la maquina de origen es 2.34.3 y no satisface el
   `config.toml`; se actualiza antes de ejecutar el bloque. No se adivinan comandos del CLI: primero
   `supabase --help` y `supabase <grupo> --help`.
-- Cuentas de Anthropic, Deepgram, Supabase hospedado y Vercel solo para lanzamiento; ningun gate de
+- Cuentas de Gemini, Deepgram, Supabase hospedado y Vercel solo para lanzamiento; ningun gate de
   construccion depende de ellas.
 
 ### Bootstrap idempotente
@@ -1825,14 +1826,13 @@ packageJson.scripts = {
 fs.writeFileSync("package.json", `${JSON.stringify(packageJson, null, 2)}\n`);
 NODE
 
-pnpm add --save-exact next@16.3.1 react@19.2.8 react-dom@19.2.8 tailwindcss@4.3.3 @tailwindcss/postcss@4.3.3 drizzle-orm@0.45.2 postgres@3.4.9 @supabase/supabase-js@2.112.3 @supabase/ssr@0.12.4 @anthropic-ai/sdk@0.117.1 zod@4.4.3 react-hook-form@7.85.0 @hookform/resolvers@5.9.1 @tanstack/react-query@5.101.4
+pnpm add --save-exact next@16.3.1 react@19.2.8 react-dom@19.2.8 tailwindcss@4.3.3 @tailwindcss/postcss@4.3.3 drizzle-orm@0.45.2 postgres@3.4.9 @supabase/supabase-js@2.112.3 @supabase/ssr@0.12.4 zod@4.4.3 react-hook-form@7.85.0 @hookform/resolvers@5.9.1 @tanstack/react-query@5.101.4
 pnpm add --save-dev --save-exact typescript@6.0.3 @types/node@24.13.3 @types/react@19.2.18 @types/react-dom@19.2.4 @biomejs/biome@2.5.9 drizzle-kit@0.31.10 vitest@4.1.11 @playwright/test@1.62.1 tsx@4.23.12
 node <<'NODE'
 const fs = require("node:fs");
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
 const pinned = {
   dependencies: {
-    "@anthropic-ai/sdk": "0.117.1",
     "@hookform/resolvers": "5.9.1",
     "@supabase/ssr": "0.12.4",
     "@supabase/supabase-js": "2.112.3",
@@ -1909,7 +1909,7 @@ indice oficial. Todos los paquetes los instala §10 y quedan exactos en `pnpm-lo
 | Drizzle ORM / Kit | 0.45.2 / 0.31.10 | datos y migraciones |
 | `postgres` | 3.4.9 | driver |
 | Supabase JS / SSR | 2.112.3 / 0.12.4 | Auth y Storage con cookies |
-| Anthropic SDK | 0.117.1 | unica integracion LLM |
+| Gemini (REST) | API `v1beta`, sin SDK | unica integracion LLM; verificada contra el endpoint el 2026-08-18 |
 | Zod | 4.4.3 | validacion y structured output |
 | React Hook Form / resolvers | 7.85.0 / 5.9.1 | formularios grandes |
 | TanStack React Query | 5.101.4 | cancelacion/reintento del Copilot |
@@ -1922,15 +1922,18 @@ No se instala `shadcn`, un SDK de Deepgram, Prisma, dotenv, Sentry ni un cliente
 7.0.2 era `latest`, pero no expone la API programatica que consume tooling; por eso 6.0.3 es un pin
 exacto y no un rango.
 
-### Anthropic
+### Gemini
 
 | Aspecto | Contrato |
 |---|---|
-| Cliente | `@anthropic-ai/sdk` 0.117.1, importado solo por `src/lib/ai/gateway.ts` |
+| Cliente | REST `v1beta` con `fetch`, solo desde `src/lib/ai/gateway.ts`. Sin SDK |
+| Autenticacion | header `x-goog-api-key`. Un `Authorization: Bearer` con la misma llave devuelve 401 |
 | Modelo | `AI_MODEL_DEFAULT`; ningun call site contiene un id literal |
-| Salida | `messages.parse()` + Zod; streaming donde una persona espera |
-| Caching | bloque system estable con `cache_control: { type: 'ephemeral' }` |
-| Refusal | revisar `stop_reason` antes de `content`; degradar a cautela |
+| Salida | `responseJsonSchema` con el JSON Schema que emite `z.toJSONSchema()` tal cual — el proveedor acepta `$schema` y `additionalProperties` sin sanear |
+| Razonamiento | `thinkingConfig.thinkingBudget` derivado del esfuerzo. `low` es 0: medido, una clasificacion gastaba 983 tokens de razonamiento para 6 de salida, y con 0 acierta igual en 29 totales |
+| Rechazo | `finishReason` SAFETY / PROHIBITED_CONTENT / BLOCKLIST / SPII y `promptFeedback.blockReason` se normalizan a `refusal`; se revisa antes de leer el texto |
+| Timeout | 60 s por llamada. Sin el, una respuesta que no llega cuelga la peticion para siempre |
+| Tier | gratuito. Medido el 2026-08-18: 11 de 14 peticiones seguidas exitosas, las 3 fallas por 503 de saturacion, no por cuota |
 | Telemetria | uso reportado, latencia, modelo, proposito, costo y prompt versionado |
 
 El gateway activa fallback del servidor segun `.claude/rules/ai-gateway.md`, inyecta un cliente falso
@@ -1980,7 +1983,7 @@ Los fixtures son `tests/fixtures/deepgram-callback.json` y `tests/fixtures/trans
 Contienen datos sinteticos sin PII real. El golden set inicial cubre prompts, pero **no bloquea CI**
 hasta tener veinte casos reales y linea base, como dice §1.
 
-No se prueba la calidad real de STT con un fixture, la latencia de red de Anthropic ni el resultado
+No se prueba la calidad real de STT con un fixture, la latencia de red del proveedor de IA ni el resultado
 comercial de una venta: **NO APLICA como gate local — requieren proveedores o datos de produccion**.
 
 ---
@@ -2013,7 +2016,7 @@ mide con `EXPLAIN (ANALYZE, BUFFERS)` antes de agregar infraestructura.
 - **Autorizacion:** cada Server Action llama `requireRole()`; cada consulta privada recibe
   `advisor_id` verificado. RLS protege la Data API como segunda barrera.
 - **Llaves:** `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` puede llegar al navegador.
-  `SUPABASE_SECRET_KEY`, Anthropic, Deepgram y cron jamas tienen prefijo `NEXT_PUBLIC_`, log o bundle.
+  `SUPABASE_SECRET_KEY`, Gemini, Deepgram y cron jamas tienen prefijo `NEXT_PUBLIC_`, log o bundle.
 - **Base:** RLS en toda tabla expuesta; `TO authenticated` mas predicado de propiedad; updates con
   SELECT, `USING` y `WITH CHECK`; nada usa `auth.role()` ni `SECURITY DEFINER` para tapar permisos.
 - **Storage:** bucket privado, ruta bajo UUID, politicas por operacion. El secret key solo se usa en
@@ -2053,7 +2056,7 @@ transcripciones ni condiciones de salud. Cada llamada al modelo deja la fila can
 | Uso en vivo | timestamps de exchange vs live session | validar que el Copilot se usa durante el live |
 
 `GET /health` separa liveness (`ok: true`) de dependencia (`db: up|down`) y expone commit. No consulta
-Anthropic, Deepgram ni Storage. Los dashboards de Vercel/Supabase ayudan a operar, pero la aceptacion
+Gemini, Deepgram ni Storage. Los dashboards de Vercel/Supabase ayudan a operar, pero la aceptacion
 del build usa la base y pruebas locales, no una UI externa.
 
 Sentry: **NO APLICA en v1 — logs de Vercel mas tablas de trazabilidad cubren diez usuarias**. Se
@@ -2114,7 +2117,8 @@ cualquier maquina nueva es copiar la plantilla y llenarla.
 | `NEXT_PUBLIC_SUPABASE_URL` | publica | paso 3 | API de Auth/Storage |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | publica | paso 3 | key `sb_publishable_...` del cliente |
 | `SUPABASE_SECRET_KEY` | secreto | paso 3 | key `sb_secret_...` para operaciones admin servidor |
-| `ANTHROPIC_API_KEY` | secreto | paso 7 real | llamadas reales; gates usan cliente falso |
+| `GEMINI_API_KEY` | secreto | paso 7 real | llamadas reales; gates usan cliente falso. Se envia como `x-goog-api-key` |
+| `GEMINI_BASE_URL` | servidor | paso 7 | default `https://generativelanguage.googleapis.com/v1beta` |
 | `AI_MODEL_DEFAULT` | servidor | paso 7 | modelo principal |
 | `AI_MODEL_SMALL` | servidor | paso 7 | candidato declarado, aun no enrutado |
 | `AI_MAX_CONCURRENCY` | servidor | paso 7 | limite por proceso, default 4 |
@@ -2259,7 +2263,7 @@ pnpm build # pasa: build de produccion sin migracion implicita
 pnpm exec next start --port 3102 & SRV=$!; for i in $(seq 1 30); do curl -sf http://127.0.0.1:3102/health >/dev/null && break; sleep 1; done; curl -sf http://127.0.0.1:3102/health | grep -q '"ok":true'; RC=$?; kill $SRV; exit $RC # pasa: el artefacto compilado arranca y responde
 pnpm test:e2e # pasa: flujos criticos locales en Chromium
 pnpm db:seed && pnpm db:seed # pasa: ambas ejecuciones salen 0
-test "$(rg -l '@anthropic-ai/sdk' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1" # pasa: un solo archivo importa el SDK
+test "$(rg -l 'x-goog-api-key' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1" # pasa: un solo archivo importa el SDK
 test -z "$(git status --porcelain)" # pasa: corre despues de todos los checkpoints y el arbol esta limpio
 for tag in step-01-scaffold-health step-02-database-schema step-03-auth-rls step-04-app-shell step-05-knowledge-hub step-06-business-brain step-07-ai-gateway step-08-structured-output step-09-simulator-questions step-10-simulator-evaluation step-11-copilot-compose step-12-copilot-orchestration step-13-responsible-communication step-14-live-transcription step-15-live-insights step-16-deploy; do git rev-parse "$tag" >/dev/null || exit 1; done # pasa: cada rollback target existe
 ```
@@ -2295,7 +2299,7 @@ Checklist de lanzamiento humano — deliberadamente fuera del gate autonomo:
 3. Postgres puro acelera pasos 1–2; Supabase local entra desde Auth en paso 3.
 4. RLS y filtro de servidor conviven porque el driver del servidor puede saltar RLS.
 5. Supabase Auth es por invitacion, email+contrasena, sin registro publico.
-6. Anthropic queda detras de un gateway unico y cada llamada tiene costo atribuible.
+6. El proveedor de IA queda detras de un gateway unico y cada llamada tiene costo atribuible.
 7. Deepgram usa REST/callback; no se opera worker ni GPU.
 8. Componentes propios sobre tokens Tailwind; shadcn se descarto para evitar reescritura de config y
    dependencias no necesarias.

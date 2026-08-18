@@ -1,13 +1,14 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import type {
-  BetaMessage,
-  MessageCreateParamsNonStreaming,
-} from "@anthropic-ai/sdk/resources/beta/messages/messages";
 import type { ZodType } from "zod";
+import { z } from "zod";
 
 import { env } from "../env.ts";
-import { AI_CONFIG, AI_MODELS, MODEL_PRICING_USD_PER_MTOK, type ModelPricing } from "./config.ts";
+import {
+  AI_MODELS,
+  AI_PROVIDER,
+  MODEL_PRICING_USD_PER_MTOK,
+  type ModelPricing,
+  THINKING_BUDGET_BY_EFFORT,
+} from "./config.ts";
 
 export type AiUsage = {
   inputTokens: number;
@@ -16,26 +17,46 @@ export type AiUsage = {
   cacheWriteTokens: number;
 };
 
-export type AiProviderResponse = Pick<
-  BetaMessage,
-  "content" | "id" | "model" | "stop_details" | "stop_reason" | "usage"
->;
+export type AiEffort = "low" | "medium" | "high" | "xhigh" | "max";
 
-export type AiProviderClient = {
-  createMessage: (request: MessageCreateParamsNonStreaming) => Promise<AiProviderResponse>;
-  parseMessage?: (request: MessageCreateParamsNonStreaming) => Promise<AiParsedProviderResponse>;
-  streamMessage?: (request: MessageCreateParamsNonStreaming) => AiProviderStream;
+/**
+ * Peticion y respuesta NEUTRALES de proveedor.
+ *
+ * La version anterior de este archivo tipaba la costura con los tipos del SDK de
+ * Anthropic, y eso no era una costura: era el proveedor filtrandose por toda la
+ * capa. Cambiar de proveedor lo demostro. Ahora el adaptador traduce en los
+ * bordes y el resto del gateway —ledger, errores, costos— no sabe con quien habla.
+ */
+export type AiProviderRequest = {
+  model: string;
+  system: string;
+  messages: Array<{ role: "user" | "assistant"; content: string }>;
+  maxTokens: number;
+  effort: AiEffort;
+  jsonSchema?: unknown;
 };
 
-export type AiParsedProviderResponse = AiProviderResponse & { parsed_output: unknown };
-
-export type AiProviderStreamEvent = {
-  type: string;
-  delta?: { type: string; partial_json?: string };
+export type AiProviderResponse = {
+  id: string;
+  model: string;
+  text: string;
+  parsedOutput?: unknown;
+  /** Normalizado. `refusal` es el unico valor con significado de control. */
+  finishReason: string;
+  refusalCategory?: string | null;
+  usage: AiUsage;
 };
+
+export type AiProviderStreamEvent = { partialJson?: string };
 
 export type AiProviderStream = AsyncIterable<AiProviderStreamEvent> & {
-  finalMessage: () => Promise<AiParsedProviderResponse>;
+  finalMessage: () => Promise<AiProviderResponse>;
+};
+
+export type AiProviderClient = {
+  createMessage: (request: AiProviderRequest) => Promise<AiProviderResponse>;
+  parseMessage?: (request: AiProviderRequest) => Promise<AiProviderResponse>;
+  streamMessage?: (request: AiProviderRequest) => AiProviderStream;
 };
 
 export type AiLedgerInput = AiUsage & {
@@ -67,7 +88,7 @@ export type GenerateTextInput = {
   system: string;
   messages: Array<{ role: "user" | "assistant"; content: string }>;
   maxTokens: number;
-  effort?: "low" | "medium" | "high" | "xhigh" | "max";
+  effort?: AiEffort;
 };
 
 export type GenerateStructuredInput<T> = GenerateTextInput & { schema: ZodType<T> };
@@ -76,15 +97,8 @@ export type GenerateStructuredStreamInput<T> = GenerateStructuredInput<T> & {
 };
 
 export type AiGatewayError =
-  | {
-      code: "AI_REFUSAL";
-      message: string;
-      category: string | null;
-    }
-  | {
-      code: "AI_PROVIDER_ERROR" | "AI_LEDGER_FAILED" | "AI_EMPTY_RESPONSE";
-      message: string;
-    };
+  | { code: "AI_REFUSAL"; message: string; category: string | null }
+  | { code: "AI_PROVIDER_ERROR" | "AI_LEDGER_FAILED" | "AI_EMPTY_RESPONSE"; message: string };
 
 export type GenerateTextResult =
   | {
@@ -98,21 +112,10 @@ export type GenerateTextResult =
         costUsd: number;
       };
     }
-  | {
-      ok: false;
-      error: AiGatewayError;
-    };
+  | { ok: false; error: AiGatewayError };
 
 export type StructuredAttemptResult<T> =
-  | {
-      ok: true;
-      data: {
-        value: T;
-        model: string;
-        usage: AiUsage;
-        costUsd: number;
-      };
-    }
+  | { ok: true; data: { value: T; model: string; usage: AiUsage; costUsd: number } }
   | {
       ok: false;
       error:
@@ -145,24 +148,219 @@ export type StructuredStreamResult<T> =
         | { code: "AI_NO_STREAM_TOKEN"; message: string };
     };
 
-function defaultClient(): AiProviderClient {
-  if (!env.ANTHROPIC_API_KEY) {
-    throw new Error("ANTHROPIC_API_KEY no esta definida.");
-  }
-  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+/**
+ * Motivos de corte que el proveedor devuelve cuando bloquea la respuesta por
+ * politica. Se normalizan a `refusal` porque el gateway ya tenia esa ruta y los
+ * consumidores dependen de ella para degradar con cautela — algo que importa
+ * mas aqui que en otros dominios, porque las preguntas sobre embarazo,
+ * medicamentos o enfermedad son exactamente las que un clasificador de
+ * seguridad bloquea.
+ */
+const REFUSAL_REASONS = new Set([
+  "SAFETY",
+  "PROHIBITED_CONTENT",
+  "BLOCKLIST",
+  "SPII",
+  "IMAGE_SAFETY",
+  "RECITATION",
+]);
+
+function normalizeFinishReason(reason: string | undefined) {
+  if (!reason) return "unknown";
+  if (REFUSAL_REASONS.has(reason)) return "refusal";
+  return reason.toLowerCase();
+}
+
+const geminiResponseSchema = z.object({
+  candidates: z
+    .array(
+      z.object({
+        content: z.object({ parts: z.array(z.object({ text: z.string() }).loose()) }).optional(),
+        finishReason: z.string().optional(),
+      }),
+    )
+    .optional(),
+  promptFeedback: z.object({ blockReason: z.string().optional() }).loose().optional(),
+  responseId: z.string().optional(),
+  modelVersion: z.string().optional(),
+  usageMetadata: z
+    .object({
+      promptTokenCount: z.number().optional(),
+      candidatesTokenCount: z.number().optional(),
+      thoughtsTokenCount: z.number().optional(),
+      cachedContentTokenCount: z.number().optional(),
+    })
+    .loose()
+    .optional(),
+});
+
+type GeminiPayload = z.infer<typeof geminiResponseSchema>;
+
+function usageFromPayload(payload: GeminiPayload): AiUsage {
+  const usage = payload.usageMetadata ?? {};
   return {
-    createMessage: (request) => client.beta.messages.create(request),
-    parseMessage: (request) => client.beta.messages.parse(request),
-    streamMessage: (request) => client.beta.messages.stream(request) as AiProviderStream,
+    inputTokens: usage.promptTokenCount ?? 0,
+    // El razonamiento se factura como salida y hay que contarlo, o el ledger
+    // subestima el consumo justo en las llamadas que mas gastan.
+    outputTokens: (usage.candidatesTokenCount ?? 0) + (usage.thoughtsTokenCount ?? 0),
+    cacheReadTokens: usage.cachedContentTokenCount ?? 0,
+    // El proveedor no reporta escritura de cache: su cacheo implicito no la cobra
+    // aparte. Se deja en 0 en vez de inventar un numero.
+    cacheWriteTokens: 0,
   };
 }
 
-function providerUsage(response: AiProviderResponse): AiUsage {
+function toProviderResponse(payload: GeminiPayload, model: string): AiProviderResponse {
+  const candidate = payload.candidates?.[0];
+  const text = (candidate?.content?.parts ?? [])
+    .map((part) => part.text)
+    .join("")
+    .trim();
+  const blocked = payload.promptFeedback?.blockReason;
+  const finishReason = blocked ? "refusal" : normalizeFinishReason(candidate?.finishReason);
   return {
-    inputTokens: response.usage.input_tokens,
-    outputTokens: response.usage.output_tokens,
-    cacheReadTokens: response.usage.cache_read_input_tokens ?? 0,
-    cacheWriteTokens: response.usage.cache_creation_input_tokens ?? 0,
+    id: payload.responseId ?? "sin-id",
+    model: payload.modelVersion ?? model,
+    text,
+    finishReason,
+    refusalCategory:
+      finishReason === "refusal" ? (blocked ?? candidate?.finishReason ?? null) : null,
+    usage: usageFromPayload(payload),
+  };
+}
+
+function requestBody(request: AiProviderRequest) {
+  return {
+    contents: request.messages.map((message) => ({
+      role: message.role === "assistant" ? "model" : "user",
+      parts: [{ text: message.content }],
+    })),
+    systemInstruction: { parts: [{ text: request.system }] },
+    generationConfig: {
+      maxOutputTokens: request.maxTokens,
+      thinkingConfig: { thinkingBudget: THINKING_BUDGET_BY_EFFORT[request.effort] },
+      ...(request.jsonSchema
+        ? { responseMimeType: "application/json", responseJsonSchema: request.jsonSchema }
+        : {}),
+    },
+  };
+}
+
+/**
+ * Techo de tiempo por llamada. Sin esto una respuesta que nunca llega cuelga la
+ * peticion para siempre: se descubrio asi, con el proveedor saturado. En un tier
+ * gratuito el 503 y la lentitud son el caso normal, no la excepcion, y el
+ * consumidor prefiere un error tipado en 60 s a una asesora esperando en vivo.
+ */
+const REQUEST_TIMEOUT_MS = 60_000;
+
+async function callGemini(request: AiProviderRequest, path: string): Promise<Response> {
+  if (!env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY no esta definida.");
+  let response: Response;
+  try {
+    response = await fetch(`${AI_PROVIDER.baseUrl}/models/${request.model}:${path}`, {
+      method: "POST",
+      headers: {
+        "x-goog-api-key": env.GEMINI_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody(request)),
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "TimeoutError") {
+      throw new Error(`El proveedor no respondio en ${REQUEST_TIMEOUT_MS / 1_000}s.`);
+    }
+    throw error;
+  }
+  if (!response.ok) {
+    const detail = await response.text().catch(() => "");
+    // 429 y 503 son la forma normal de agotar o saturar un tier gratuito: el
+    // mensaje conserva el codigo para que el consumidor pueda distinguirlos.
+    throw new Error(`El proveedor respondio ${response.status}. ${detail.slice(0, 200)}`);
+  }
+  return response;
+}
+
+function defaultClient(): AiProviderClient {
+  return {
+    async createMessage(request) {
+      const response = await callGemini(request, "generateContent");
+      const payload = geminiResponseSchema.parse(await response.json());
+      return toProviderResponse(payload, request.model);
+    },
+
+    async parseMessage(request) {
+      const response = await callGemini(request, "generateContent");
+      const payload = geminiResponseSchema.parse(await response.json());
+      const base = toProviderResponse(payload, request.model);
+      let parsedOutput: unknown;
+      try {
+        parsedOutput = base.text ? JSON.parse(base.text) : undefined;
+      } catch {
+        parsedOutput = undefined;
+      }
+      return { ...base, parsedOutput };
+    },
+
+    streamMessage(request) {
+      let resolveFinal: (value: AiProviderResponse) => void;
+      let rejectFinal: (reason: unknown) => void;
+      const final = new Promise<AiProviderResponse>((resolve, reject) => {
+        resolveFinal = resolve;
+        rejectFinal = reject;
+      });
+
+      async function* iterate(): AsyncGenerator<AiProviderStreamEvent> {
+        try {
+          const response = await callGemini(request, "streamGenerateContent?alt=sse");
+          const body = response.body;
+          if (!body) throw new Error("El proveedor no devolvio cuerpo de stream.");
+          const reader = body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          let text = "";
+          let last: GeminiPayload | undefined;
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
+            for (const line of lines) {
+              if (!line.startsWith("data:")) continue;
+              const raw = line.slice(5).trim();
+              if (!raw || raw === "[DONE]") continue;
+              const payload = geminiResponseSchema.safeParse(JSON.parse(raw));
+              if (!payload.success) continue;
+              last = payload.data;
+              const chunk = (payload.data.candidates?.[0]?.content?.parts ?? [])
+                .map((part) => part.text)
+                .join("");
+              if (!chunk) continue;
+              text += chunk;
+              yield { partialJson: chunk };
+            }
+          }
+
+          if (!last) throw new Error("El stream no produjo ninguna respuesta.");
+          const base = toProviderResponse(last, request.model);
+          let parsedOutput: unknown;
+          try {
+            parsedOutput = text ? JSON.parse(text) : undefined;
+          } catch {
+            parsedOutput = undefined;
+          }
+          resolveFinal({ ...base, text: text.trim(), parsedOutput });
+        } catch (error) {
+          rejectFinal(error);
+          throw error;
+        }
+      }
+
+      return Object.assign(iterate(), { finalMessage: () => final });
+    },
   };
 }
 
@@ -180,31 +378,14 @@ function providerErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Error desconocido del proveedor.";
 }
 
-function requestParameters(input: GenerateTextInput): MessageCreateParamsNonStreaming {
+function requestParameters(input: GenerateTextInput): AiProviderRequest {
   return {
     model: AI_MODELS.default,
-    max_tokens: input.maxTokens,
+    system: input.system,
     messages: input.messages,
-    system: [
-      {
-        type: "text",
-        text: input.system,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    thinking: { type: "adaptive" },
-    output_config: { effort: input.effort ?? "high" },
-    fallbacks: AI_CONFIG.fallback,
-    betas: [...AI_CONFIG.betaHeaders],
+    maxTokens: input.maxTokens,
+    effort: input.effort ?? "high",
   };
-}
-
-function responseText(response: AiProviderResponse) {
-  return response.content
-    .filter((block) => block.type === "text")
-    .map((block) => block.text)
-    .join("\n")
-    .trim();
 }
 
 export function createAiGateway(dependencies: AiGatewayDependencies) {
@@ -249,10 +430,10 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
       }
 
       const latencyMs = Math.max(0, Math.round(now() - startedAt));
-      const usage = providerUsage(response);
+      const usage = response.usage;
       const pricing = pricingTable[response.model];
       const costUsd = pricing ? calculateCostUsd(usage, pricing) : 0;
-      const finishReason = response.stop_reason ?? "unknown";
+      const finishReason = response.finishReason;
 
       const ledger = await dependencies.writeCall({
         advisorId: input.advisorId,
@@ -273,18 +454,18 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
       }
 
       // El rechazo debe decidir el flujo antes de que cualquier consumidor lea content.
-      if (response.stop_reason === "refusal") {
+      if (response.finishReason === "refusal") {
         return {
           ok: false,
           error: {
             code: "AI_REFUSAL",
             message: "El modelo rechazo responder; usa una degradacion segura.",
-            category: response.stop_details?.category ?? null,
+            category: response.refusalCategory ?? null,
           },
         };
       }
 
-      const text = responseText(response);
+      const text = response.text;
       if (!text) {
         return {
           ok: false,
@@ -302,19 +483,15 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
       input: GenerateStructuredInput<T>,
     ): Promise<StructuredAttemptResult<T>> {
       const startedAt = now();
-      let response: AiParsedProviderResponse;
+      let response: AiProviderResponse;
 
       try {
         const client = dependencies.client ?? defaultClient();
         if (!client.parseMessage)
           throw new Error("El cliente no implementa salidas estructuradas.");
-        const request = requestParameters(input);
         response = await client.parseMessage({
-          ...request,
-          output_config: {
-            ...request.output_config,
-            format: zodOutputFormat(input.schema),
-          },
+          ...requestParameters(input),
+          jsonSchema: z.toJSONSchema(input.schema),
         });
       } catch (error) {
         const latencyMs = Math.max(0, Math.round(now() - startedAt));
@@ -346,13 +523,13 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
       }
 
       const latencyMs = Math.max(0, Math.round(now() - startedAt));
-      const usage = providerUsage(response);
+      const usage = response.usage;
       const pricing = pricingTable[response.model];
       const costUsd = pricing ? calculateCostUsd(usage, pricing) : 0;
-      const finishReason = response.stop_reason ?? "unknown";
+      const finishReason = response.finishReason;
 
       // Igual que en texto libre: stop_reason decide antes de inspeccionar content.
-      if (response.stop_reason === "refusal") {
+      if (response.finishReason === "refusal") {
         const ledger = await dependencies.writeCall({
           advisorId: input.advisorId,
           purpose: input.purpose,
@@ -375,13 +552,13 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
           error: {
             code: "AI_REFUSAL",
             message: "El modelo rechazo responder; usa una degradacion segura.",
-            category: response.stop_details?.category ?? null,
+            category: response.refusalCategory ?? null,
           },
         };
       }
 
-      const rawText = responseText(response);
-      const parsed = input.schema.safeParse(response.parsed_output);
+      const rawText = response.text;
+      const parsed = input.schema.safeParse(response.parsedOutput);
       const validationError = parsed.success
         ? null
         : parsed.error.issues
@@ -423,24 +600,17 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
     ): Promise<StructuredStreamResult<T>> {
       const startedAt = now();
       let firstTokenAt: number | undefined;
-      let response: AiParsedProviderResponse;
+      let response: AiProviderResponse;
 
       try {
         const client = dependencies.client ?? defaultClient();
         if (!client.streamMessage) throw new Error("El cliente no implementa streaming.");
-        const request = requestParameters(input);
         const stream = client.streamMessage({
-          ...request,
-          output_config: {
-            ...request.output_config,
-            format: zodOutputFormat(input.schema),
-          },
+          ...requestParameters(input),
+          jsonSchema: z.toJSONSchema(input.schema),
         });
         for await (const event of stream) {
-          const partialJson =
-            event.type === "content_block_delta" && event.delta?.type === "input_json_delta"
-              ? event.delta.partial_json
-              : undefined;
+          const partialJson = event.partialJson;
           if (!partialJson) continue;
           firstTokenAt ??= now();
           await input.onDelta(partialJson);
@@ -476,11 +646,11 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
       }
 
       const latencyMs = Math.max(0, Math.round(now() - startedAt));
-      const usage = providerUsage(response);
+      const usage = response.usage;
       const pricing = pricingTable[response.model];
       const costUsd = pricing ? calculateCostUsd(usage, pricing) : 0;
-      const finishReason = response.stop_reason ?? "unknown";
-      if (response.stop_reason === "refusal") {
+      const finishReason = response.finishReason;
+      if (response.finishReason === "refusal") {
         const ledger = await dependencies.writeCall({
           advisorId: input.advisorId,
           purpose: input.purpose,
@@ -503,11 +673,11 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
           error: {
             code: "AI_REFUSAL",
             message: "El modelo rechazo responder; usa una degradacion segura.",
-            category: response.stop_details?.category ?? null,
+            category: response.refusalCategory ?? null,
           },
         };
       }
-      const parsed = input.schema.safeParse(response.parsed_output);
+      const parsed = input.schema.safeParse(response.parsedOutput);
       const validationError = parsed.success ? null : parsed.error.message;
       const ledger = await dependencies.writeCall({
         advisorId: input.advisorId,
