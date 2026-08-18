@@ -40,7 +40,7 @@ Cada vez que aparece una necesidad nueva de generar, clasificar, evaluar o extra
 ## Verificar
 
 ```bash
-pnpm test tests/unit/sdk-single-import.test.ts   # expect: exit 0 — un solo archivo importa el SDK
+test "$(rg -l 'x-goog-api-key' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1"   # expect: exit 0 — un solo archivo habla con el proveedor
 pnpm test tests/unit                             # expect: exit 0, 0 failed, 0 skipped
 pnpm typecheck                                   # expect: exit 0
 ```
@@ -48,12 +48,12 @@ pnpm typecheck                                   # expect: exit 0
 ## No hacer
 
 - No escribir un id de modelo en el call site. Van en `src/lib/ai/config.ts`, leidos de env.
-- No escribir `budget_tokens`: esta eliminado en Opus 5 y devuelve 400.
+- No usar `Authorization: Bearer`: con esta llave el proveedor devuelve 401. El header es `x-goog-api-key`.
 - No poner `effort` en el nivel superior. Va dentro de `output_config`.
 - No pedir JSON en prosa. El esquema viaja como `responseJsonSchema`, generado con
   `z.toJSONSchema()` desde el mismo esquema de Zod que valida la respuesta: una sola definicion,
   nunca dos copias que se desincronizan.
-- No hacer prefill de un mensaje assistant: devuelve 400 en Opus 5.
+- No escribir un id de modelo literal fuera de `src/lib/ai/config.ts`. El gate del paso 8 lo prohibe.
 - No estimar tokens ni costo contando caracteres. Se persiste lo que reporta el proveedor.
 - No bajar a `AI_MODEL_SMALL` sin un eval del golden set que lo respalde.
 - No dejar que el modelo aporte informacion que no este en `products` ni en `commercial_rules`.

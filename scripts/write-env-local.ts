@@ -2,7 +2,7 @@
  * Genera y ACTUALIZA .env.local.
  *
  * Dos modos, ambos idempotentes y ambos preservando toda clave que ya exista en
- * .env.local (por ejemplo ANTHROPIC_API_KEY, que el usuario pega a mano).
+ * .env.local (por ejemplo GEMINI_API_KEY, que el usuario pega a mano).
  * Precedencia al generar: defaults < .env < .env.local. El modo
  * --from-supabase refresca deliberadamente solo las tres llaves locales de
  * Supabase y las escribe en .env.local:
@@ -32,6 +32,7 @@ const LOCAL_DEFAULTS: Record<string, string> = {
   DIRECT_DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
   TEST_DATABASE_URL: "postgresql://postgres:postgres@127.0.0.1:55432/super_store_test",
   SUPABASE_RECORDINGS_BUCKET: "live-recordings",
+  GEMINI_BASE_URL: "https://generativelanguage.googleapis.com/v1beta",
   AI_MODEL_DEFAULT: "gemini-3-flash-preview",
   AI_MODEL_SMALL: "gemini-3.1-flash-lite",
   AI_MAX_CONCURRENCY: "4",
@@ -113,7 +114,7 @@ function main(): void {
   }
 
   for (const key of [
-    "ANTHROPIC_API_KEY",
+    "GEMINI_API_KEY",
     "DEEPGRAM_API_KEY",
     "DEEPGRAM_CALLBACK_SECRET",
     "CRON_SECRET",

@@ -189,7 +189,7 @@
     "acceptance": [
       "CUANDO una respuesta del proveedor termina normalmente EL SISTEMA DEBERA persistir modelo, proposito, latencia, tokens, cache, costo y finish reason en una fila de `llm_calls`.",
       "CUANDO `finishReason` es `refusal` EL SISTEMA DEBERA detectarlo antes de leer el texto y devolver un resultado tipado que obliga al consumidor a degradar con cautela.",
-      "CUANDO se busca el header del proveedor en archivos fuente EL SISTEMA DEBERA encontrar imports en exactamente un archivo: `src/lib/ai/gateway.ts`."
+      "CUANDO se busca el header del proveedor en archivos fuente EL SISTEMA DEBERA encontrar coincidencias en exactamente un archivo: `src/lib/ai/gateway.ts`."
     ],
     "verify": [
       "pnpm test tests/unit/ai-gateway.test.ts",

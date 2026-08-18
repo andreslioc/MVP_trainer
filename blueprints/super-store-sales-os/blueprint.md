@@ -1365,7 +1365,7 @@ git tag step-06-business-brain
 - Crear `src/lib/ai/config.ts`, `gateway.ts` y el unico escritor `src/server/llm-calls.ts`.
 - El gateway recibe un cliente inyectable, mide latencia, revisa `finishReason` antes de leer
   `content`, persiste el uso reportado y calcula costo desde la tabla de precios configurada.
-- Ningun test usa `ANTHROPIC_API_KEY`; un cliente falso entrega respuestas y uso deterministas.
+- Ningun test usa `GEMINI_API_KEY`; un cliente falso entrega respuestas y uso deterministas.
 
 **Done when**
 
@@ -1381,7 +1381,7 @@ git tag step-06-business-brain
 ```bash
 pnpm test tests/unit/ai-gateway.test.ts # pasa: orden de finishReason, uso, costo y errores estan probados con cliente falso
 pnpm test tests/integration/llm-calls.test.ts # pasa: una traza completa queda persistida y atribuida
-test "$(rg -l 'x-goog-api-key' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1" && rg -q 'x-goog-api-key' src/lib/ai/gateway.ts # pasa: exactamente un archivo importa el SDK
+test "$(rg -l 'x-goog-api-key' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1" && rg -q 'x-goog-api-key' src/lib/ai/gateway.ts # pasa: un solo archivo referencia el header del proveedor
 pnpm typecheck && pnpm lint && pnpm test # pasa: gate comun en verde
 ```
 
@@ -2174,7 +2174,7 @@ builder preserva un archivo existente para no borrar trabajo del usuario.
 ### 19.1 `CLAUDE.md`
 
 Fuente canonica de comandos, limites de arquitectura, diseno, entorno y no negociables. Declara el
-gate comun, URLs por tipo de proceso, unica lectura de `process.env`, unico import del SDK y reglas de
+gate comun, URLs por tipo de proceso, unica lectura de `process.env`, unico punto de contacto con el proveedor y reglas de
 comunicacion responsable. Ya esta emitido en `workspace/CLAUDE.md`.
 
 ### 19.2 `AGENTS.md`
@@ -2263,7 +2263,7 @@ pnpm build # pasa: build de produccion sin migracion implicita
 pnpm exec next start --port 3102 & SRV=$!; for i in $(seq 1 30); do curl -sf http://127.0.0.1:3102/health >/dev/null && break; sleep 1; done; curl -sf http://127.0.0.1:3102/health | grep -q '"ok":true'; RC=$?; kill $SRV; exit $RC # pasa: el artefacto compilado arranca y responde
 pnpm test:e2e # pasa: flujos criticos locales en Chromium
 pnpm db:seed && pnpm db:seed # pasa: ambas ejecuciones salen 0
-test "$(rg -l 'x-goog-api-key' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1" # pasa: un solo archivo importa el SDK
+test "$(rg -l 'x-goog-api-key' src --glob '*.ts' --glob '*.tsx' | wc -l | tr -d ' ')" = "1" # pasa: un solo archivo referencia el header del proveedor
 test -z "$(git status --porcelain)" # pasa: corre despues de todos los checkpoints y el arbol esta limpio
 for tag in step-01-scaffold-health step-02-database-schema step-03-auth-rls step-04-app-shell step-05-knowledge-hub step-06-business-brain step-07-ai-gateway step-08-structured-output step-09-simulator-questions step-10-simulator-evaluation step-11-copilot-compose step-12-copilot-orchestration step-13-responsible-communication step-14-live-transcription step-15-live-insights step-16-deploy; do git rev-parse "$tag" >/dev/null || exit 1; done # pasa: cada rollback target existe
 ```

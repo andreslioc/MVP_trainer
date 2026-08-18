@@ -42,7 +42,7 @@ Next.js 16 (App Router, Turbopack) · TypeScript · Tailwind CSS v4 · Drizzle O
 
 **Camino de una peticion.** navegador → `src/app/(app)/app/copilot/page.tsx` (Server Component) →
 accion en `src/server/copilot/compose.ts` → `src/lib/ai/gateway.ts` (unico archivo que importa el
-SDK) → `src/server/llm-calls.ts` persiste el uso → `src/db/client.ts` → Postgres.
+REST, sin SDK) → `src/server/llm-calls.ts` persiste el uso → `src/db/client.ts` → Postgres.
 
 **Fronteras.** Cruzar una al reves rompe el build:
 
