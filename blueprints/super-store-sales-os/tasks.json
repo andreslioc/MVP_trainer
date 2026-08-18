@@ -130,7 +130,7 @@
     ],
     "checkpoint": "step-06-business-brain",
     "files": ["src/lib/validation/commercial-rule.ts", "src/server/commercial-rules.ts", "src/app/(app)/app/settings/page.tsx", "tests/unit/commercial-rule-validation.test.ts", "tests/integration/commercial-rules.test.ts"],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T7",
