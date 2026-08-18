@@ -222,9 +222,26 @@ async function main(): Promise<void> {
       }
     });
 
+    if (hasLocalSupabase && env.SUPABASE_RECORDINGS_BUCKET) {
+      const { createAdminSupabaseClient } = await import("../src/lib/auth.ts");
+      const supabase = createAdminSupabaseClient();
+      const { data: bucket } = await supabase.storage.getBucket(env.SUPABASE_RECORDINGS_BUCKET);
+      const bucketResult = bucket
+        ? await supabase.storage.updateBucket(env.SUPABASE_RECORDINGS_BUCKET, {
+            public: false,
+            fileSizeLimit: 200 * 1024 * 1024,
+            allowedMimeTypes: ["audio/mpeg", "audio/mp4", "audio/wav", "audio/webm", "video/mp4"],
+          })
+        : await supabase.storage.createBucket(env.SUPABASE_RECORDINGS_BUCKET, {
+            public: false,
+            fileSizeLimit: 200 * 1024 * 1024,
+            allowedMimeTypes: ["audio/mpeg", "audio/mp4", "audio/wav", "audio/webm", "video/mp4"],
+          });
+      if (bucketResult.error) throw bucketResult.error;
+    }
+
     console.info(
-      `Seed DB completado en ${hasLocalSupabase ? "Supabase local" : "Postgres de pruebas"}. ` +
-        "Admin de Auth y bucket se habilitan en E1-T3.",
+      `Seed completado en ${hasLocalSupabase ? "Supabase local" : "Postgres de pruebas"}.`,
     );
   } finally {
     await connection.close();

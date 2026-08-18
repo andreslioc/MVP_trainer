@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "request_id": "dg-fixture-request",
+    "duration": 42.4
+  },
+  "results": {
+    "channels": [
+      {
+        "alternatives": [
+          {
+            "transcript": "Hola, hoy vamos a revisar el producto. ¿Cómo se usa?"
+          }
+        ]
+      }
+    ],
+    "utterances": [
+      {
+        "speaker": 0,
+        "transcript": "Hola, hoy vamos a revisar el producto."
+      },
+      {
+        "speaker": 1,
+        "transcript": "¿Cómo se usa?"
+      }
+    ]
+  }
+}
