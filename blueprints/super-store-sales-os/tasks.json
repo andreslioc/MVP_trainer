@@ -64,7 +64,7 @@
     ],
     "checkpoint": "step-03-auth-rls",
     "files": ["src/lib/auth.ts", "proxy.ts", "src/app/login/", "tests/integration/auth-rls.test.ts", "tests/e2e/auth.spec.ts"],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T4",

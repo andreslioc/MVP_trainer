@@ -8,13 +8,13 @@
   "files": {
     "includes": [
       "**",
-      "!blueprints/**",
-      "!**/node_modules/**",
-      "!.next/**",
-      "!drizzle/**",
-      "!supabase/.temp/**",
-      "!playwright-report/**",
-      "!test-results/**"
+      "!blueprints",
+      "!**/node_modules",
+      "!.next",
+      "!drizzle",
+      "!supabase/.temp",
+      "!playwright-report",
+      "!test-results"
     ]
   },
   "formatter": {

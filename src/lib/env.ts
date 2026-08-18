@@ -6,9 +6,11 @@ const optionalString = z.preprocess(
 );
 
 const serverEnvSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.string().min(1),
   DIRECT_DATABASE_URL: z.string().min(1),
   TEST_DATABASE_URL: z.string().min(1),
+  SUPABASE_LOCAL_DATABASE_URL: optionalString,
   NEXT_PUBLIC_SUPABASE_URL: optionalString,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: optionalString,
   SUPABASE_SECRET_KEY: optionalString,
@@ -17,3 +19,22 @@ const serverEnvSchema = z.object({
 });
 
 export const env = serverEnvSchema.parse(process.env);
+
+const supabasePublicEnvSchema = z.object({
+  url: z.url(),
+  publishableKey: z.string().min(1),
+});
+
+export function getSupabasePublicEnv() {
+  return supabasePublicEnvSchema.parse({
+    url: env.NEXT_PUBLIC_SUPABASE_URL,
+    publishableKey: env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  });
+}
+
+export function getSupabaseAdminEnv() {
+  const { url } = getSupabasePublicEnv();
+  return z
+    .object({ url: z.url(), secretKey: z.string().min(1) })
+    .parse({ url, secretKey: env.SUPABASE_SECRET_KEY });
+}
