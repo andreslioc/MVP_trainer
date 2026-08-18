@@ -2,7 +2,13 @@ import { and, asc, count, desc, eq, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
-import { products, prompts, trainingQuestions, trainingSessions } from "../../db/schema.ts";
+import {
+  products,
+  prompts,
+  trainingAnswers,
+  trainingQuestions,
+  trainingSessions,
+} from "../../db/schema.ts";
 import { createAiGateway } from "../../lib/ai/gateway.ts";
 import { buildGenerateQuestionsPrompt } from "../../lib/ai/prompts/generate-questions.ts";
 import { type GeneratedQuestions, generatedQuestionsSchema } from "../../lib/ai/schemas.ts";
@@ -363,7 +369,20 @@ export async function getTrainingSession(sessionId: string, options: TrainingDep
       .from(trainingQuestions)
       .where(eq(trainingQuestions.productId, session.productId))
       .orderBy(asc(trainingQuestions.createdAt));
-    return { ok: true as const, data: { ...session, questions } };
+    const answers = await database
+      .select({
+        id: trainingAnswers.id,
+        questionId: trainingAnswers.questionId,
+        advisorAnswer: trainingAnswers.advisorAnswer,
+        scores: trainingAnswers.scores,
+        feedback: trainingAnswers.feedback,
+        improvedAnswer: trainingAnswers.improvedAnswer,
+        createdAt: trainingAnswers.createdAt,
+      })
+      .from(trainingAnswers)
+      .where(eq(trainingAnswers.sessionId, session.id))
+      .orderBy(desc(trainingAnswers.createdAt));
+    return { ok: true as const, data: { ...session, questions, answers } };
   } catch {
     return {
       ok: false as const,

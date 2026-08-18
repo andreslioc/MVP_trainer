@@ -36,6 +36,18 @@ const dimensionScoreSchema = z
   })
   .strict();
 
+export const evaluationDimensionKeys = [
+  "conocimiento_producto",
+  "claridad_explicacion",
+  "naturalidad_cercania",
+  "uso_responsable_evidencia",
+  "manejo_objeciones",
+  "capacidad_persuasion",
+  "uso_cta",
+  "duracion",
+  "cumplimiento_reglas_marca",
+] as const;
+
 export const evaluationSchema = z
   .object({
     scores: z

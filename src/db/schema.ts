@@ -189,9 +189,9 @@ export const trainingAnswers = pgTable(
       .notNull()
       .references(() => trainingQuestions.id, { onDelete: "restrict" }),
     advisorAnswer: text("advisor_answer").notNull(),
-    scores: jsonb("scores").$type<Record<string, { score: number; reason: string }>>().notNull(),
-    feedback: text("feedback").notNull(),
-    improvedAnswer: text("improved_answer").notNull(),
+    scores: jsonb("scores").$type<Record<string, { score: number; reason: string }>>(),
+    feedback: text("feedback"),
+    improvedAnswer: text("improved_answer"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

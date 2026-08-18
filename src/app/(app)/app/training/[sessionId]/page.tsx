@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { getSession } from "../../../../../lib/auth.ts";
 import { getTrainingSession } from "../../../../../server/training/questions.ts";
+import { TrainingResponseForm } from "./training-response-form.tsx";
 
 export default async function TrainingSessionPage({
   params,
@@ -15,6 +16,9 @@ export default async function TrainingSessionPage({
   if (!result.ok) notFound();
 
   const firstQuestion = result.data.questions[0];
+  const savedAnswer = firstQuestion
+    ? result.data.answers.find((answer) => answer.questionId === firstQuestion.id)
+    : undefined;
   return (
     <section aria-labelledby="page-title" className="max-w-4xl">
       <p className="text-sm font-semibold text-primary">Práctica en curso</p>
@@ -33,10 +37,11 @@ export default async function TrainingSessionPage({
             <span>{firstQuestion.intent}</span>
           </div>
           <h2 className="mt-3 text-2xl font-semibold text-fg">{firstQuestion.text}</h2>
-          <p className="mt-5 rounded-card border border-border bg-background p-4 text-sm text-fg-muted">
-            El formulario de respuesta y la evaluación de nueve dimensiones llegan en el siguiente
-            paso.
-          </p>
+          <TrainingResponseForm
+            questionId={firstQuestion.id}
+            savedAnswer={savedAnswer}
+            sessionId={result.data.id}
+          />
         </article>
       ) : null}
     </section>
