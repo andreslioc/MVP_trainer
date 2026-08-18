@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
@@ -31,6 +31,7 @@ import {
 } from "../../lib/ai/structured.ts";
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { writeLlmCall } from "../llm-calls.ts";
+import { availableCtasFromRules, orchestrateCopilot } from "./orchestrator.ts";
 
 const composeInputSchema = z
   .object({
@@ -43,7 +44,7 @@ const composeInputSchema = z
   })
   .strict();
 
-type CopilotDatabase = Pick<typeof db, "insert" | "select">;
+type CopilotDatabase = Pick<typeof db, "select" | "transaction">;
 type AuthorizationResult =
   | { ok: true; data: { id: string; role: AdvisorRole } }
   | { ok: false; error: { code: string; message: string } };
@@ -103,22 +104,11 @@ export function asksForMissingSensitiveFact(
     .some((term) => !knowledge.includes(term));
 }
 
-function activeRuleStrings(rules: Array<{ value: Record<string, unknown> }>) {
-  const strings = new Set<string>();
-  const visit = (value: unknown) => {
-    if (typeof value === "string") strings.add(normalize(value).trim());
-    else if (Array.isArray(value)) value.forEach(visit);
-    else if (value && typeof value === "object") Object.values(value).forEach(visit);
-  };
-  for (const rule of rules) visit(rule.value);
-  return strings;
-}
-
 function validateComposition(
   value: unknown,
   product: typeof products.$inferSelect,
-  rules: Array<{ key: string; value: Record<string, unknown> }>,
   expectedIntent: CopilotIntent["intent"],
+  orchestration: ReturnType<typeof orchestrateCopilot>,
 ) {
   const parsed = copilotCompositionSchema.safeParse(value);
   if (!parsed.success) return null;
@@ -127,15 +117,8 @@ function validateComposition(
     [parsed.data.express, parsed.data.estandar, parsed.data.profunda].join(" "),
   );
   if (product.claimsForbidden.some((claim) => combined.includes(normalize(claim)))) return null;
-  if (parsed.data.rule_applied && !rules.some((rule) => rule.key === parsed.data.rule_applied)) {
-    return null;
-  }
-  if (
-    parsed.data.cta_used &&
-    !activeRuleStrings(rules).has(normalize(parsed.data.cta_used).trim())
-  ) {
-    return null;
-  }
+  if (parsed.data.cta_used !== (orchestration.cta?.text ?? null)) return null;
+  if (parsed.data.rule_applied !== orchestration.ruleApplied) return null;
   return parsed.data;
 }
 
@@ -190,7 +173,11 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
   try {
     const [[session], [product], activeRules, promptRows] = await Promise.all([
       database
-        .select({ id: liveSessions.id })
+        .select({
+          id: liveSessions.id,
+          ctasUsed: liveSessions.ctasUsed,
+          promosMentioned: liveSessions.promosMentioned,
+        })
         .from(liveSessions)
         .where(
           and(
@@ -206,9 +193,13 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
         .where(and(eq(products.id, parsedInput.data.productId), isNotNull(products.verifiedAt)))
         .limit(1),
       database
-        .select({ key: commercialRules.key, value: commercialRules.value })
+        .select({
+          key: commercialRules.key,
+          value: commercialRules.value,
+          active: commercialRules.active,
+        })
         .from(commercialRules)
-        .where(eq(commercialRules.active, true)),
+        .orderBy(asc(commercialRules.key)),
       database
         .select({ id: prompts.id, name: prompts.name })
         .from(prompts)
@@ -228,6 +219,15 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
         error: { code: "COPILOT_PROMPT_MISSING", message: "El Copilot no esta configurado." },
       };
     }
+    const orchestration = orchestrateCopilot({
+      availableCtas: availableCtasFromRules(activeRules),
+      rules: activeRules,
+      ctasUsed: session.ctasUsed,
+      promosMentioned: session.promosMentioned,
+    });
+    const rulesForPrompt = activeRules
+      .filter((rule) => rule.active)
+      .map(({ key, value }) => ({ key, value }));
 
     const classifyRendered = buildCopilotClassifyPrompt(parsedInput.data.customerQuestion);
     const classified = await classify({
@@ -249,18 +249,21 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
 
     let composition: CopilotComposition;
     let timeToFirstTokenMs: number;
+    let appliedOrchestration = orchestration;
     if (asksForMissingSensitiveFact(parsedInput.data.customerQuestion, product)) {
       composition = safeCopilotFallback(classified.data.value.intent);
+      appliedOrchestration = { cta: null, incentive: null, ruleApplied: null };
       await onChunk(composition[parsedInput.data.lengthVariant]);
       timeToFirstTokenMs = Math.max(0, now() - startedAt);
     } else {
       const rendered = buildCopilotComposePrompt({
         product,
-        activeRules,
+        activeRules: rulesForPrompt,
         customerQuestion: parsedInput.data.customerQuestion,
         intent: classified.data.value.intent,
         objective: parsedInput.data.objective,
         tone: parsedInput.data.tone,
+        orchestration,
       });
       let partialJson = "";
       let emitted = "";
@@ -292,8 +295,8 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
       const safe = validateComposition(
         generated.data.value,
         product,
-        activeRules,
         classified.data.value.intent,
+        orchestration,
       );
       if (!safe) {
         return {
@@ -307,23 +310,48 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
     }
 
     const answerText = composition[parsedInput.data.lengthVariant];
-    const [exchange] = await database
-      .insert(copilotExchanges)
-      .values({
-        liveSessionId: session.id,
-        productId: product.id,
-        customerQuestion: parsedInput.data.customerQuestion,
-        intent: composition.intent,
-        answerText,
-        lengthVariant: parsedInput.data.lengthVariant,
-        durationEstimateS: estimateDurationSeconds(answerText),
-        confidence: composition.confidence,
-        ctaUsed: composition.cta_used,
-        ruleApplied: composition.rule_applied,
-        alerts: [],
-      })
-      .returning();
-    if (!exchange) throw new Error("No se guardo el intercambio.");
+    const recordedAt = new Date().toISOString();
+    const ctaEntries = appliedOrchestration.cta
+      ? [{ cta: appliedOrchestration.cta.text, at: recordedAt }]
+      : [];
+    const promotionEntries = appliedOrchestration.incentive
+      ? [{ rule_key: appliedOrchestration.incentive.ruleKey, at: recordedAt }]
+      : [];
+    const exchange = await database.transaction(async (tx) => {
+      const [updatedSession] = await tx
+        .update(liveSessions)
+        .set({
+          ctasUsed: sql`${liveSessions.ctasUsed} || ${JSON.stringify(ctaEntries)}::jsonb`,
+          promosMentioned: sql`${liveSessions.promosMentioned} || ${JSON.stringify(promotionEntries)}::jsonb`,
+        })
+        .where(
+          and(
+            eq(liveSessions.id, session.id),
+            eq(liveSessions.advisorId, authorization.data.id),
+            isNull(liveSessions.endedAt),
+          ),
+        )
+        .returning({ id: liveSessions.id });
+      if (!updatedSession) throw new Error("La sesion ya no esta activa.");
+      const [createdExchange] = await tx
+        .insert(copilotExchanges)
+        .values({
+          liveSessionId: session.id,
+          productId: product.id,
+          customerQuestion: parsedInput.data.customerQuestion,
+          intent: composition.intent,
+          answerText,
+          lengthVariant: parsedInput.data.lengthVariant,
+          durationEstimateS: estimateDurationSeconds(answerText),
+          confidence: composition.confidence,
+          ctaUsed: composition.cta_used,
+          ruleApplied: composition.rule_applied,
+          alerts: [],
+        })
+        .returning();
+      if (!createdExchange) throw new Error("No se guardo el intercambio.");
+      return createdExchange;
+    });
     return {
       ok: true as const,
       data: {

@@ -129,6 +129,8 @@ describe("Copilot session and exchange", () => {
   it("classifies, streams and persists an attributed exchange", async () => {
     const chunks: string[] = [];
     let streamedSystem = "";
+    let selectedCta: string | null = null;
+    let selectedRule: string | null = null;
     const result = await composeCopilotAnswer(
       {
         liveSessionId: sessionId,
@@ -147,11 +149,24 @@ describe("Copilot session and exchange", () => {
         }),
         stream: async (input) => {
           streamedSystem = input.system;
-          await input.onDelta(JSON.stringify(composition()));
+          const orchestrationLine = input.messages[0]?.content
+            .split("\n")
+            .find((line) => line.startsWith("ORQUESTACION COMERCIAL: "));
+          const orchestration = JSON.parse(
+            orchestrationLine?.slice("ORQUESTACION COMERCIAL: ".length) ?? "{}",
+          ) as { cta?: { text: string } | null; ruleApplied?: string | null };
+          selectedCta = orchestration.cta?.text ?? null;
+          selectedRule = orchestration.ruleApplied ?? null;
+          const generated = {
+            ...composition(),
+            cta_used: selectedCta,
+            rule_applied: selectedRule,
+          };
+          await input.onDelta(JSON.stringify(generated));
           return {
             ok: true,
             data: {
-              value: composition(),
+              value: generated,
               model: "fake",
               usage: {
                 inputTokens: 1,
@@ -185,8 +200,8 @@ describe("Copilot session and exchange", () => {
       intent: "informacion",
       lengthVariant: "express",
       confidence: "alto",
-      ctaUsed: cta,
-      ruleApplied: activeRuleKey,
+      ctaUsed: selectedCta,
+      ruleApplied: selectedRule,
       alerts: [],
     });
     expect(result.data.exchange.durationEstimateS).toBeGreaterThan(0);

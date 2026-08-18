@@ -8,6 +8,7 @@ import {
   type CopilotCompositionView,
   type CopilotVariant,
 } from "../../../../components/copilot/answer-panel.tsx";
+import { COPILOT_VIEW_DEFAULTS } from "../../../../lib/copilot/view-defaults.ts";
 import { endLiveSessionAction, startLiveSessionAction } from "./actions.ts";
 
 type CopilotFormValues = {
@@ -48,7 +49,7 @@ export function CopilotForm({
       productId: "",
       customerQuestion: "",
       objective: "informar con claridad",
-      lengthVariant: "express",
+      lengthVariant: COPILOT_VIEW_DEFAULTS.variant,
       tone: "cercano",
     },
   });
@@ -211,9 +212,9 @@ export function CopilotForm({
           <div className="mt-2 grid grid-cols-3 gap-2">
             {(
               [
-                ["express", "Express", "15–20 s"],
-                ["estandar", "Estándar", "30–45 s"],
-                ["profunda", "Profunda", "60–90 s"],
+                ["express", "Express", COPILOT_VIEW_DEFAULTS.durationLabels.express],
+                ["estandar", "Estándar", COPILOT_VIEW_DEFAULTS.durationLabels.estandar],
+                ["profunda", "Profunda", COPILOT_VIEW_DEFAULTS.durationLabels.profunda],
               ] as const
             ).map(([value, label, duration]) => (
               <label

@@ -3,6 +3,11 @@ import { productKnowledgeForPrompt } from "./generate-questions.ts";
 type ProductKnowledge = Parameters<typeof productKnowledgeForPrompt>[0];
 
 type ActiveRule = { key: string; value: Record<string, unknown> };
+type Orchestration = {
+  cta: { text: string; ruleKey: string } | null;
+  incentive: { ruleKey: string; value: Record<string, unknown> } | null;
+  ruleApplied: string | null;
+};
 
 export const COPILOT_CLASSIFY_PROMPT = `
 Clasifica una pregunta real de una clienta en una sola intencion comercial:
@@ -29,7 +34,8 @@ Reglas obligatorias:
 - Nunca inventes estudios, certificaciones, porcentajes, dosis, precios ni beneficios.
 - Nunca digas que un suplemento cura, trata o previene enfermedades.
 - Embarazo, lactancia, medicamentos o enfermedades requieren consulta profesional y confianza "revisar".
-- Usa como maximo un CTA y una regla comercial, ambos presentes en el contexto activo.
+- Usa como maximo un CTA y un incentivo comercial, ambos presentes en el contexto activo.
+- Si la orquestacion selecciona CTA o incentivo, usalos exactamente; si entrega null, no inventes otro.
 `.trim();
 
 export function buildCopilotClassifyPrompt(customerQuestion: string) {
@@ -46,6 +52,7 @@ export function buildCopilotComposePrompt(input: {
   intent: string;
   objective: string;
   tone: string;
+  orchestration: Orchestration;
 }) {
   return {
     system: [
@@ -61,6 +68,7 @@ export function buildCopilotComposePrompt(input: {
           `INTENCION CLASIFICADA: ${input.intent}`,
           `OBJETIVO: ${input.objective}`,
           `TONO: ${input.tone}`,
+          `ORQUESTACION COMERCIAL: ${JSON.stringify(input.orchestration)}`,
           "Compone las tres versiones con el contrato estructurado.",
         ].join("\n"),
       },

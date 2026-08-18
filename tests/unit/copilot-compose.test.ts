@@ -55,6 +55,11 @@ describe("Copilot composition", () => {
       intent: "informacion",
       objective: "informar",
       tone: "cercano",
+      orchestration: {
+        cta: { text: composition.cta_used, ruleKey: "canal_whatsapp" },
+        incentive: null,
+        ruleApplied: "canal_whatsapp",
+      },
     });
     expect(classify.system).toContain("informacion, comparacion, precio");
     for (const part of [
