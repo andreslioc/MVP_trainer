@@ -98,7 +98,17 @@ export type GenerateStructuredStreamInput<T> = GenerateStructuredInput<T> & {
 
 export type AiGatewayError =
   | { code: "AI_REFUSAL"; message: string; category: string | null }
-  | { code: "AI_PROVIDER_ERROR" | "AI_LEDGER_FAILED" | "AI_EMPTY_RESPONSE"; message: string };
+  | {
+      code: "AI_PROVIDER_ERROR" | "AI_LEDGER_FAILED" | "AI_EMPTY_RESPONSE";
+      message: string;
+      /**
+       * Si reintentar puede servir. Un 503 de saturacion se recupera solo; una
+       * cuota diaria agotada no, y decirle "intenta de nuevo" a una asesora que
+       * esta en camara es peor que no decirle nada.
+       */
+      retryable?: boolean;
+    }
+  | { code: "AI_QUOTA_EXCEEDED"; message: string; retryable: false };
 
 export type GenerateTextResult =
   | {
@@ -277,7 +287,10 @@ async function callGemini(request: AiProviderRequest, path: string): Promise<Res
     const detail = await response.text().catch(() => "");
     // 429 y 503 son la forma normal de agotar o saturar un tier gratuito: el
     // mensaje conserva el codigo para que el consumidor pueda distinguirlos.
-    throw new Error(`El proveedor respondio ${response.status}. ${detail.slice(0, 200)}`);
+    throw new ProviderHttpError(
+      response.status,
+      `El proveedor respondio ${response.status}. ${detail.slice(0, 200)}`,
+    );
   }
   return response;
 }
@@ -374,8 +387,49 @@ export function calculateCostUsd(usage: AiUsage, pricing: ModelPricing) {
   );
 }
 
+/** Error del proveedor que conserva el estado HTTP para poder clasificarlo. */
+class ProviderHttpError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ProviderHttpError";
+  }
+}
+
 function providerErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Error desconocido del proveedor.";
+}
+
+/**
+ * Traduce un fallo del proveedor al error que ve el consumidor.
+ *
+ * La distincion que importa es 429 contra todo lo demas: la cuota gratuita es
+ * **por dia y por modelo**, asi que un 429 no se arregla esperando — aunque el
+ * proveedor devuelva un `retryDelay` de segundos, que es enganoso. El 503 de
+ * saturacion si se recupera solo.
+ */
+function classifyProviderError(error: unknown): AiGatewayError {
+  if (error instanceof ProviderHttpError) {
+    if (error.status === 429) {
+      return {
+        code: "AI_QUOTA_EXCEEDED",
+        message: "Se agoto la cuota del proveedor de IA. No sirve reintentar hasta que se renueve.",
+        retryable: false,
+      };
+    }
+    return {
+      code: "AI_PROVIDER_ERROR",
+      message: "El proveedor de IA no respondio.",
+      retryable: error.status >= 500 || error.status === 408,
+    };
+  }
+  return {
+    code: "AI_PROVIDER_ERROR",
+    message: "El proveedor de IA no respondio.",
+    retryable: true,
+  };
 }
 
 function requestParameters(input: GenerateTextInput): AiProviderRequest {
@@ -423,10 +477,7 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
             error: { code: "AI_LEDGER_FAILED", message: "No se pudo auditar la llamada de IA." },
           };
         }
-        return {
-          ok: false,
-          error: { code: "AI_PROVIDER_ERROR", message: "El proveedor de IA no respondio." },
-        };
+        return { ok: false, error: classifyProviderError(error) };
       }
 
       const latencyMs = Math.max(0, Math.round(now() - startedAt));
@@ -516,10 +567,7 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
             error: { code: "AI_LEDGER_FAILED", message: "No se pudo auditar la llamada de IA." },
           };
         }
-        return {
-          ok: false,
-          error: { code: "AI_PROVIDER_ERROR", message: "El proveedor de IA no respondio." },
-        };
+        return { ok: false, error: classifyProviderError(error) };
       }
 
       const latencyMs = Math.max(0, Math.round(now() - startedAt));
@@ -639,10 +687,7 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
             error: { code: "AI_LEDGER_FAILED", message: "No se pudo auditar la llamada de IA." },
           };
         }
-        return {
-          ok: false,
-          error: { code: "AI_PROVIDER_ERROR", message: "El proveedor de IA no respondio." },
-        };
+        return { ok: false, error: classifyProviderError(error) };
       }
 
       const latencyMs = Math.max(0, Math.round(now() - startedAt));

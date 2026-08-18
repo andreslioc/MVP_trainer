@@ -118,6 +118,37 @@ function validateComposition(
   return parsed.data;
 }
 
+/**
+ * Convierte un fallo del gateway en lo que la asesora debe leer.
+ *
+ * Una cuota agotada no se arregla reintentando, y decirle "intenta de nuevo" a
+ * alguien que esta en camara le hace perder el live pulsando un boton muerto.
+ * El unico caso en que "reintenta" es un consejo honesto es cuando el error es
+ * efectivamente transitorio.
+ */
+function copilotFailure(error: { code: string; retryable?: boolean }) {
+  if (error.code === "AI_QUOTA_EXCEEDED") {
+    return {
+      ok: false as const,
+      error: {
+        code: "COPILOT_QUOTA_EXCEEDED",
+        message:
+          "Se agoto la cuota diaria de IA. Reintentar no sirve: responde con tus propias palabras y avisa a una administradora.",
+      },
+    };
+  }
+  return {
+    ok: false as const,
+    error: {
+      code: "COPILOT_FAILED",
+      message:
+        error.retryable === false
+          ? "No se pudo generar y reintentar no va a ayudar. Responde con tus propias palabras."
+          : "No se pudo generar. Intenta de nuevo. Tu pregunta sigue en el formulario.",
+    },
+  };
+}
+
 export async function composeCopilotAnswer(input: unknown, options: ComposeDependencies = {}) {
   const authorization = await (options.authorize ?? requireRole)("asesor");
   if (!authorization.ok) return authorization;
@@ -206,12 +237,7 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
       maxTokens: 256,
       effort: "low",
     });
-    if (!classified.ok) {
-      return {
-        ok: false as const,
-        error: { code: "COPILOT_FAILED", message: "No se pudo generar. Intenta de nuevo." },
-      };
-    }
+    if (!classified.ok) return copilotFailure(classified.error);
 
     let composition: CopilotComposition;
     let alerts: ResponsibleAlert[] = [];
@@ -244,12 +270,7 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
         onDelta: () => undefined,
       });
       if (!generated.ok) {
-        if (generated.error.code !== "AI_REFUSAL") {
-          return {
-            ok: false as const,
-            error: { code: "COPILOT_FAILED", message: "No se pudo generar. Intenta de nuevo." },
-          };
-        }
+        if (generated.error.code !== "AI_REFUSAL") return copilotFailure(generated.error);
         composition = safeCopilotFallback(classified.data.value.intent);
         providerRefusal = true;
         appliedOrchestration = { cta: null, incentive: null, ruleApplied: null };

@@ -176,7 +176,13 @@ describe("AI gateway", () => {
 
     expect(result).toEqual({
       ok: false,
-      error: { code: "AI_PROVIDER_ERROR", message: "El proveedor de IA no respondio." },
+      error: {
+        code: "AI_PROVIDER_ERROR",
+        message: "El proveedor de IA no respondio.",
+        // Un error de red sin estado HTTP se asume transitorio: reintentar es
+        // consejo honesto. Lo que nunca debe marcarse asi es una cuota agotada.
+        retryable: true,
+      },
     });
     expect(ledger.calls[0]).toMatchObject({
       finishReason: "error",
@@ -210,5 +216,48 @@ describe("AI gateway", () => {
       ok: false,
       error: { code: "AI_LEDGER_FAILED", message: "No se pudo auditar la llamada de IA." },
     });
+  });
+});
+
+describe("clasificacion de errores del proveedor", () => {
+  async function failWith(status: number, body: string) {
+    const original = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(body, { status })) as unknown as typeof globalThis.fetch;
+    const previousKey = process.env.GEMINI_API_KEY;
+    process.env.GEMINI_API_KEY = "llave-de-prueba";
+    try {
+      const gateway = createAiGateway({ writeCall: successfulLedger().writeCall });
+      return await gateway.generateText(request());
+    } finally {
+      globalThis.fetch = original;
+      process.env.GEMINI_API_KEY = previousKey;
+    }
+  }
+
+  it("un 429 es cuota agotada y NO es reintentable", async () => {
+    const result = await failWith(429, '{"error":{"code":429,"status":"RESOURCE_EXHAUSTED"}}');
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("AI_QUOTA_EXCEEDED");
+    expect("retryable" in result.error && result.error.retryable).toBe(false);
+  });
+
+  it("un 503 de saturacion si es reintentable", async () => {
+    const result = await failWith(503, '{"error":{"code":503,"status":"UNAVAILABLE"}}');
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("AI_PROVIDER_ERROR");
+    expect("retryable" in result.error && result.error.retryable).toBe(true);
+  });
+
+  it("un 400 no es reintentable: la peticion esta mal y seguira mal", async () => {
+    const result = await failWith(400, '{"error":{"code":400}}');
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect("retryable" in result.error && result.error.retryable).toBe(false);
   });
 });
