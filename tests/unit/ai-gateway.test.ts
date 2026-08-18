@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { z } from "zod";
 
 import { AI_MODELS } from "../../src/lib/ai/config.ts";
 import {
@@ -259,5 +260,69 @@ describe("clasificacion de errores del proveedor", () => {
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect("retryable" in result.error && result.error.retryable).toBe(false);
+  });
+});
+
+describe("stream SSE del proveedor", () => {
+  /** Arma una respuesta SSE cuyo ULTIMO evento no termina en salto de linea. */
+  function sseResponse(payloads: string[], trailingNewline: boolean) {
+    const body = payloads.map((p) => `data: ${p}`).join("\n") + (trailingNewline ? "\n" : "");
+    return new Response(
+      new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(body));
+          controller.close();
+        },
+      }),
+      { status: 200 },
+    );
+  }
+
+  function chunkPayload(text: string, finish?: string) {
+    return JSON.stringify({
+      candidates: [{ content: { parts: [{ text }] }, ...(finish ? { finishReason: finish } : {}) }],
+      usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 5 },
+      modelVersion: AI_MODELS.default,
+    });
+  }
+
+  async function streamWith(trailingNewline: boolean) {
+    const original = globalThis.fetch;
+    const previousKey = process.env.GEMINI_API_KEY;
+    process.env.GEMINI_API_KEY = "llave-de-prueba";
+    globalThis.fetch = (async () =>
+      sseResponse(
+        [chunkPayload('{"answer":"ho'), chunkPayload('la"}', "STOP")],
+        trailingNewline,
+      )) as unknown as typeof globalThis.fetch;
+    try {
+      const gateway = createAiGateway({ writeCall: successfulLedger().writeCall });
+      return await gateway.generateStructuredStream({
+        ...request(),
+        schema: z.object({ answer: z.string() }),
+        onDelta: () => undefined,
+      });
+    } finally {
+      globalThis.fetch = original;
+      process.env.GEMINI_API_KEY = previousKey;
+    }
+  }
+
+  it("no pierde el ultimo evento cuando el stream cierra sin salto final", async () => {
+    // Regresion real: sin vaciar el buffer al terminar, el JSON llegaba cortado
+    // a media frase y fallaba la validacion con el stream aparentemente sano.
+    const result = await streamWith(false);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.value).toEqual({ answer: "hola" });
+  });
+
+  it("tambien funciona cuando el stream cierra con salto final", async () => {
+    const result = await streamWith(true);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.value).toEqual({ answer: "hola" });
   });
 });

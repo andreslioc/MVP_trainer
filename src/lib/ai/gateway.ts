@@ -335,6 +335,25 @@ function defaultClient(): AiProviderClient {
           let text = "";
           let last: GeminiPayload | undefined;
 
+          const consume = (line: string) => {
+            if (!line.startsWith("data:")) return undefined;
+            const raw = line.slice(5).trim();
+            if (!raw || raw === "[DONE]") return undefined;
+            let parsed: unknown;
+            try {
+              parsed = JSON.parse(raw);
+            } catch {
+              return undefined;
+            }
+            const payload = geminiResponseSchema.safeParse(parsed);
+            if (!payload.success) return undefined;
+            last = payload.data;
+            const chunk = (payload.data.candidates?.[0]?.content?.parts ?? [])
+              .map((part) => part.text)
+              .join("");
+            return chunk || undefined;
+          };
+
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
@@ -342,19 +361,22 @@ function defaultClient(): AiProviderClient {
             const lines = buffer.split("\n");
             buffer = lines.pop() ?? "";
             for (const line of lines) {
-              if (!line.startsWith("data:")) continue;
-              const raw = line.slice(5).trim();
-              if (!raw || raw === "[DONE]") continue;
-              const payload = geminiResponseSchema.safeParse(JSON.parse(raw));
-              if (!payload.success) continue;
-              last = payload.data;
-              const chunk = (payload.data.candidates?.[0]?.content?.parts ?? [])
-                .map((part) => part.text)
-                .join("");
+              const chunk = consume(line);
               if (!chunk) continue;
               text += chunk;
               yield { partialJson: chunk };
             }
+          }
+
+          // El buffer puede quedar con la ultima linea sin salto final. Sin este
+          // vaciado se pierde el evento que cierra el JSON, y la salida llega
+          // truncada a media frase: valida como stream, invalida como contrato.
+          buffer += decoder.decode();
+          for (const line of buffer.split("\n")) {
+            const chunk = consume(line);
+            if (!chunk) continue;
+            text += chunk;
+            yield { partialJson: chunk };
           }
 
           if (!last) throw new Error("El stream no produjo ninguna respuesta.");
