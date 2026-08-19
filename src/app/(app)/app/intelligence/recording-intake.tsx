@@ -158,8 +158,9 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
               role="status"
             >
               El proveedor de transcripción no puede alcanzar esta aplicación desde internet, así
-              que la transcripción no volverá. Sube el archivo si quieres guardarlo, pero para
-              analizar un live hoy usa <strong>Pegar transcripción</strong>.
+              que la transcripción no llega sola. Sube el archivo y luego dale{" "}
+              <strong>Transcribir ahora</strong> en la lista de grabaciones: el audio se manda
+              directo y el texto vuelve en el momento.
             </p>
           ) : null}
           <input
