@@ -20,7 +20,7 @@ import { sum, count } from "drizzle-orm";
     console.log("\n📊 Costos por propósito:\n");
     console.log("Propósito".padEnd(25) + " | Calls | Input Tokens | Output Tokens | Costo USD");
     console.log("-".repeat(80));
-    
+
     const sorted = results.sort((a, b) => (b.costTotal || 0) - (a.costTotal || 0));
     for (const r of sorted) {
       const purpose = r.purpose.padEnd(25);

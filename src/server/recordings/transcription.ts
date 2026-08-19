@@ -165,9 +165,8 @@ function transcriptFromPayload(payload: z.infer<typeof deepgramCallbackSchema>) 
   if (payload.results.utterances?.length) {
     return payload.results.utterances
       .map((utterance) => {
-        const timestamp = utterance.start_time !== undefined
-          ? `[${Math.round(utterance.start_time)}s]`
-          : "";
+        const timestamp =
+          utterance.start_time !== undefined ? `[${Math.round(utterance.start_time)}s]` : "";
         return `${timestamp} [Speaker ${utterance.speaker}] ${utterance.transcript}`;
       })
       .join("\n");

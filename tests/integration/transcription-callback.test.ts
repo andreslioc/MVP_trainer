@@ -112,7 +112,8 @@ describe("transcription callback", () => {
     expect(rows[0]).toMatchObject({
       status: "transcribed",
       durationS: 42,
-      transcript: "[0s] [Speaker 0] Hola, hoy vamos a revisar el producto.\n[5s] [Speaker 1] ¿Cómo se usa?",
+      transcript:
+        "[0s] [Speaker 0] Hola, hoy vamos a revisar el producto.\n[5s] [Speaker 1] ¿Cómo se usa?",
     });
   });
 });

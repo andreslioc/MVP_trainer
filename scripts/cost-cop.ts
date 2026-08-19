@@ -18,7 +18,7 @@ import { sum, count } from "drizzle-orm";
 
     const prices = {
       input: 0.075 / 1_000_000,
-      output: 0.30 / 1_000_000,
+      output: 0.3 / 1_000_000,
     };
 
     const usdToCop = 4200; // Tipo de cambio aproximado
@@ -33,7 +33,9 @@ import { sum, count } from "drizzle-orm";
       { scale: 100, days: 30, label: "100x pesado" },
     ];
 
-    console.log("Escala              | Llamadas/mes |  Costo/mes USD  |    Costo/mes COP    |  Costo/año COP");
+    console.log(
+      "Escala              | Llamadas/mes |  Costo/mes USD  |    Costo/mes COP    |  Costo/año COP",
+    );
     console.log("-".repeat(100));
 
     for (const scenario of scenarios) {
@@ -45,10 +47,14 @@ import { sum, count } from "drizzle-orm";
 
       const callsStr = String(calls.toLocaleString()).padStart(12);
       const usdStr = `$${monthCostUsd.toFixed(2)} USD`.padStart(15);
-      const copStr = `$${monthCostCop.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`.padStart(19);
-      const yearStr = `$${yearCostCop.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`.padStart(18);
+      const copStr =
+        `$${monthCostCop.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`.padStart(19);
+      const yearStr =
+        `$${yearCostCop.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`.padStart(18);
 
-      console.log(`${scenario.label.padEnd(19)} | ${callsStr} | ${usdStr} | ${copStr} | ${yearStr}`);
+      console.log(
+        `${scenario.label.padEnd(19)} | ${callsStr} | ${usdStr} | ${copStr} | ${yearStr}`,
+      );
     }
 
     console.log("\n");
@@ -56,7 +62,7 @@ import { sum, count } from "drizzle-orm";
     // Detalles para 20x
     const scale = 20;
     const multiplier = scale * 30;
-    
+
     let totalInputCost = 0;
     let totalOutputCost = 0;
     let totalCalls = 0;
@@ -88,7 +94,9 @@ import { sum, count } from "drizzle-orm";
       const purpose = r.purpose.padEnd(25);
       const calls = String(scaledCalls.toLocaleString()).padStart(12);
       const usd = `$${totalCost.toFixed(2)}`.padStart(10);
-      const cop = `$${totalCostCop.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`.padStart(14);
+      const cop = `$${totalCostCop.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`.padStart(
+        14,
+      );
 
       console.log(`${purpose} | ${calls} | ${usd} | ${cop}`);
     }
@@ -102,15 +110,21 @@ import { sum, count } from "drizzle-orm";
     const totalLabel = "TOTAL".padEnd(25);
     const totalCallsStr = String(totalCalls.toLocaleString()).padStart(12);
     const totalUsdDisplay = `$${grandTotal.toFixed(2)}`.padStart(10);
-    const totalCopDisplay = `$${grandTotalCop.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`.padStart(14);
+    const totalCopDisplay =
+      `$${grandTotalCop.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`.padStart(14);
     console.log(`${totalLabel} | ${totalCallsStr} | ${totalUsdDisplay} | ${totalCopDisplay}\n`);
 
     console.log("📈 Desglose 20x:\n");
     console.log(`  460 llamadas/día × 30 días = 13,800 llamadas/mes`);
-    console.log(`  Costo diario:  $${costPerDay.toFixed(2)} USD  =  $${costPerDayCop.toLocaleString("es-CO", { maximumFractionDigits: 0 })} COP`);
-    console.log(`  Costo mensual: $${grandTotal.toFixed(2)} USD  =  $${grandTotalCop.toLocaleString("es-CO", { maximumFractionDigits: 0 })} COP`);
-    console.log(`  Costo anual:   $${(grandTotal * 12).toFixed(2)} USD  =  $${(grandTotalCop * 12).toLocaleString("es-CO", { maximumFractionDigits: 0 })} COP\n`);
-
+    console.log(
+      `  Costo diario:  $${costPerDay.toFixed(2)} USD  =  $${costPerDayCop.toLocaleString("es-CO", { maximumFractionDigits: 0 })} COP`,
+    );
+    console.log(
+      `  Costo mensual: $${grandTotal.toFixed(2)} USD  =  $${grandTotalCop.toLocaleString("es-CO", { maximumFractionDigits: 0 })} COP`,
+    );
+    console.log(
+      `  Costo anual:   $${(grandTotal * 12).toFixed(2)} USD  =  $${(grandTotalCop * 12).toLocaleString("es-CO", { maximumFractionDigits: 0 })} COP\n`,
+    );
   } finally {
     await connection.close();
   }

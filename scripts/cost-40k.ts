@@ -24,7 +24,7 @@ import { sum, count } from "drizzle-orm";
     const models = {
       "Gemini 1.5 Flash (actual)": {
         input: 0.075,
-        output: 0.30,
+        output: 0.3,
         color: "🟢",
       },
       "Gemini 1.5 Pro": {
@@ -94,13 +94,14 @@ import { sum, count } from "drizzle-orm";
     console.log("\n");
     console.log("📊 CON GEMINI 1.5 FLASH (actual):\n");
 
-    const flashCostPerCall = avgInputPerCall * (0.075 / 1_000_000) + avgOutputPerCall * (0.30 / 1_000_000);
+    const flashCostPerCall =
+      avgInputPerCall * (0.075 / 1_000_000) + avgOutputPerCall * (0.3 / 1_000_000);
     const flashCalls = targetUsd / flashCostPerCall;
     const flashCallsPerDay = flashCalls / 30;
 
     console.log(`  Llamadas/mes: ${Math.round(flashCalls).toLocaleString()}`);
     console.log(`  Llamadas/día: ${Math.round(flashCallsPerDay).toLocaleString()}`);
-    console.log(`  Multiplicador: ${(flashCallsPerDay / (230)).toFixed(1)}x del patrón 20x pesado\n`);
+    console.log(`  Multiplicador: ${(flashCallsPerDay / 230).toFixed(1)}x del patrón 20x pesado\n`);
 
     // Tabla de escalas para Gemini Flash
     console.log("Comparación de escalas (Gemini Flash):\n");
@@ -115,15 +116,14 @@ import { sum, count } from "drizzle-orm";
       const callsMonth = callsDay * 30;
       const costMonth = callsMonth * flashCostPerCall * usdToCop;
 
-      const ratio = (callsDay / Math.round(flashCallsPerDay) * 100).toFixed(0);
+      const ratio = ((callsDay / Math.round(flashCallsPerDay)) * 100).toFixed(0);
       console.log(
-        `${scale}x (${callsDay.toLocaleString()} calls)`.padEnd(14) + 
-        ` | ${String(callsDay).padStart(12)} | ${String(callsMonth).padStart(12)} | $${String(Math.round(costMonth)).padStart(12)} | ${ratio}%`
+        `${scale}x (${callsDay.toLocaleString()} calls)`.padEnd(14) +
+          ` | ${String(callsDay).padStart(12)} | ${String(callsMonth).padStart(12)} | $${String(Math.round(costMonth)).padStart(12)} | ${ratio}%`,
       );
     }
 
     console.log();
-
   } finally {
     await connection.close();
   }

@@ -2,6 +2,7 @@ import type { ZodType } from "zod";
 import { z } from "zod";
 
 import { env } from "../env.ts";
+import { createOllamaClient } from "./ollama-client.ts";
 import {
   AI_MODELS,
   AI_PROVIDER,
@@ -295,8 +296,36 @@ async function callGemini(request: AiProviderRequest, path: string): Promise<Res
   return response;
 }
 
+let cachedClient: AiProviderClient | null = null;
+
 function defaultClient(): AiProviderClient {
-  return {
+  // Cache para evitar reinicializar cada vez
+  if (cachedClient) return cachedClient;
+
+  // Solo usa Ollama si está explícitamente habilitado en desarrollo
+  const useOllama =
+    typeof process !== "undefined" &&
+    process.env.NODE_ENV !== "production" &&
+    process.env.OLLAMA_ENABLED === "true";
+
+  if (useOllama) {
+    try {
+      const ollama = createOllamaClient("llama2:7b");
+      if (typeof console !== "undefined") {
+        console.log("✓ Usando Ollama en localhost:11434 (desarrollo)");
+      }
+      cachedClient = ollama;
+      return cachedClient;
+    } catch {
+      // Falla silenciosa, usa Gemini
+      if (typeof console !== "undefined") {
+        console.log("⚠ Ollama no disponible, usando Gemini API");
+      }
+    }
+  }
+
+  // Cliente de Gemini (default)
+  cachedClient = {
     async createMessage(request) {
       const response = await callGemini(request, "generateContent");
       const payload = geminiResponseSchema.parse(await response.json());
@@ -397,6 +426,8 @@ function defaultClient(): AiProviderClient {
       return Object.assign(iterate(), { finalMessage: () => final });
     },
   };
+
+  return cachedClient;
 }
 
 export function calculateCostUsd(usage: AiUsage, pricing: ModelPricing) {

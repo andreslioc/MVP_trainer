@@ -18,7 +18,7 @@ import { sum, count } from "drizzle-orm";
 
     const prices = {
       input: 0.075 / 1_000_000,
-      output: 0.30 / 1_000_000,
+      output: 0.3 / 1_000_000,
     };
 
     const scale = 20;
@@ -68,13 +68,17 @@ import { sum, count } from "drizzle-orm";
     const totalInputDisplay = `$${totalInputCost.toFixed(2)}`.padStart(11);
     const totalOutputDisplay = `$${totalOutputCost.toFixed(2)}`.padStart(10);
     const totalDisplay = `$${grandTotal.toFixed(2)}`.padStart(12);
-    console.log(`${totalLabel} | ${totalCallsStr} | ${totalInputDisplay} | ${totalOutputDisplay} | ${totalDisplay}\n`);
+    console.log(
+      `${totalLabel} | ${totalCallsStr} | ${totalInputDisplay} | ${totalOutputDisplay} | ${totalDisplay}\n`,
+    );
 
     const costPerDay = grandTotal / days;
     const costPerWeek = costPerDay * 7;
 
     console.log("📊 Desglose temporal:\n");
-    console.log(`  Por día:   ${(totalCalls / days).toFixed(0)} llamadas → $${costPerDay.toFixed(2)}`);
+    console.log(
+      `  Por día:   ${(totalCalls / days).toFixed(0)} llamadas → $${costPerDay.toFixed(2)}`,
+    );
     console.log(`  Por semana: $${costPerWeek.toFixed(2)}`);
     console.log(`  Por mes:   $${grandTotal.toFixed(2)}`);
     console.log(`  Por año:   $${(grandTotal * 12).toFixed(2)}\n`);
@@ -96,10 +100,11 @@ import { sum, count } from "drizzle-orm";
       const calls = 23 * mult;
       const monthCost = (0.006416 * mult).toFixed(2);
       const yearCost = (0.006416 * mult * 12).toFixed(2);
-      console.log(`${scenario.label.padEnd(14)} | ${String(calls.toLocaleString()).padStart(12)} | $${monthCost.padStart(7)} | $${yearCost.padStart(7)}`);
+      console.log(
+        `${scenario.label.padEnd(14)} | ${String(calls.toLocaleString()).padStart(12)} | $${monthCost.padStart(7)} | $${yearCost.padStart(7)}`,
+      );
     }
     console.log();
-
   } finally {
     await connection.close();
   }
