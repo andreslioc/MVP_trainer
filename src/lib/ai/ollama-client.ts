@@ -53,8 +53,11 @@ async function callOllama(
       model,
       prompt,
       stream,
-      raw: true,
-      format: request.jsonSchema ? "json" : undefined,
+      // `format: "json"` solo obliga a que la salida sea JSON valido, no a que
+      // tenga la forma pedida: el modelo devolvia JSON impecable con las claves
+      // de otro esquema y la validacion lo rechazaba entera. Ollama acepta el
+      // JSON Schema completo aqui y entonces si lo impone.
+      format: request.jsonSchema ?? undefined,
     }),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
