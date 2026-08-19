@@ -43,6 +43,7 @@ export type UploadRecordingDependencies = {
   bucket?: string;
   retentionDays?: number;
   maxBytes?: number;
+  provider?: "deepgram" | "groq";
   now?: () => Date;
   randomId?: () => string;
   randomToken?: () => string;
@@ -144,6 +145,16 @@ export async function uploadRecording(
     } catch {
       await storage.remove([storagePath]);
       throw new Error("No se creó la grabación.");
+    }
+
+    // Encolar solo tiene sentido con el camino asincrono de Deepgram, que
+    // devuelve el resultado por callback. Con un proveedor sincrono no hay nada
+    // que encolar: la grabacion queda en `uploaded` y la asesora dispara la
+    // transcripcion cuando quiera. Llamar a Deepgram igual gastaba una peticion,
+    // exigia su llave, y dejaba la fila en `transcribing` esperando un callback
+    // que nadie iba a mandar.
+    if ((options.provider ?? env.TRANSCRIPTION_PROVIDER) !== "deepgram") {
+      return { ok: true as const, data: recording };
     }
 
     const signed = await storage.createSignedUrl(storagePath, 60 * 60);

@@ -253,4 +253,54 @@ describe("recording upload", () => {
     expect(options.contentType).toBe("audio/wav");
     expect(body).toBe(original);
   });
+
+  it("con un proveedor sincrono no encola nada y deja la grabacion lista para transcribir", async () => {
+    const id = randomUUID();
+    const enqueue = vi.fn(async () => ({ ok: true as const, data: { requestId: "no-deberia" } }));
+    const createSignedUrl = vi.fn(async () => ({
+      data: { signedUrl: "https://storage.test/firmada" },
+      error: null,
+    }));
+
+    const result = await uploadRecording(
+      {
+        file: {
+          name: "live.wav",
+          type: "audio/wav",
+          size: wav(1).byteLength,
+          arrayBuffer: async () => wav(1),
+        },
+      },
+      {
+        authorize: async () => ({ ok: true, data: { id: advisorId, role: "asesor" } }),
+        database: connection.db,
+        storage: {
+          upload: async () => ({ error: null }),
+          createSignedUrl,
+          remove: async () => ({}),
+        },
+        bucket: "live-recordings",
+        retentionDays: 90,
+        now: () => now,
+        randomId: () => id,
+        randomToken: () => "d".repeat(64),
+        enqueue,
+        provider: "groq",
+      },
+    );
+
+    expect(result.ok).toBe(true);
+    // Ni peticion a Deepgram ni URL firmada: no hay callback que esperar.
+    expect(enqueue).not.toHaveBeenCalled();
+    expect(createSignedUrl).not.toHaveBeenCalled();
+
+    const [persisted] = await connection.db
+      .select()
+      .from(liveRecordings)
+      .where(eq(liveRecordings.id, id));
+    // `uploaded` y no `transcribing`: nadie esta transcribiendo todavia, y
+    // decir lo contrario dejaria una fila mintiendo para siempre.
+    expect(persisted?.status).toBe("uploaded");
+    expect(persisted?.providerRequestId).toBeNull();
+  });
 });
