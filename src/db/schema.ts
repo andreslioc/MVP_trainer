@@ -289,6 +289,10 @@ export const insights = pgTable(
       .references(() => liveRecordings.id, { onDelete: "cascade" }),
     type: insightType("type").notNull(),
     text: text("text").notNull(),
+    // Segundo del live donde ocurre, tomado de las marcas [Xs] de la
+    // transcripcion. Nulo cuando la transcripcion no las trae —la pegada a mano
+    // puede no tenerlas— o cuando el patron no se localiza en un punto.
+    atSeconds: integer("at_seconds"),
     productId: uuid("product_id").references(() => products.id, { onDelete: "set null" }),
     frequency: integer("frequency").notNull().default(1),
     promotedToQuestionId: uuid("promoted_to_question_id").references(() => trainingQuestions.id, {
@@ -301,6 +305,10 @@ export const insights = pgTable(
     index("insights_product_id_idx").on(table.productId),
     index("insights_promoted_question_id_idx").on(table.promotedToQuestionId),
     check("insights_frequency_positive", sql`${table.frequency} > 0`),
+    check(
+      "insights_at_seconds_nonnegative",
+      sql`${table.atSeconds} is null or ${table.atSeconds} >= 0`,
+    ),
   ],
 );
 
@@ -314,11 +322,17 @@ export const chatCoverage = pgTable(
     question: text("question").notNull(),
     answered: boolean("answered").notNull(),
     evidenceQuote: text("evidence_quote"),
+    /** Segundo en que la asesora la respondio. Nulo si no la respondio. */
+    atSeconds: integer("at_seconds"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("chat_coverage_recording_idx").on(table.recordingId),
     index("chat_coverage_answered_idx").on(table.recordingId, table.answered),
+    check(
+      "chat_coverage_at_seconds_nonnegative",
+      sql`${table.atSeconds} is null or ${table.atSeconds} >= 0`,
+    ),
   ],
 );
 

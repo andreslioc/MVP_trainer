@@ -117,12 +117,14 @@ describe("analyzeRecording", () => {
           text: "preguntan si el producto es original",
           product_id: productId,
           frequency: 4,
+          at_seconds: null,
         },
         {
           type: "objecion",
           text: "dudan del precio frente a otra marca",
           product_id: productId,
           frequency: 2,
+          at_seconds: null,
         },
       ],
     });
@@ -168,6 +170,7 @@ describe("analyzeRecording", () => {
           text: "varias clientas piden escribir al 3159876543 para asesoria",
           product_id: productId,
           frequency: 2,
+          at_seconds: null,
         },
       ],
     });

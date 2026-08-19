@@ -24,6 +24,7 @@ type Insight = {
   productId: string | null;
   productName: string | null;
   frequency: number;
+  atSeconds: number | null;
   promotedToQuestionId: string | null;
 };
 
@@ -32,6 +33,7 @@ type ChatCoverage = {
   question: string;
   answered: boolean;
   evidenceQuote: string | null;
+  atSeconds: number | null;
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -63,6 +65,17 @@ function duration(seconds: number | null) {
  * nombre del archivo tampoco: las descargas de un live se llaman todas igual.
  * La hora es lo unico que siempre esta y siempre desambigua.
  */
+/**
+ * Minuto y segundo del live, no segundos crudos: es como esta rotulada la barra
+ * de un reproductor, y el hallazgo existe para poder ir a ese punto del video.
+ */
+function mark(atSeconds: number | null) {
+  if (atSeconds === null) return null;
+  const minutes = Math.floor(atSeconds / 60);
+  const seconds = atSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
 function stamp(createdAt: Date) {
   return `${createdAt.toLocaleDateString("es-CO")} · ${createdAt.toLocaleTimeString("es-CO", {
     hour: "2-digit",
@@ -189,6 +202,11 @@ export function InsightsPanel({
               <li className="rounded-card border border-border bg-surface p-4" key={insight.id}>
                 <p className="text-sm font-semibold text-primary">
                   {TYPE_LABEL[insight.type] ?? insight.type} · {insight.frequency}×
+                  {mark(insight.atSeconds) ? (
+                    <span className="ml-2 tabular-nums font-normal text-fg-muted">
+                      min {mark(insight.atSeconds)}
+                    </span>
+                  ) : null}
                 </p>
                 <p className="mt-1 text-fg">{insight.text}</p>
                 {insight.productName ? (
@@ -236,7 +254,12 @@ export function InsightsPanel({
                   <div className="flex-1">
                     <p className="font-semibold">{item.question}</p>
                     {item.evidenceQuote ? (
-                      <p className="mt-1 text-xs opacity-90">Respuesta: {item.evidenceQuote}</p>
+                      <p className="mt-1 text-xs opacity-90">
+                        {mark(item.atSeconds) ? (
+                          <span className="tabular-nums">min {mark(item.atSeconds)} · </span>
+                        ) : null}
+                        Respuesta: {item.evidenceQuote}
+                      </p>
                     ) : null}
                   </div>
                 </div>

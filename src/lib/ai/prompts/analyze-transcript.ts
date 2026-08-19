@@ -85,6 +85,10 @@ Reglas obligatorias para insights:
 - Redacta cada insight en tercera persona y de forma generalizable, no como cita literal.
 - frequency es cuantas veces aparece el patron en esta transcripcion, minimo 1.
 - product_id solo se llena con un id de la lista de productos entregada; si ninguno aplica, null.
+- at_seconds es el segundo del live donde ocurre el hallazgo, copiado de la marca [Xs] de la linea
+  correspondiente de la transcripcion. Sirve para que la asesora vaya a ese punto del video. Si la
+  transcripcion no trae marcas, o el patron no se localiza en un punto concreto, null. No lo
+  estimes ni lo deduzcas del orden de las lineas: o lo lees de una marca, o es null.
 - Si la transcripcion no da para un tipo, simplemente no lo incluyas. Es preferible devolver pocos
   insights solidos a rellenar los seis tipos con material debil.
 `.trim();
@@ -93,8 +97,10 @@ export const CHAT_COVERAGE_PROMPT = `
 Cuando recibas el chat del live, tu tarea adicional es:
 1. Identifica cada pregunta real que hace un viewer en el chat (no spam, no saludos, preguntas concretas).
 2. Para cada pregunta, busca en la TRANSCRIPCION si la asesora la respondio.
-3. Si la respondio: marca answered=true y copia la frase exacta de la transcripcion como evidence_quote.
-4. Si no la respondio o la pregunta queda sin respuesta clara: marca answered=false y evidence_quote=null.
+3. Si la respondio: marca answered=true, copia la frase exacta de la transcripcion como
+   evidence_quote, y pon en at_seconds el segundo de la marca [Xs] de esa linea.
+4. Si no la respondio o la pregunta queda sin respuesta clara: marca answered=false,
+   evidence_quote=null y at_seconds=null.
 5. Usa exclusivamente lo que aparece en la transcripcion. No inventes respuestas.
 6. Si una pregunta pide informacion sobre un producto especifico, busca respuestas sobre ese producto.
 7. No redactes ni reemplaces [telefono], [correo] o [nombre] en las preguntas del chat; ya vienen

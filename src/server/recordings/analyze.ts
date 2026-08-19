@@ -90,6 +90,7 @@ export function sanitizeInsights(
     text: string;
     productId: string | null;
     frequency: number;
+    atSeconds: number | null;
   }> = [];
   let discarded = 0;
   let redacted = 0;
@@ -103,7 +104,13 @@ export function sanitizeInsights(
     }
     const productId =
       insight.product_id && allowedProductIds.has(insight.product_id) ? insight.product_id : null;
-    kept.push({ type: insight.type, text, productId, frequency: insight.frequency });
+    kept.push({
+      type: insight.type,
+      text,
+      productId,
+      frequency: insight.frequency,
+      atSeconds: insight.at_seconds,
+    });
   }
 
   return { kept, discarded, redacted };
@@ -120,6 +127,7 @@ function sanitizeChatCoverage(value: TranscriptInsights["chat_coverage"]) {
     question: string;
     answered: boolean;
     evidenceQuote: string | null;
+    atSeconds: number | null;
   }> = [];
   let discarded = 0;
   let redacted = 0;
@@ -147,6 +155,9 @@ function sanitizeChatCoverage(value: TranscriptInsights["chat_coverage"]) {
       question,
       answered: item.answered,
       evidenceQuote: evidenceQuote || null,
+      // Un segundo sin respuesta no significa nada: si no la respondio, no hay
+      // punto del video al que mandar a la asesora.
+      atSeconds: item.answered ? item.at_seconds : null,
     });
   }
 
@@ -267,6 +278,7 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
                   text: insight.text,
                   productId: insight.productId,
                   frequency: insight.frequency,
+                  atSeconds: insight.atSeconds,
                 })),
               )
               .returning();
@@ -281,6 +293,7 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
                   question: item.question,
                   answered: item.answered,
                   evidenceQuote: item.evidenceQuote,
+                  atSeconds: item.atSeconds,
                 })),
               )
               .returning();

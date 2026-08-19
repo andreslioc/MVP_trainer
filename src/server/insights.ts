@@ -59,6 +59,7 @@ export async function listInsights(recordingId: string, options: InsightsDepende
         productId: insights.productId,
         productName: products.name,
         frequency: insights.frequency,
+        atSeconds: insights.atSeconds,
         promotedToQuestionId: insights.promotedToQuestionId,
       })
       .from(insights)
@@ -241,6 +242,7 @@ export async function listChatCoverage(recordingId: string, options: InsightsDep
         question: chatCoverage.question,
         answered: chatCoverage.answered,
         evidenceQuote: chatCoverage.evidenceQuote,
+        atSeconds: chatCoverage.atSeconds,
       })
       .from(chatCoverage)
       .where(eq(chatCoverage.recordingId, recordingId));

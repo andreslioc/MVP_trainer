@@ -102,6 +102,7 @@ export const transcriptInsightsSchema = z
           text: z.string().trim().min(1),
           product_id: z.uuid().nullable(),
           frequency: z.number().int().positive(),
+          at_seconds: z.number().int().nonnegative().nullable(),
         })
         .strict(),
     ),
@@ -112,6 +113,7 @@ export const transcriptInsightsSchema = z
             question: z.string().trim().min(1),
             answered: z.boolean(),
             evidence_quote: z.string().trim().min(1).nullable(),
+            at_seconds: z.number().int().nonnegative().nullable(),
           })
           .strict(),
       )

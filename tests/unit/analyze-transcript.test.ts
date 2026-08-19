@@ -96,8 +96,20 @@ describe("sanitizeInsights", () => {
     const result = sanitizeInsights(
       {
         insights: [
-          { type: "faq", text: "preguntan por la dosis", product_id: null, frequency: 3 },
-          { type: "objecion", text: "escribir al 3001234567", product_id: null, frequency: 1 },
+          {
+            type: "faq",
+            text: "preguntan por la dosis",
+            product_id: null,
+            frequency: 3,
+            at_seconds: null,
+          },
+          {
+            type: "objecion",
+            text: "escribir al 3001234567",
+            product_id: null,
+            frequency: 1,
+            at_seconds: null,
+          },
         ],
       },
       allowed,
@@ -111,7 +123,11 @@ describe("sanitizeInsights", () => {
 
   it("descarta un insight que despues de redactar no dice nada", () => {
     const result = sanitizeInsights(
-      { insights: [{ type: "faq", text: "3001234567", product_id: null, frequency: 1 }] },
+      {
+        insights: [
+          { type: "faq", text: "3001234567", product_id: null, frequency: 1, at_seconds: null },
+        ],
+      },
       allowed,
     );
     expect(result.kept).toHaveLength(0);
@@ -128,6 +144,7 @@ describe("sanitizeInsights", () => {
             text: "preguntan si es original",
             product_id: "44444444-4444-4444-8444-444444444444",
             frequency: 2,
+            at_seconds: null,
           },
         ],
       },
@@ -145,6 +162,7 @@ describe("sanitizeInsights", () => {
             text: "preguntan por el sabor",
             product_id: "33333333-3333-4333-8333-333333333333",
             frequency: 1,
+            at_seconds: null,
           },
         ],
       },
