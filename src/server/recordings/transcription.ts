@@ -31,6 +31,8 @@ export const deepgramCallbackSchema = z
               .object({
                 speaker: z.number().int().nonnegative(),
                 transcript: z.string().trim().min(1),
+                start_time: z.number().finite().nonnegative().optional(),
+                end_time: z.number().finite().nonnegative().optional(),
               })
               .passthrough(),
           )
@@ -162,7 +164,12 @@ export async function enqueueTranscription(
 function transcriptFromPayload(payload: z.infer<typeof deepgramCallbackSchema>) {
   if (payload.results.utterances?.length) {
     return payload.results.utterances
-      .map((utterance) => `[Speaker ${utterance.speaker}] ${utterance.transcript}`)
+      .map((utterance) => {
+        const timestamp = utterance.start_time !== undefined
+          ? `[${Math.round(utterance.start_time)}s]`
+          : "";
+        return `${timestamp} [Speaker ${utterance.speaker}] ${utterance.transcript}`;
+      })
       .join("\n");
   }
   return payload.results.channels[0]?.alternatives[0]?.transcript ?? "";

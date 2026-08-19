@@ -16,11 +16,15 @@
     "utterances": [
       {
         "speaker": 0,
-        "transcript": "Hola, hoy vamos a revisar el producto."
+        "transcript": "Hola, hoy vamos a revisar el producto.",
+        "start_time": 0.4,
+        "end_time": 4.8
       },
       {
         "speaker": 1,
-        "transcript": "¿Cómo se usa?"
+        "transcript": "¿Cómo se usa?",
+        "start_time": 5.2,
+        "end_time": 7.1
       }
     ]
   }
