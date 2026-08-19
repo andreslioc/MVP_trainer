@@ -67,7 +67,7 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
       report(
         result.ok,
         result.ok
-          ? "Grabación subida y enviada a transcribir. El estado cambia cuando el proveedor responde."
+          ? "Grabación subida y comprimida. Dale «Transcribir ahora» en la lista de grabaciones."
           : result.error.message,
       );
     });

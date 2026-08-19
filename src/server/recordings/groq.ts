@@ -92,24 +92,26 @@ export async function transcribeWithGroq(
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
+
+    // El limite de segundos de audio por hora llega como 413 y NO como 429
+    // —comprobado contra la API real con un live de 2,37 h—, asi que
+    // clasificarlo por codigo de estado lo confundia con "el archivo pesa
+    // demasiado" y mandaba a comprimir algo que ya pesaba 17 MB. Lo que
+    // distingue el caso es el cuerpo, que dice cuanto se pidio contra cuanto se
+    // admite; se mira antes que el estado, en cualquier codigo.
+    const pedido = Number(/Requested\s+(\d+)/.exec(detail)?.[1] ?? 0);
+    const tope = Number(/Limit\s+(\d+)/.exec(detail)?.[1] ?? 0);
+    if (tope > 0 && pedido > tope) {
+      return {
+        ok: false as const,
+        error: {
+          code: "TOO_LONG",
+          message: `La grabación dura ${Math.round(pedido / 60)} minutos y este proveedor admite ${Math.round(tope / 60)} por hora. Usa Deepgram, que no tiene ese tope, o corta el live.`,
+        },
+      };
+    }
+
     if (response.status === 429) {
-      // Dos cosas muy distintas llegan como 429 y solo una se arregla esperando.
-      // Si la peticion POR SI SOLA excede el limite horario de audio, esperar no
-      // sirve: manana fallaria igual. Groq lo distingue en el cuerpo, diciendo
-      // cuanto pidio contra cuanto admite.
-      const excedeUnaSola = /Requested\s+(\d+)/.exec(detail);
-      const limite = /Limit\s+(\d+)/.exec(detail);
-      const pedido = excedeUnaSola ? Number(excedeUnaSola[1]) : 0;
-      const tope = limite ? Number(limite[1]) : 0;
-      if (pedido > tope && tope > 0) {
-        return {
-          ok: false as const,
-          error: {
-            code: "TOO_LONG",
-            message: `La grabación dura ${Math.round(pedido / 60)} minutos y el proveedor admite ${Math.round(tope / 60)} por petición. Córtala en partes o usa Deepgram, que no tiene ese tope.`,
-          },
-        };
-      }
       return {
         ok: false as const,
         error: {
@@ -118,6 +120,7 @@ export async function transcribeWithGroq(
         },
       };
     }
+
     return {
       ok: false as const,
       error: {

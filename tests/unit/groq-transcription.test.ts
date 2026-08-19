@@ -86,17 +86,36 @@ describe("transcribeWithGroq", () => {
       },
     };
 
+    // Llega como 413, no como 429: comprobado contra la API real. Clasificarlo
+    // por estado lo confundia con "el archivo pesa demasiado" y mandaba a
+    // comprimir un audio que ya estaba en 17 MB.
+    for (const estado of [413, 429]) {
+      const result = await transcribeWithGroq(
+        { audio: new ArrayBuffer(8), contentType: "audio/ogg" },
+        { config, fetcher: fetcherReturning(estado, cuerpo).fetcher },
+      );
+
+      expect(result.ok, `estado ${estado}`).toBe(false);
+      if (result.ok) return;
+      expect(result.error.code, `estado ${estado}`).toBe("TOO_LONG");
+      expect(result.error.message).toContain("170 minutos");
+      expect(result.error.message).toContain("120");
+      expect(result.error.message).toContain("Deepgram");
+    }
+  });
+
+  it("un 413 sin el detalle de segundos si es un problema de tamaño", async () => {
     const result = await transcribeWithGroq(
       { audio: new ArrayBuffer(8), contentType: "audio/ogg" },
-      { config, fetcher: fetcherReturning(429, cuerpo).fetcher },
+      {
+        config,
+        fetcher: fetcherReturning(413, { error: { message: "payload too large" } }).fetcher,
+      },
     );
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
-    expect(result.error.code).toBe("TOO_LONG");
-    expect(result.error.message).toContain("170 minutos");
-    expect(result.error.message).toContain("120");
-    expect(result.error.message).not.toContain("Intenta más tarde");
+    expect(result.error.code).toBe("TOO_LARGE");
   });
 
   it("si de verdad se agoto la cuota, ahi si dice que espere", async () => {
