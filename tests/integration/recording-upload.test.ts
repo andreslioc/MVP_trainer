@@ -29,6 +29,35 @@ afterAll(async () => {
   await supabaseConnection.close();
 });
 
+/** WAV de tono: comprimible de verdad, sin arrastrar un fixture binario. */
+function wav(seconds: number) {
+  const rate = 16000;
+  const frames = rate * seconds;
+  const buffer = Buffer.alloc(44 + frames * 2);
+  buffer.write("RIFF", 0);
+  buffer.writeUInt32LE(36 + frames * 2, 4);
+  buffer.write("WAVEfmt ", 8);
+  buffer.writeUInt32LE(16, 16);
+  buffer.writeUInt16LE(1, 20);
+  buffer.writeUInt16LE(1, 22);
+  buffer.writeUInt32LE(rate, 24);
+  buffer.writeUInt32LE(rate * 2, 28);
+  buffer.writeUInt16LE(2, 32);
+  buffer.writeUInt16LE(16, 34);
+  buffer.write("data", 36);
+  buffer.writeUInt32LE(frames * 2, 40);
+  for (let frame = 0; frame < frames; frame += 1) {
+    buffer.writeInt16LE(
+      Math.round(9000 * Math.sin((2 * Math.PI * 220 * frame) / rate)),
+      44 + frame * 2,
+    );
+  }
+  return buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength,
+  ) as ArrayBuffer;
+}
+
 describe("recording upload", () => {
   it("keeps the recordings bucket private with owner-scoped Storage policies", async () => {
     const buckets = await supabaseConnection.db.execute<{ id: string; public: boolean }>(sql`
@@ -122,5 +151,106 @@ describe("recording upload", () => {
       callbackToken,
       expiresAt: new Date("2026-11-16T15:00:00.000Z"),
     });
+  });
+
+  it("guarda el audio comprimido, no el original que llego", async () => {
+    // El audio de un live llega en original: dos horas rondan los 112 MB y el
+    // proveedor mas restrictivo admite 25. Lo que debe quedar en Storage —y
+    // ocupar los 90 dias de retencion— es la version comprimida.
+    const id = randomUUID();
+    const upload = vi.fn(
+      async (_path: string, _body: ArrayBuffer, _options: { contentType: string; upsert: false }) =>
+        ({ error: null }) as { error: { message: string } | null },
+    );
+    const original = wav(20);
+
+    const result = await uploadRecording(
+      {
+        file: {
+          name: "live.wav",
+          type: "audio/wav",
+          size: original.byteLength,
+          arrayBuffer: async () => original,
+        },
+      },
+      {
+        authorize: async () => ({ ok: true, data: { id: advisorId, role: "asesor" } }),
+        database: connection.db,
+        storage: {
+          upload,
+          createSignedUrl: async () => ({
+            data: { signedUrl: "https://storage.test/firmada" },
+            error: null,
+          }),
+          remove: async () => ({}),
+        },
+        bucket: "live-recordings",
+        retentionDays: 90,
+        now: () => now,
+        randomId: () => id,
+        randomToken: () => "b".repeat(64),
+        enqueue: async () => ({ ok: true as const, data: { requestId: "req" } }),
+        maxBytes: 64 * 1024,
+      },
+    );
+
+    expect(result.ok).toBe(true);
+    const [path, body, options] = upload.mock.calls[0] ?? [];
+    expect(path).toBe(`${advisorId}/${id}.ogg`);
+    expect(options.contentType).toBe("audio/ogg");
+    expect(body.byteLength).toBeLessThan(original.byteLength);
+    expect(body.byteLength).toBeLessThanOrEqual(64 * 1024);
+
+    const [persisted] = await connection.db
+      .select()
+      .from(liveRecordings)
+      .where(eq(liveRecordings.id, id));
+    // La ruta debe nombrar lo que de verdad se guardo: un .wav que contiene ogg
+    // rompe a quien lo descargue por el nombre.
+    expect(persisted?.storagePath).toBe(`${advisorId}/${id}.ogg`);
+  });
+
+  it("no toca el audio que ya viene chico: recomprimir de gratis solo degrada", async () => {
+    const id = randomUUID();
+    const upload = vi.fn(
+      async (_path: string, _body: ArrayBuffer, _options: { contentType: string; upsert: false }) =>
+        ({ error: null }) as { error: { message: string } | null },
+    );
+    const original = wav(1);
+
+    await uploadRecording(
+      {
+        file: {
+          name: "corto.wav",
+          type: "audio/wav",
+          size: original.byteLength,
+          arrayBuffer: async () => original,
+        },
+      },
+      {
+        authorize: async () => ({ ok: true, data: { id: advisorId, role: "asesor" } }),
+        database: connection.db,
+        storage: {
+          upload,
+          createSignedUrl: async () => ({
+            data: { signedUrl: "https://storage.test/firmada" },
+            error: null,
+          }),
+          remove: async () => ({}),
+        },
+        bucket: "live-recordings",
+        retentionDays: 90,
+        now: () => now,
+        randomId: () => id,
+        randomToken: () => "c".repeat(64),
+        enqueue: async () => ({ ok: true as const, data: { requestId: "req" } }),
+        maxBytes: 10 * 1024 * 1024,
+      },
+    );
+
+    const [path, body, options] = upload.mock.calls[0] ?? [];
+    expect(path).toBe(`${advisorId}/${id}.wav`);
+    expect(options.contentType).toBe("audio/wav");
+    expect(body).toBe(original);
   });
 });

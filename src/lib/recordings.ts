@@ -17,6 +17,7 @@ export const RECORDING_MIME_EXTENSIONS = {
   "audio/mp4": "m4a",
   "audio/wav": "wav",
   "audio/webm": "webm",
+  "audio/ogg": "ogg",
   "video/mp4": "mp4",
 } as const;
 
@@ -31,7 +32,7 @@ export function megabytes(bytes: number) {
 /** Devuelve el motivo por el que el archivo no sirve, o null si sirve. */
 export function recordingFileProblem(file: { type: string; size: number }) {
   if (!(file.type in RECORDING_MIME_EXTENSIONS)) {
-    return "Ese formato no se admite. Sube un mp3, m4a, wav, webm o mp4.";
+    return "Ese formato no se admite. Sube un mp3, m4a, wav, ogg, webm o mp4.";
   }
   if (file.size > MAX_RECORDING_BYTES) {
     return `El archivo pesa ${megabytes(file.size)} MB y el máximo son ${megabytes(MAX_RECORDING_BYTES)} MB. Comprime el audio o corta el live en partes.`;

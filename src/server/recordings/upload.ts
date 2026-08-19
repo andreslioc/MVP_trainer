@@ -8,6 +8,7 @@ import { liveRecordings } from "../../db/schema.ts";
 import { createAdminSupabaseClient, type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { env } from "../../lib/env.ts";
 import { MAX_RECORDING_BYTES, RECORDING_MIME_EXTENSIONS } from "../../lib/recordings.ts";
+import { compressForTranscription } from "./compress.ts";
 import { enqueueTranscription, type DeepgramConfig } from "./transcription.ts";
 
 const recordingFileSchema = z.object({
@@ -41,6 +42,7 @@ export type UploadRecordingDependencies = {
   storage?: RecordingStorage;
   bucket?: string;
   retentionDays?: number;
+  maxBytes?: number;
   now?: () => Date;
   randomId?: () => string;
   randomToken?: () => string;
@@ -86,16 +88,35 @@ export async function uploadRecording(
   const storage = options.storage ?? defaultStorage(bucket);
   const recordingId = (options.randomId ?? randomUUID)();
   const callbackToken = (options.randomToken ?? (() => randomBytes(32).toString("hex")))();
-  const storagePath = `${authorization.data.id}/${recordingId}.${RECORDING_MIME_EXTENSIONS[parsed.data.type]}`;
+  // La extension se decide despues de comprimir: una ruta .mp4 que contiene ogg
+  // es una mentira que rompe a quien lo descargue por el nombre.
+  const extension = RECORDING_MIME_EXTENSIONS[parsed.data.type];
   const createdAt = (options.now ?? (() => new Date()))();
+  let storagePath = `${authorization.data.id}/${recordingId}.${extension}`;
   const expiresAt = new Date(
     createdAt.getTime() + (options.retentionDays ?? env.RECORDING_RETENTION_DAYS) * 86_400_000,
   );
 
   try {
-    const body = (await parsed.data.arrayBuffer()) as ArrayBuffer;
+    // Comprimir aqui y no al transcribir. El audio original de un live de dos
+    // horas ronda los 112 MB y baja a 22 en 22 segundos; pagar eso una vez al
+    // subir evita repetirlo en cada transcripcion y, sobre todo, evita guardar
+    // cinco veces mas bytes durante los 90 dias de retencion. Lo que se
+    // conserva es lo unico que el producto usa: la voz.
+    const original = (await parsed.data.arrayBuffer()) as ArrayBuffer;
+    const prepared = await compressForTranscription(
+      { audio: original, contentType: parsed.data.type },
+      { maxBytes: options.maxBytes ?? env.TRANSCRIPTION_MAX_BYTES },
+    );
+    if (!prepared.ok) {
+      return { ok: false as const, error: prepared.error };
+    }
+
+    if (prepared.data.compressed) storagePath = `${authorization.data.id}/${recordingId}.ogg`;
+
+    const body = prepared.data.audio;
     const uploaded = await storage.upload(storagePath, body, {
-      contentType: parsed.data.type,
+      contentType: prepared.data.contentType,
       upsert: false,
     });
     if (uploaded.error) {

@@ -233,12 +233,26 @@ async function main(): Promise<void> {
         ? await supabase.storage.updateBucket(env.SUPABASE_RECORDINGS_BUCKET, {
             public: false,
             fileSizeLimit: 200 * 1024 * 1024,
-            allowedMimeTypes: ["audio/mpeg", "audio/mp4", "audio/wav", "audio/webm", "video/mp4"],
+            allowedMimeTypes: [
+              "audio/mpeg",
+              "audio/mp4",
+              "audio/wav",
+              "audio/ogg",
+              "audio/webm",
+              "video/mp4",
+            ],
           })
         : await supabase.storage.createBucket(env.SUPABASE_RECORDINGS_BUCKET, {
             public: false,
             fileSizeLimit: 200 * 1024 * 1024,
-            allowedMimeTypes: ["audio/mpeg", "audio/mp4", "audio/wav", "audio/webm", "video/mp4"],
+            allowedMimeTypes: [
+              "audio/mpeg",
+              "audio/mp4",
+              "audio/wav",
+              "audio/ogg",
+              "audio/webm",
+              "video/mp4",
+            ],
           });
       if (bucketResult.error) throw bucketResult.error;
     }
