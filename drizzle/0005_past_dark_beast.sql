@@ -12,13 +12,13 @@ begin
       using (
         recording_id in (
           select id from public.live_recordings
-          where advisor_id = auth.uid()::text
+          where advisor_id = (select auth.uid())
         )
       )
       with check (
         recording_id in (
           select id from public.live_recordings
-          where advisor_id = auth.uid()::text
+          where advisor_id = (select auth.uid())
         )
       );
   $sql$;

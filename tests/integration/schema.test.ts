@@ -180,4 +180,24 @@ describe("database schema", () => {
     expect(stored?.id).toBe(id);
     await connection.db.delete(advisors).where(eq(advisors.id, id));
   });
+
+  it("mantiene RLS activo en chat_coverage", async () => {
+    // Una politica sin `enable row level security` no filtra nada y no se nota:
+    // pg_policies la muestra igual. chat_coverage nacio asi —politica sin RLS—
+    // y quedo abierta a cualquier autenticado por la API de Supabase hasta que
+    // alguien lo miro. Esta prueba es lo que hace que se note.
+    //
+    // Solo se afirma sobre chat_coverage y no sobre las demas tablas privadas
+    // porque el `enable` de las otras vive dentro del guardia de rol de la
+    // migracion 0001: fuera de Supabase se salta, asi que aqui aparecen en
+    // false y afirmar lo contrario seria afirmar sobre el entorno equivocado.
+    const [row] = await connection.db.execute<{ relrowsecurity: boolean }>(sql`
+      select c.relrowsecurity
+      from pg_class as c
+      join pg_namespace as n on n.oid = c.relnamespace
+      where n.nspname = 'public' and c.relname = 'chat_coverage'
+    `);
+
+    expect(row?.relrowsecurity).toBe(true);
+  });
 });

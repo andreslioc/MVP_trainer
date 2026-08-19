@@ -107,7 +107,11 @@ export async function uploadRecording(
     const original = (await parsed.data.arrayBuffer()) as ArrayBuffer;
     const prepared = await compressForTranscription(
       { audio: original, contentType: parsed.data.type },
-      { maxBytes: options.maxBytes ?? env.TRANSCRIPTION_MAX_BYTES },
+      // bestEffort: quedarse por encima del tope no justifica rechazar la
+      // subida. El archivo comprimido ya es una fraccion del original y el
+      // proveedor vuelve a mirarlo al transcribir, que es donde el limite
+      // manda de verdad.
+      { maxBytes: options.maxBytes ?? env.TRANSCRIPTION_MAX_BYTES, bestEffort: true },
     );
     if (!prepared.ok) {
       return { ok: false as const, error: prepared.error };
@@ -121,6 +125,7 @@ export async function uploadRecording(
       upsert: false,
     });
     if (uploaded.error) {
+      console.error("[uploadRecording] Storage rechazó el archivo:", uploaded.error.message);
       return {
         ok: false as const,
         error: { code: "INTERNAL", message: "No se pudo cargar la grabación." },
@@ -142,7 +147,10 @@ export async function uploadRecording(
         .returning();
       if (!created) throw new Error("No se creó la grabación.");
       recording = created;
-    } catch {
+    } catch (error) {
+      // El objeto ya esta en Storage: si la fila no se crea hay que retirarlo o
+      // queda huerfano, sin nada que lo referencie ni lo expire.
+      console.error("[uploadRecording] no se pudo insertar la fila:", error);
       await storage.remove([storagePath]);
       throw new Error("No se creó la grabación.");
     }
@@ -216,7 +224,12 @@ export async function uploadRecording(
       )
       .returning();
     return { ok: true as const, data: updated ?? transcribing };
-  } catch {
+  } catch (error) {
+    // Un catch que descarta la causa convierte cualquier fallo en el mismo
+    // mensaje opaco, y deja la unica pista posible en la basura. El mensaje al
+    // usuario sigue siendo generico —no le sirve el detalle y puede filtrar
+    // rutas—, pero el servidor tiene que poder decir que paso.
+    console.error("[uploadRecording] fallo procesando la grabación:", error);
     return {
       ok: false as const,
       error: { code: "INTERNAL", message: "No se pudo procesar la grabación." },

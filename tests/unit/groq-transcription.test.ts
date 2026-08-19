@@ -74,16 +74,43 @@ describe("transcribeWithGroq", () => {
     expect(result.data.transcript).toBe("Hola a todas.");
   });
 
-  it("no dice 'intenta de nuevo' cuando lo que se agoto es la cuota del dia", async () => {
+  it("no manda a esperar cuando esperar no arregla nada: la grabacion es muy larga", async () => {
+    // Cuerpo real que devolvio Groq con un live de 2,83 h en el tier gratuito.
+    const cuerpo = {
+      error: {
+        message:
+          "Request too large for model `whisper-large-v3-turbo` in organization `org_x` " +
+          "service tier `on_demand` on seconds of audio per hour (ASPH): Limit 7200, " +
+          "Requested 10200, please reduce your message size and try again.",
+        code: "rate_limit_exceeded",
+      },
+    };
+
     const result = await transcribeWithGroq(
       { audio: new ArrayBuffer(8), contentType: "audio/ogg" },
-      { config, fetcher: fetcherReturning(429, { error: "rate limit" }).fetcher },
+      { config, fetcher: fetcherReturning(429, cuerpo).fetcher },
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("TOO_LONG");
+    expect(result.error.message).toContain("170 minutos");
+    expect(result.error.message).toContain("120");
+    expect(result.error.message).not.toContain("Intenta más tarde");
+  });
+
+  it("si de verdad se agoto la cuota, ahi si dice que espere", async () => {
+    const result = await transcribeWithGroq(
+      { audio: new ArrayBuffer(8), contentType: "audio/ogg" },
+      {
+        config,
+        fetcher: fetcherReturning(429, { error: { message: "rate limit reached" } }).fetcher,
+      },
     );
 
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error.code).toBe("QUOTA_EXCEEDED");
-    expect(result.error.message).toContain("mañana");
   });
 
   it("distingue el archivo demasiado grande de una caida cualquiera", async () => {

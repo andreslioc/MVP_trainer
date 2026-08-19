@@ -1,0 +1,12 @@
+-- chat_coverage quedo con su politica pero sin RLS activo.
+--
+-- Una politica sin `enable row level security` no filtra nada: la tabla estaba
+-- abierta a cualquier usuario autenticado a traves de la API de Supabase, al
+-- contrario que insights y live_recordings, que si lo tienen desde 0001. La
+-- politica se creo en 0005 y el `alter table` se quedo fuera.
+--
+-- Va aparte y no dentro del guardia de rol de 0005 a proposito: activar RLS no
+-- necesita que exista el rol `authenticated`, funciona igual sobre un Postgres
+-- puro, y por eso tambien corre en la base de pruebas — que es donde una prueba
+-- puede afirmarlo.
+alter table public.chat_coverage enable row level security;

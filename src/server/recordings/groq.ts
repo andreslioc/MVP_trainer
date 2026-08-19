@@ -90,14 +90,29 @@ export async function transcribeWithGroq(
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    // 429 en el tier gratuito es la cuota diaria de audio, no saturacion: no se
-    // arregla reintentando en un minuto y decir "intenta de nuevo" seria mentir.
     if (response.status === 429) {
+      // Dos cosas muy distintas llegan como 429 y solo una se arregla esperando.
+      // Si la peticion POR SI SOLA excede el limite horario de audio, esperar no
+      // sirve: manana fallaria igual. Groq lo distingue en el cuerpo, diciendo
+      // cuanto pidio contra cuanto admite.
+      const excedeUnaSola = /Requested\s+(\d+)/.exec(detail);
+      const limite = /Limit\s+(\d+)/.exec(detail);
+      const pedido = excedeUnaSola ? Number(excedeUnaSola[1]) : 0;
+      const tope = limite ? Number(limite[1]) : 0;
+      if (pedido > tope && tope > 0) {
+        return {
+          ok: false as const,
+          error: {
+            code: "TOO_LONG",
+            message: `La grabación dura ${Math.round(pedido / 60)} minutos y el proveedor admite ${Math.round(tope / 60)} por petición. Córtala en partes o usa Deepgram, que no tiene ese tope.`,
+          },
+        };
+      }
       return {
         ok: false as const,
         error: {
           code: "QUOTA_EXCEEDED",
-          message: "Se agotó la cuota gratuita de transcripción de hoy. Intenta mañana.",
+          message: "Se agotó la cuota gratuita de transcripción por ahora. Intenta más tarde.",
         },
       };
     }

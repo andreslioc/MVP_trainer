@@ -124,6 +124,10 @@ describe("recording upload", () => {
         randomId: () => recordingId,
         randomToken: () => callbackToken,
         enqueue,
+        // Explicito y no heredado del entorno: esta prueba describe el camino
+        // de Deepgram, y dejarla depender de TRANSCRIPTION_PROVIDER la hacia
+        // fallar en cuanto alguien configuraba Groq en su .env.local.
+        provider: "deepgram",
       },
     );
 

@@ -15,6 +15,12 @@ import { join } from "node:path";
  *
  * Esto NO abarata Deepgram, que cobra por duracion y no por peso. Existe por el
  * limite de tamano de Groq y para que la subida no muera a medio camino.
+ *
+ * `bestEffort` distingue dos usos que parecian uno solo. Al SUBIR, el objetivo
+ * es economia de almacenamiento y quedarse corto no justifica perder el
+ * archivo: 26 MB siguen siendo seis veces menos que 156, asi que se guarda lo
+ * que salga. Al TRANSCRIBIR, el tope es del proveedor y pasarse significa que
+ * la peticion sera rechazada, asi que ahi si hay que fallar y decirlo.
  */
 
 const OPUS_BITRATE = "16k";
@@ -41,6 +47,11 @@ function runFfmpeg(input: string, output: string) {
         "-ac", "1",                     // mono
         "-ar", "16000",                 // 16 kHz: lo que espera un modelo de voz
         "-c:a", "libopus", "-b:a", OPUS_BITRATE,
+        // CBR y no el VBR por defecto: medido sobre 2,8 h reales, el VBR de
+        // opus se pasa un 30% del bitrate pedido (25,9 MB donde tocaban 19,9) y
+        // eso basta para reventar un tope de 25 MB. En CBR el desvio es del 1%,
+        // asi que el tamano se puede predecir antes de encodear.
+        "-vbr", "off",
         output,
       ],
       { stdio: ["ignore", "ignore", "pipe"] },
@@ -65,7 +76,9 @@ function runFfmpeg(input: string, output: string) {
 
 export async function compressForTranscription(
   input: { audio: ArrayBuffer; contentType: string },
-  options: { maxBytes: number; run?: Runner } = { maxBytes: 25 * 1024 * 1024 },
+  options: { maxBytes: number; run?: Runner; bestEffort?: boolean } = {
+    maxBytes: 25 * 1024 * 1024,
+  },
 ): Promise<CompressResult> {
   if (input.audio.byteLength <= options.maxBytes) {
     return {
@@ -91,6 +104,7 @@ export async function compressForTranscription(
     if (!result.ok) {
       // ffmpeg ausente es un fallo de despliegue, no del archivo: en Vercel no
       // existe el binario. Distinguirlo evita culpar a la grabacion.
+      console.error("[compressForTranscription] ffmpeg:", result.stderr.slice(0, 600));
       const missing = result.stderr.includes("ENOENT");
       return {
         ok: false,
@@ -104,7 +118,7 @@ export async function compressForTranscription(
     }
 
     const compressed = await readFile(target);
-    if (compressed.byteLength > options.maxBytes) {
+    if (compressed.byteLength > options.maxBytes && !options.bestEffort) {
       return {
         ok: false,
         error: {
@@ -126,7 +140,8 @@ export async function compressForTranscription(
         bytes: compressed.byteLength,
       },
     };
-  } catch {
+  } catch (error) {
+    console.error("[compressForTranscription] fallo:", error);
     return {
       ok: false,
       error: { code: "COMPRESSION_FAILED", message: "No se pudo comprimir el audio." },
