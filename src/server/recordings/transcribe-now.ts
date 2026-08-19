@@ -5,6 +5,8 @@ import { db } from "../../db/client.ts";
 import { liveRecordings } from "../../db/schema.ts";
 import { createAdminSupabaseClient, type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { env } from "../../lib/env.ts";
+import { compressForTranscription } from "./compress.ts";
+import { transcribeWithGroq } from "./groq.ts";
 import {
   applyTranscriptionParams,
   deepgramCallbackSchema,
@@ -86,6 +88,29 @@ export async function transcribeNow(
   };
 }
 
+export type TranscribeAudio = (input: {
+  audio: ArrayBuffer;
+  contentType: string;
+}) => Promise<
+  | { ok: true; data: { transcript: string; durationS: number } }
+  | { ok: false; error: { code: string; message: string } }
+>;
+
+/**
+ * Cada proveedor declara su propio tope de tamano, y ese tope decide si hay que
+ * recomprimir. Deepgram admite 2 GB y por eso casi nunca comprime; el tier
+ * gratuito de Groq admite 25 MB y por eso casi siempre lo hace.
+ */
+function resolveProvider(): { transcribe: TranscribeAudio; maxBytes: number } {
+  if (env.TRANSCRIPTION_PROVIDER === "groq") {
+    return {
+      transcribe: (input) => transcribeWithGroq(input),
+      maxBytes: env.TRANSCRIPTION_MAX_BYTES,
+    };
+  }
+  return { transcribe: (input) => transcribeNow(input), maxBytes: 2 * 1024 * 1024 * 1024 };
+}
+
 type TranscribeDatabase = Pick<typeof db, "select" | "update">;
 type AuthorizationResult =
   | { ok: true; data: { id: string; role: AdvisorRole } }
@@ -99,7 +124,8 @@ export type TranscribeRecordingDependencies = {
   database?: TranscribeDatabase;
   storage?: TranscribeStorage;
   bucket?: string;
-  transcribe?: typeof transcribeNow;
+  transcribe?: TranscribeAudio;
+  maxBytes?: number;
   config?: TranscriptionConfig;
 };
 
@@ -206,13 +232,20 @@ export async function transcribeRecording(
     return await fail("INTERNAL", "No se pudo leer el audio guardado.");
   }
 
-  const transcribed = await (options.transcribe ?? transcribeNow)(
+  const provider = resolveProvider();
+  const compressed = await compressForTranscription(
     {
       audio: await downloaded.data.arrayBuffer(),
       contentType: downloaded.data.type || "application/octet-stream",
     },
-    { config: options.config },
+    { maxBytes: options.maxBytes ?? provider.maxBytes },
   );
+  if (!compressed.ok) return await fail(compressed.error.code, compressed.error.message);
+
+  const transcribed = await (options.transcribe ?? provider.transcribe)({
+    audio: compressed.data.audio,
+    contentType: compressed.data.contentType,
+  });
   if (!transcribed.ok) return await fail(transcribed.error.code, transcribed.error.message);
 
   const [updated] = await database
