@@ -105,6 +105,17 @@ export const transcriptInsightsSchema = z
         })
         .strict(),
     ),
+    chat_coverage: z
+      .array(
+        z
+          .object({
+            question: z.string().trim().min(1),
+            answered: z.boolean(),
+            evidence_quote: z.string().trim().min(1).nullable(),
+          })
+          .strict(),
+      )
+      .optional(),
   })
   .strict();
 

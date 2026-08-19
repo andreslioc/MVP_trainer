@@ -9,6 +9,7 @@ type Mode = "transcript" | "audio";
 export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
   const [mode, setMode] = useState<Mode>("transcript");
   const [transcript, setTranscript] = useState("");
+  const [chatLog, setChatLog] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -23,9 +24,13 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
     event.preventDefault();
     setMessage(null);
     startTransition(async () => {
-      const result = await ingestTranscriptAction({ transcript });
+      const result = await ingestTranscriptAction({
+        transcript,
+        chatLog: chatLog.trim() || undefined,
+      });
       if (result.ok) {
         setTranscript("");
+        setChatLog("");
         report(true, "Transcripción cargada. Ya puedes analizarla.");
       } else {
         report(false, result.error.message);
@@ -101,6 +106,21 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
             placeholder="[Speaker 0] Hola a todas, hoy tenemos la creatina…"
             value={transcript}
           />
+          <label className="mt-4 block text-sm font-semibold text-fg" htmlFor="chat-log">
+            Chat del live (opcional)
+          </label>
+          <p className="mt-1 text-sm text-fg-muted">
+            Pega los mensajes del chat para analizar cuáles preguntas fueron respondidas. Un mensaje
+            por línea.
+          </p>
+          <textarea
+            className="mt-2 min-h-24 w-full rounded-card border border-border-control bg-surface p-3 text-fg"
+            disabled={pending}
+            id="chat-log"
+            onChange={(event) => setChatLog(event.target.value)}
+            placeholder="usuario123: ¿es seguro en el embarazo?&#10;maria_shop: ¿cuál es el beneficio?"
+            value={chatLog}
+          />
           <button
             className="mt-3 min-h-11 rounded-card bg-primary px-5 font-semibold text-white disabled:opacity-60"
             disabled={pending || transcript.trim().length < 40}
@@ -129,8 +149,7 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
           ) : null}
           <input
             accept="audio/mpeg,audio/mp4,audio/wav,audio/webm,video/mp4"
-            className="mt-3 block w-full text-fg"
-            disabled={pending}
+            className="mt-3 block w-full cursor-pointer rounded-card border border-border-control bg-surface p-3 text-fg"
             id="recording-file"
             name="file"
             ref={fileInput}

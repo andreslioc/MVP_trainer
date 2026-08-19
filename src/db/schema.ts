@@ -257,6 +257,7 @@ export const liveRecordings = pgTable(
     storagePath: text("storage_path").notNull(),
     status: recordingStatus("status").notNull().default("uploaded"),
     transcript: text("transcript"),
+    chatLog: text("chat_log"),
     durationS: integer("duration_s"),
     providerRequestId: text("provider_request_id"),
     callbackToken: text("callback_token").notNull(),
@@ -295,6 +296,24 @@ export const insights = pgTable(
     index("insights_product_id_idx").on(table.productId),
     index("insights_promoted_question_id_idx").on(table.promotedToQuestionId),
     check("insights_frequency_positive", sql`${table.frequency} > 0`),
+  ],
+);
+
+export const chatCoverage = pgTable(
+  "chat_coverage",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    recordingId: uuid("recording_id")
+      .notNull()
+      .references(() => liveRecordings.id, { onDelete: "cascade" }),
+    question: text("question").notNull(),
+    answered: boolean("answered").notNull(),
+    evidenceQuote: text("evidence_quote"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("chat_coverage_recording_idx").on(table.recordingId),
+    index("chat_coverage_answered_idx").on(table.recordingId, table.answered),
   ],
 );
 

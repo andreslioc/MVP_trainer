@@ -135,6 +135,7 @@ describe("database schema", () => {
 
   it("preserves the required delete behavior and keeps advisors portable", async () => {
     const expected = new Map([
+      ["chat_coverage_recording_id_live_recordings_id_fk", "c"],
       ["copilot_exchanges_live_session_id_live_sessions_id_fk", "c"],
       ["copilot_exchanges_product_id_products_id_fk", "r"],
       ["insights_product_id_products_id_fk", "n"],

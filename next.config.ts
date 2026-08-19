@@ -7,6 +7,14 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: {
     "*": ["blueprints/**"],
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "250mb",
+    },
+  },
+  onDemandEntries: {
+    maxInactiveAge: 1000 * 60 * 60, // 1 hora
+  },
 };
 
 export default nextConfig;

@@ -17,10 +17,12 @@
   --warning-border: #a16207;
   --confidence-high-bg: #dcfce7;
   --confidence-high-fg: #14532d;
+  --confidence-high-border: #16a34a;
   --confidence-mid-bg: #fef9c3;
   --confidence-mid-fg: #713f12;
   --confidence-low-bg: #fee2e2;
   --confidence-low-fg: #7f1d1d;
+  --confidence-low-border: #dc2626;
   --radius: 0.75rem;
   --shadow-popover: 0 4px 12px rgb(15 23 42 / 0.08);
 

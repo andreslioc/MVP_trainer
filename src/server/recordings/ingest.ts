@@ -24,6 +24,7 @@ import { env } from "../../lib/env.ts";
 const ingestSchema = z
   .object({
     transcript: z.string().trim().min(40).max(500_000),
+    chatLog: z.string().trim().min(1).max(200_000).optional(),
     durationS: z.number().int().positive().max(86_400).optional(),
   })
   .strict();
@@ -70,6 +71,7 @@ export async function ingestTranscript(input: unknown, options: IngestDependenci
         storagePath: `manual/${randomUUID()}.txt`,
         status: "transcribed",
         transcript: parsed.data.transcript,
+        chatLog: parsed.data.chatLog ?? null,
         durationS: parsed.data.durationS ?? null,
         callbackToken: randomBytes(32).toString("hex"),
         expiresAt,

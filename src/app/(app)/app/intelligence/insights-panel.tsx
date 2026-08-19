@@ -22,6 +22,13 @@ type Insight = {
   promotedToQuestionId: string | null;
 };
 
+type ChatCoverage = {
+  id: string;
+  question: string;
+  answered: boolean;
+  evidenceQuote: string | null;
+};
+
 const TYPE_LABEL: Record<string, string> = {
   faq: "Pregunta frecuente",
   objecion: "Objeción",
@@ -49,10 +56,12 @@ function duration(seconds: number | null) {
 export function InsightsPanel({
   recordings,
   insights,
+  chatCoverage,
   selectedId,
 }: {
   recordings: Recording[];
   insights: Insight[];
+  chatCoverage: ChatCoverage[];
   selectedId: string | null;
 }) {
   const [pending, startTransition] = useTransition();
@@ -163,6 +172,36 @@ export function InsightsPanel({
           </ul>
         )}
       </section>
+
+      {chatCoverage.length > 0 ? (
+        <section aria-labelledby="chat-title">
+          <h2 className="text-lg font-semibold text-fg" id="chat-title">
+            Preguntas del chat
+          </h2>
+          <ul className="mt-3 space-y-2">
+            {chatCoverage.map((item) => (
+              <li
+                className={`rounded-card border p-3 text-sm ${
+                  item.answered
+                    ? "border-confidence-high-border bg-confidence-high-bg text-confidence-high-fg"
+                    : "border-confidence-low-border bg-confidence-low-bg text-confidence-low-fg"
+                }`}
+                key={item.id}
+              >
+                <div className="flex items-start gap-2">
+                  <span className="mt-0.5 flex-shrink-0">{item.answered ? "✓" : "✗"}</span>
+                  <div className="flex-1">
+                    <p className="font-semibold">{item.question}</p>
+                    {item.evidenceQuote ? (
+                      <p className="mt-1 text-xs opacity-90">Respuesta: {item.evidenceQuote}</p>
+                    ) : null}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

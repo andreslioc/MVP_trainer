@@ -70,7 +70,7 @@ export const ANALYZE_TRANSCRIPT_PROMPT = `
 Eres analista comercial de una tienda colombiana de suplementos que vende por TikTok Live.
 Recibes la transcripcion redactada de un live y devuelves insights accionables.
 
-Tipos permitidos, y solo estos seis:
+Tipos permitidos para insights, y solo estos seis:
 - faq: una pregunta que las clientas repiten.
 - objecion: una resistencia a comprar.
 - error: una respuesta incorrecta, incompleta o sin sustento de la asesora.
@@ -78,7 +78,7 @@ Tipos permitidos, y solo estos seis:
 - buena_practica: una explicacion que funciono y conviene repetir.
 - riesgo_claim: una afirmacion de salud que excede lo que la ficha permite.
 
-Reglas obligatorias:
+Reglas obligatorias para insights:
 - Usa exclusivamente lo que aparece en la transcripcion. No inventes preguntas que nadie hizo.
 - NUNCA copies nombres propios, telefonos, correos ni direcciones al texto de un insight.
   La transcripcion ya viene redactada; si ves ${REDACTION_TOKENS.name} o ${REDACTION_TOKENS.phone}, no los reemplaces por nada.
@@ -89,24 +89,52 @@ Reglas obligatorias:
   insights solidos a rellenar los seis tipos con material debil.
 `.trim();
 
+export const CHAT_COVERAGE_PROMPT = `
+Cuando recibas el chat del live, tu tarea adicional es:
+1. Identifica cada pregunta real que hace un viewer en el chat (no spam, no saludos, preguntas concretas).
+2. Para cada pregunta, busca en la TRANSCRIPCION si la asesora la respondio.
+3. Si la respondio: marca answered=true y copia la frase exacta de la transcripcion como evidence_quote.
+4. Si no la respondio o la pregunta queda sin respuesta clara: marca answered=false y evidence_quote=null.
+5. Usa exclusivamente lo que aparece en la transcripcion. No inventes respuestas.
+6. Si una pregunta pide informacion sobre un producto especifico, busca respuestas sobre ese producto.
+7. No redactes ni reemplaces [telefono], [correo] o [nombre] en las preguntas del chat; ya vienen
+  redactadas. Tampoco inventes un question si solo quedaron tokens.
+
+Devuelve la lista en chat_coverage, vacia si no hay preguntas reales en el chat.
+`.trim();
+
 export type AnalyzeTranscriptInput = {
   transcript: string;
+  chatLog?: string | null;
   durationS: number | null;
   products: Array<{ id: string; name: string }>;
 };
 
 export function buildAnalyzeTranscriptPrompt(input: AnalyzeTranscriptInput) {
   const catalog = input.products.map((product) => ({ id: product.id, name: product.name }));
+  const systemParts = [
+    ANALYZE_TRANSCRIPT_PROMPT,
+    input.chatLog ? CHAT_COVERAGE_PROMPT : null,
+    `\n\nPRODUCTOS DISPONIBLES:\n${JSON.stringify(catalog)}`,
+  ].filter(Boolean);
+
+  const userContentParts = [
+    `DURACION_SEGUNDOS: ${input.durationS ?? "desconocida"}`,
+    "TRANSCRIPCION REDACTADA:",
+    redactPii(input.transcript),
+  ];
+
+  if (input.chatLog) {
+    userContentParts.push("CHAT DEL LIVE:");
+    userContentParts.push(redactPii(input.chatLog));
+  }
+
   return {
-    system: `${ANALYZE_TRANSCRIPT_PROMPT}\n\nPRODUCTOS DISPONIBLES:\n${JSON.stringify(catalog)}`,
+    system: systemParts.join("\n"),
     messages: [
       {
         role: "user" as const,
-        content: [
-          `DURACION_SEGUNDOS: ${input.durationS ?? "desconocida"}`,
-          "TRANSCRIPCION REDACTADA:",
-          redactPii(input.transcript),
-        ].join("\n"),
+        content: userContentParts.join("\n"),
       },
     ],
   };

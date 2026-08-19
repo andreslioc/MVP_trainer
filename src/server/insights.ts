@@ -2,7 +2,13 @@ import { and, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../db/client.ts";
-import { insights, liveRecordings, products, trainingQuestions } from "../db/schema.ts";
+import {
+  chatCoverage,
+  insights,
+  liveRecordings,
+  products,
+  trainingQuestions,
+} from "../db/schema.ts";
 import { containsPii, redactPii } from "../lib/ai/prompts/analyze-transcript.ts";
 import { type AdvisorRole, requireRole } from "../lib/auth.ts";
 import { INTENT_BY_PROMOTABLE_TYPE, isPromotable } from "../lib/insights.ts";
@@ -198,6 +204,49 @@ export async function promoteInsight(insightId: string, options: InsightsDepende
     return {
       ok: false as const,
       error: { code: "INTERNAL", message: "No se pudo promover el hallazgo." },
+    };
+  }
+}
+
+export async function listChatCoverage(recordingId: string, options: InsightsDependencies = {}) {
+  const { authorize, database } = dependencies(options);
+  const authorization = await authorize("asesor");
+  if (!authorization.ok) return authorization;
+
+  try {
+    const [recording] = await database
+      .select({ id: liveRecordings.id })
+      .from(liveRecordings)
+      .where(
+        and(
+          eq(liveRecordings.id, recordingId),
+          eq(liveRecordings.advisorId, authorization.data.id),
+        ),
+      )
+      .limit(1);
+
+    if (!recording) {
+      return {
+        ok: false as const,
+        error: { code: "NOT_FOUND", message: "La grabación no existe." },
+      };
+    }
+
+    const rows = await database
+      .select({
+        id: chatCoverage.id,
+        question: chatCoverage.question,
+        answered: chatCoverage.answered,
+        evidenceQuote: chatCoverage.evidenceQuote,
+      })
+      .from(chatCoverage)
+      .where(eq(chatCoverage.recordingId, recordingId));
+
+    return { ok: true as const, data: rows };
+  } catch {
+    return {
+      ok: false as const,
+      error: { code: "INTERNAL", message: "No se pudieron cargar las preguntas del chat." },
     };
   }
 }

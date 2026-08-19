@@ -1,5 +1,5 @@
 import { getSession } from "../../../../lib/auth.ts";
-import { listInsights } from "../../../../server/insights.ts";
+import { listInsights, listChatCoverage } from "../../../../server/insights.ts";
 import { listAnalyzableRecordings } from "../../../../server/recordings/analyze.ts";
 import { env } from "../../../../lib/env.ts";
 import { InsightsPanel } from "./insights-panel.tsx";
@@ -24,6 +24,7 @@ export default async function IntelligencePage() {
   const rows = recordings.ok ? recordings.data : [];
   const selected = rows.find((recording) => recording.status === "analyzed") ?? null;
   const insights = selected ? await listInsights(selected.id, { authorize }) : null;
+  const chatCoverageResult = selected ? await listChatCoverage(selected.id, { authorize }) : null;
 
   return (
     <section aria-labelledby="page-title" className="max-w-6xl">
@@ -48,6 +49,7 @@ export default async function IntelligencePage() {
             <RecordingIntake callbackReady={callbackReady} />
           </div>
           <InsightsPanel
+            chatCoverage={chatCoverageResult?.ok ? chatCoverageResult.data : []}
             insights={insights?.ok ? insights.data : []}
             recordings={rows}
             selectedId={selected?.id ?? null}

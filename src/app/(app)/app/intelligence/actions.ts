@@ -19,7 +19,11 @@ export async function promoteInsightAction(insightId: string) {
   return result;
 }
 
-export async function ingestTranscriptAction(input: { transcript: string; durationS?: number }) {
+export async function ingestTranscriptAction(input: {
+  transcript: string;
+  chatLog?: string;
+  durationS?: number;
+}) {
   const result = await ingestTranscript(input);
   if (result.ok) revalidatePath("/app/intelligence");
   return result;

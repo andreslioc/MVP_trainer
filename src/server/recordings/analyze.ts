@@ -2,7 +2,7 @@ import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
-import { insights, liveRecordings, products, prompts } from "../../db/schema.ts";
+import { chatCoverage, insights, liveRecordings, products, prompts } from "../../db/schema.ts";
 import { createAiGateway } from "../../lib/ai/gateway.ts";
 import {
   buildAnalyzeTranscriptPrompt,
@@ -109,6 +109,50 @@ export function sanitizeInsights(
 }
 
 /**
+ * Sanitiza la cobertura de chat aplicando la misma lógica de redacción y descarte que sanitizeInsights.
+ * Una pregunta que contiene PII tras redactar se descarta, y una pregunta que queda vacía se descarta.
+ */
+function sanitizeChatCoverage(value: TranscriptInsights["chat_coverage"]) {
+  if (!value || !Array.isArray(value)) return { kept: [], discarded: 0, redacted: 0 };
+
+  const kept: Array<{
+    question: string;
+    answered: boolean;
+    evidenceQuote: string | null;
+  }> = [];
+  let discarded = 0;
+  let redacted = 0;
+
+  for (const item of value) {
+    const questionContainsPii = containsPii(item.question);
+    if (questionContainsPii) redacted += 1;
+
+    const question = redactPii(item.question).trim();
+    if (!hasSubstance(question)) {
+      discarded += 1;
+      continue;
+    }
+
+    const evidenceContainsPii = item.evidence_quote ? containsPii(item.evidence_quote) : false;
+    if (evidenceContainsPii) redacted += 1;
+
+    const evidenceQuote = item.evidence_quote ? redactPii(item.evidence_quote).trim() : null;
+    if (evidenceQuote && !hasSubstance(evidenceQuote)) {
+      discarded += 1;
+      continue;
+    }
+
+    kept.push({
+      question,
+      answered: item.answered,
+      evidenceQuote: evidenceQuote || null,
+    });
+  }
+
+  return { kept, discarded, redacted };
+}
+
+/**
  * Analiza una grabación transcrita y persiste sus insights.
  *
  * La transición `transcribed → analyzing` es condicional y por eso sirve de
@@ -128,6 +172,7 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
       id: liveRecordings.id,
       status: liveRecordings.status,
       transcript: liveRecordings.transcript,
+      chatLog: liveRecordings.chatLog,
       durationS: liveRecordings.durationS,
     })
     .from(liveRecordings)
@@ -185,6 +230,7 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
 
     const rendered = buildAnalyzeTranscriptPrompt({
       transcript: recording.transcript,
+      chatLog: recording.chatLog,
       durationS: recording.durationS,
       products: catalog,
     });
@@ -205,6 +251,8 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
       new Set(catalog.map((product) => product.id)),
     );
 
+    const sanitizedChat = sanitizeChatCoverage(generated.data.value.chat_coverage);
+
     const saved = await database.transaction(async (tx) => {
       const rows =
         sanitized.kept.length === 0
@@ -221,17 +269,32 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
                 })),
               )
               .returning();
+      const chatRows =
+        sanitizedChat.kept.length === 0
+          ? []
+          : await tx
+              .insert(chatCoverage)
+              .values(
+                sanitizedChat.kept.map((item) => ({
+                  recordingId: recording.id,
+                  question: item.question,
+                  answered: item.answered,
+                  evidenceQuote: item.evidenceQuote,
+                })),
+              )
+              .returning();
       await tx
         .update(liveRecordings)
         .set({ status: "analyzed" })
         .where(eq(liveRecordings.id, recording.id));
-      return rows;
+      return { insights: rows, chatCoverage: chatRows };
     });
 
     return {
       ok: true as const,
       data: {
-        insights: saved,
+        insights: saved.insights,
+        chatCoverage: saved.chatCoverage,
         discarded: sanitized.discarded,
         redacted: sanitized.redacted,
       },
