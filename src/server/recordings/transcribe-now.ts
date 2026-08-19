@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
+import { logFailure } from "../../lib/log.ts";
 import { db } from "../../db/client.ts";
 import { liveRecordings } from "../../db/schema.ts";
 import { createAdminSupabaseClient, type AdvisorRole, requireRole } from "../../lib/auth.ts";
@@ -49,7 +50,8 @@ export async function transcribeNow(
       body: input.audio,
       signal: AbortSignal.timeout(SYNC_TIMEOUT_MS),
     });
-  } catch {
+  } catch (error) {
+    logFailure("transcribeNow", error);
     return {
       ok: false as const,
       error: { code: "PROVIDER_UNAVAILABLE", message: "No se pudo transcribir la grabación." },

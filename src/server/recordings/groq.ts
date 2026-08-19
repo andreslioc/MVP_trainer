@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { env } from "../../lib/env.ts";
+import { logFailure } from "../../lib/log.ts";
 
 /**
  * Transcripcion con Groq (Whisper large-v3-turbo), API compatible con OpenAI.
@@ -81,7 +82,8 @@ export async function transcribeWithGroq(
       body: form,
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
-  } catch {
+  } catch (error) {
+    logFailure("transcribeWithGroq", error);
     return {
       ok: false as const,
       error: { code: "PROVIDER_UNAVAILABLE", message: "No se pudo transcribir la grabación." },

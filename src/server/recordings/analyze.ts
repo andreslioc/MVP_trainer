@@ -18,6 +18,7 @@ import {
 } from "../../lib/ai/structured.ts";
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { writeLlmCall } from "../llm-calls.ts";
+import { logFailure } from "../../lib/log.ts";
 
 type AnalyzeDatabase = Pick<typeof db, "select" | "update" | "transaction">;
 type AuthorizationResult =
@@ -299,7 +300,8 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
         redacted: sanitized.redacted,
       },
     };
-  } catch {
+  } catch (error) {
+    logFailure("analyzeRecording", error);
     await database
       .update(liveRecordings)
       .set({ status: "failed" })
@@ -333,7 +335,8 @@ export async function listAnalyzableRecordings(options: AnalyzeDependencies = {}
       .where(eq(liveRecordings.advisorId, authorization.data.id))
       .orderBy(desc(liveRecordings.createdAt));
     return { ok: true as const, data: rows };
-  } catch {
+  } catch (error) {
+    logFailure("listAnalyzableRecordings", error);
     return {
       ok: false as const,
       error: { code: "INTERNAL", message: "No se pudieron cargar las grabaciones." },

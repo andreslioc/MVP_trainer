@@ -1,3 +1,5 @@
+import { logFailure } from "../../lib/log.ts";
+
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -104,7 +106,7 @@ export async function compressForTranscription(
     if (!result.ok) {
       // ffmpeg ausente es un fallo de despliegue, no del archivo: en Vercel no
       // existe el binario. Distinguirlo evita culpar a la grabacion.
-      console.error("[compressForTranscription] ffmpeg:", result.stderr.slice(0, 600));
+      logFailure("compressForTranscription/ffmpeg", result.stderr.slice(0, 600));
       const missing = result.stderr.includes("ENOENT");
       return {
         ok: false,
@@ -141,7 +143,7 @@ export async function compressForTranscription(
       },
     };
   } catch (error) {
-    console.error("[compressForTranscription] fallo:", error);
+    logFailure("compressForTranscription", error);
     return {
       ok: false,
       error: { code: "COMPRESSION_FAILED", message: "No se pudo comprimir el audio." },

@@ -7,6 +7,7 @@ import { db } from "../../db/client.ts";
 import { liveRecordings } from "../../db/schema.ts";
 import { createAdminSupabaseClient, type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { env } from "../../lib/env.ts";
+import { logFailure } from "../../lib/log.ts";
 import { MAX_RECORDING_BYTES, RECORDING_MIME_EXTENSIONS } from "../../lib/recordings.ts";
 import { compressForTranscription } from "./compress.ts";
 import { enqueueTranscription, type DeepgramConfig } from "./transcription.ts";
@@ -129,7 +130,7 @@ export async function uploadRecording(
       upsert: false,
     });
     if (uploaded.error) {
-      console.error("[uploadRecording] Storage rechazó el archivo:", uploaded.error.message);
+      logFailure("uploadRecording/storage", uploaded.error.message);
       return {
         ok: false as const,
         error: { code: "INTERNAL", message: "No se pudo cargar la grabación." },
@@ -154,7 +155,7 @@ export async function uploadRecording(
     } catch (error) {
       // El objeto ya esta en Storage: si la fila no se crea hay que retirarlo o
       // queda huerfano, sin nada que lo referencie ni lo expire.
-      console.error("[uploadRecording] no se pudo insertar la fila:", error);
+      logFailure("uploadRecording/insert", error);
       await storage.remove([storagePath]);
       throw new Error("No se creó la grabación.");
     }
@@ -233,7 +234,7 @@ export async function uploadRecording(
     // mensaje opaco, y deja la unica pista posible en la basura. El mensaje al
     // usuario sigue siendo generico —no le sirve el detalle y puede filtrar
     // rutas—, pero el servidor tiene que poder decir que paso.
-    console.error("[uploadRecording] fallo procesando la grabación:", error);
+    logFailure("uploadRecording", error);
     return {
       ok: false as const,
       error: { code: "INTERNAL", message: "No se pudo procesar la grabación." },

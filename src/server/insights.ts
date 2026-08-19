@@ -12,6 +12,7 @@ import {
 import { containsPii, redactPii } from "../lib/ai/prompts/analyze-transcript.ts";
 import { type AdvisorRole, requireRole } from "../lib/auth.ts";
 import { INTENT_BY_PROMOTABLE_TYPE, isPromotable } from "../lib/insights.ts";
+import { logFailure } from "../lib/log.ts";
 
 type InsightsDatabase = Pick<typeof db, "select" | "transaction">;
 type AuthorizationResult =
@@ -71,7 +72,8 @@ export async function listInsights(recordingId: string, options: InsightsDepende
       )
       .orderBy(desc(insights.frequency));
     return { ok: true as const, data: rows };
-  } catch {
+  } catch (error) {
+    logFailure("listInsights", error);
     return {
       ok: false as const,
       error: { code: "INTERNAL", message: "No se pudieron cargar los hallazgos." },
@@ -200,7 +202,8 @@ export async function promoteInsight(insightId: string, options: InsightsDepende
 
       return { ok: true as const, data: { question, created: Boolean(inserted) } };
     });
-  } catch {
+  } catch (error) {
+    logFailure("promoteInsight", error);
     return {
       ok: false as const,
       error: { code: "INTERNAL", message: "No se pudo promover el hallazgo." },
@@ -243,7 +246,8 @@ export async function listChatCoverage(recordingId: string, options: InsightsDep
       .where(eq(chatCoverage.recordingId, recordingId));
 
     return { ok: true as const, data: rows };
-  } catch {
+  } catch (error) {
+    logFailure("listChatCoverage", error);
     return {
       ok: false as const,
       error: { code: "INTERNAL", message: "No se pudieron cargar las preguntas del chat." },

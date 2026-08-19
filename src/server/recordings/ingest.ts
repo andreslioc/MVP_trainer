@@ -6,6 +6,7 @@ import { db } from "../../db/client.ts";
 import { liveRecordings } from "../../db/schema.ts";
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { env } from "../../lib/env.ts";
+import { logFailure } from "../../lib/log.ts";
 
 /**
  * Ingesta de una transcripcion ya escrita, sin pasar por Storage ni por el
@@ -79,7 +80,8 @@ export async function ingestTranscript(input: unknown, options: IngestDependenci
       .returning();
     if (!recording) throw new Error("No se creo la grabacion.");
     return { ok: true as const, data: recording };
-  } catch {
+  } catch (error) {
+    logFailure("ingestTranscript", error);
     return {
       ok: false as const,
       error: { code: "INTERNAL", message: "No se pudo guardar la transcripción." },
