@@ -4,6 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { openDirectDatabase } from "../../src/db/client.ts";
+import type { RecordingMime } from "../../src/lib/recordings.ts";
 import { advisors, liveRecordings } from "../../src/db/schema.ts";
 import { uploadRecording } from "../../src/server/recordings/upload.ts";
 
@@ -28,6 +29,29 @@ afterAll(async () => {
   await connection.close();
   await supabaseConnection.close();
 });
+
+/**
+ * Doble fiel de un File del navegador.
+ *
+ * `File.arrayBuffer` es un metodo de Blob y exige que `this` sea el Blob. Un
+ * doble escrito como `arrayBuffer: async () => bytes` no lo exige, y por eso
+ * dejaba pasar codigo que invocaba el metodo desacoplado del objeto: en pruebas
+ * funcionaba y contra un File real fallaba con ERR_INVALID_THIS.
+ */
+function fileLike<T extends RecordingMime>(bytes: ArrayBuffer, type: T, name: string) {
+  const file = {
+    name,
+    type,
+    size: bytes.byteLength,
+    arrayBuffer(this: unknown) {
+      if (this !== file) {
+        throw new TypeError('Value of "this" must be of type Blob');
+      }
+      return Promise.resolve(bytes);
+    },
+  };
+  return file;
+}
 
 /** WAV de tono: comprimible de verdad, sin arrastrar un fixture binario. */
 function wav(seconds: number) {
@@ -104,12 +128,7 @@ describe("recording upload", () => {
 
     const result = await uploadRecording(
       {
-        file: {
-          name: "live.mp3",
-          type: "audio/mpeg",
-          size: fileBytes.byteLength,
-          arrayBuffer: async () => fileBytes,
-        },
+        file: fileLike(fileBytes, "audio/mpeg", "live.mp3"),
       },
       {
         authorize: async () => ({
@@ -170,12 +189,7 @@ describe("recording upload", () => {
 
     const result = await uploadRecording(
       {
-        file: {
-          name: "live.wav",
-          type: "audio/wav",
-          size: original.byteLength,
-          arrayBuffer: async () => original,
-        },
+        file: fileLike(original, "audio/wav", "live.wav"),
       },
       {
         authorize: async () => ({ ok: true, data: { id: advisorId, role: "asesor" } }),
@@ -224,12 +238,7 @@ describe("recording upload", () => {
 
     await uploadRecording(
       {
-        file: {
-          name: "corto.wav",
-          type: "audio/wav",
-          size: original.byteLength,
-          arrayBuffer: async () => original,
-        },
+        file: fileLike(original, "audio/wav", "corto.wav"),
       },
       {
         authorize: async () => ({ ok: true, data: { id: advisorId, role: "asesor" } }),
@@ -268,12 +277,7 @@ describe("recording upload", () => {
 
     const result = await uploadRecording(
       {
-        file: {
-          name: "live.wav",
-          type: "audio/wav",
-          size: wav(1).byteLength,
-          arrayBuffer: async () => wav(1),
-        },
+        file: fileLike(wav(1), "audio/wav", "live.wav"),
       },
       {
         authorize: async () => ({ ok: true, data: { id: advisorId, role: "asesor" } }),

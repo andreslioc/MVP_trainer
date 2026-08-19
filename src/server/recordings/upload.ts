@@ -104,7 +104,11 @@ export async function uploadRecording(
     // subir evita repetirlo en cada transcripcion y, sobre todo, evita guardar
     // cinco veces mas bytes durante los 90 dias de retencion. Lo que se
     // conserva es lo unico que el producto usa: la voz.
-    const original = (await parsed.data.arrayBuffer()) as ArrayBuffer;
+    // Se leen los bytes del File ORIGINAL, no del objeto que construye Zod.
+    // `File.arrayBuffer` exige que `this` sea el Blob; invocarlo desde la copia
+    // parseada lo desacopla y Node responde ERR_INVALID_THIS. La validacion
+    // sigue viniendo de `parsed`, que es para lo que existe.
+    const original = (await input.file.arrayBuffer()) as ArrayBuffer;
     const prepared = await compressForTranscription(
       { audio: original, contentType: parsed.data.type },
       // bestEffort: quedarse por encima del tope no justifica rechazar la
