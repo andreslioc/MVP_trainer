@@ -173,6 +173,10 @@ export async function uploadRecording(
           storagePath,
           title: parsedTitle.data ?? null,
           chatLog: parsedChatLog.data ?? null,
+          // Medida al comprimir. Sin esto la lista dice "duración desconocida"
+          // hasta que alguien transcribe, y no hay con que decidir que proveedor
+          // aguanta el archivo.
+          durationS: prepared.data.durationS,
           callbackToken,
           createdAt,
           expiresAt,

@@ -7,7 +7,7 @@ import { liveRecordings } from "../../db/schema.ts";
 import { createAdminSupabaseClient, type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { env } from "../../lib/env.ts";
 import { compressForTranscription } from "./compress.ts";
-import { transcribeWithGroq } from "./groq.ts";
+import { GROQ_MAX_AUDIO_SECONDS, transcribeWithGroq } from "./groq.ts";
 import {
   applyTranscriptionParams,
   deepgramCallbackSchema,
@@ -103,14 +103,42 @@ export type TranscribeAudio = (input: {
  * recomprimir. Deepgram admite 2 GB y por eso casi nunca comprime; el tier
  * gratuito de Groq admite 25 MB y por eso casi siempre lo hace.
  */
-function resolveProvider(): { transcribe: TranscribeAudio; maxBytes: number } {
-  if (env.TRANSCRIPTION_PROVIDER === "groq") {
-    return {
-      transcribe: (input) => transcribeWithGroq(input),
-      maxBytes: env.TRANSCRIPTION_MAX_BYTES,
-    };
+const DEEPGRAM = {
+  nombre: "deepgram" as const,
+  transcribe: (input: Parameters<TranscribeAudio>[0]) => transcribeNow(input),
+  maxBytes: 2 * 1024 * 1024 * 1024,
+};
+
+/**
+ * Elige proveedor por duracion, no solo por configuracion.
+ *
+ * El tier gratuito de Groq admite 7.200 segundos de audio por hora de reloj, y
+ * un live de dos horas y media los pasa. Como el limite es por ventana y no por
+ * peticion, trocear no lo esquiva: los segundos se gastan igual. Con Groq
+ * configurado y una grabacion que no le cabe, se usa Deepgram —que no tiene ese
+ * tope y ya esta pagado— en vez de fallar. Lo gratis cubre los lives cortos y el
+ * credito se gasta solo en los que lo necesitan.
+ *
+ * Si la duracion no se pudo medir se intenta con Groq igual: fallara con un
+ * mensaje claro, que es mejor que gastar credito por una sospecha.
+ */
+export function resolveProvider(durationS: number | null) {
+  if (env.TRANSCRIPTION_PROVIDER !== "groq") return DEEPGRAM;
+
+  const noLeCabe = durationS !== null && durationS > GROQ_MAX_AUDIO_SECONDS;
+  if (noLeCabe && env.DEEPGRAM_API_KEY) {
+    logFailure(
+      "transcribeRecording",
+      `grabación de ${Math.round(durationS / 60)} min: excede los ${GROQ_MAX_AUDIO_SECONDS / 60} min de Groq, se usa Deepgram`,
+    );
+    return DEEPGRAM;
   }
-  return { transcribe: (input) => transcribeNow(input), maxBytes: 2 * 1024 * 1024 * 1024 };
+
+  return {
+    nombre: "groq" as const,
+    transcribe: (input: Parameters<TranscribeAudio>[0]) => transcribeWithGroq(input),
+    maxBytes: env.TRANSCRIPTION_MAX_BYTES,
+  };
 }
 
 type TranscribeDatabase = Pick<typeof db, "select" | "update">;
@@ -174,6 +202,7 @@ export async function transcribeRecording(
       id: liveRecordings.id,
       status: liveRecordings.status,
       storagePath: liveRecordings.storagePath,
+      durationS: liveRecordings.durationS,
     })
     .from(liveRecordings)
     .where(
@@ -234,7 +263,7 @@ export async function transcribeRecording(
     return await fail("INTERNAL", "No se pudo leer el audio guardado.");
   }
 
-  const provider = resolveProvider();
+  const provider = resolveProvider(recording.durationS);
   const compressed = await compressForTranscription(
     {
       audio: await downloaded.data.arrayBuffer(),

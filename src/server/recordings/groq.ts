@@ -18,6 +18,13 @@ import { logFailure } from "../../lib/log.ts";
 
 const REQUEST_TIMEOUT_MS = 600_000;
 
+/**
+ * Segundos de audio que el tier gratuito admite por hora de reloj. Verificado
+ * contra la API: un live de 8.523 s devuelve 413 con "Limit 7200". No es por
+ * peticion sino por ventana, asi que trocear no lo esquiva.
+ */
+export const GROQ_MAX_AUDIO_SECONDS = 7200;
+
 const groqResponseSchema = z.object({
   text: z.string(),
   duration: z.number().finite().nonnegative().optional(),

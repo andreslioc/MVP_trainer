@@ -31,11 +31,46 @@ const COMPRESS_TIMEOUT_MS = 600_000;
 export type CompressResult =
   | {
       ok: true;
-      data: { audio: ArrayBuffer; contentType: string; compressed: boolean; bytes: number };
+      data: {
+        audio: ArrayBuffer;
+        contentType: string;
+        compressed: boolean;
+        bytes: number;
+        /** Nulo solo si ffprobe no pudo leer el archivo. */
+        durationS: number | null;
+      };
     }
   | { ok: false; error: { code: string; message: string } };
 
 type Runner = (input: string, output: string) => Promise<{ ok: boolean; stderr: string }>;
+type Prober = (input: string) => Promise<number | null>;
+
+/**
+ * Duracion en segundos, medida y no estimada.
+ *
+ * Se mide aqui porque este es el unico punto donde el audio ya esta en disco, y
+ * porque la duracion decide cosas antes de transcribir: que proveedor aguanta el
+ * archivo, y que ve la asesora en la lista mientras espera. Deducirla del peso y
+ * el bitrate seria adivinar.
+ */
+function runFfprobe(input: string) {
+  return new Promise<number | null>((resolve) => {
+    const child = spawn(
+      "ffprobe",
+      ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", input],
+      { stdio: ["ignore", "pipe", "ignore"] },
+    );
+    let out = "";
+    child.stdout?.on("data", (chunk) => {
+      out += String(chunk);
+    });
+    child.on("error", () => resolve(null));
+    child.on("close", () => {
+      const seconds = Number.parseFloat(out.trim());
+      resolve(Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds) : null);
+    });
+  });
+}
 
 function runFfmpeg(input: string, output: string) {
   return new Promise<{ ok: boolean; stderr: string }>((resolve) => {
@@ -78,28 +113,31 @@ function runFfmpeg(input: string, output: string) {
 
 export async function compressForTranscription(
   input: { audio: ArrayBuffer; contentType: string },
-  options: { maxBytes: number; run?: Runner; bestEffort?: boolean } = {
+  options: { maxBytes: number; run?: Runner; probe?: Prober; bestEffort?: boolean } = {
     maxBytes: 25 * 1024 * 1024,
   },
 ): Promise<CompressResult> {
-  if (input.audio.byteLength <= options.maxBytes) {
-    return {
-      ok: true,
-      data: {
-        audio: input.audio,
-        contentType: input.contentType,
-        compressed: false,
-        bytes: input.audio.byteLength,
-      },
-    };
-  }
-
   let directory: string | undefined;
   try {
     directory = await mkdtemp(join(tmpdir(), "super-store-audio-"));
     const source = join(directory, `${randomUUID()}.src`);
     const target = join(directory, `${randomUUID()}.ogg`);
     await writeFile(source, Buffer.from(input.audio));
+
+    const durationS = await (options.probe ?? runFfprobe)(source);
+
+    if (input.audio.byteLength <= options.maxBytes) {
+      return {
+        ok: true,
+        data: {
+          audio: input.audio,
+          contentType: input.contentType,
+          compressed: false,
+          bytes: input.audio.byteLength,
+          durationS,
+        },
+      };
+    }
 
     const run = options.run ?? runFfmpeg;
     const result = await run(source, target);
@@ -140,6 +178,7 @@ export async function compressForTranscription(
         contentType: "audio/ogg",
         compressed: true,
         bytes: compressed.byteLength,
+        durationS,
       },
     };
   } catch (error) {
