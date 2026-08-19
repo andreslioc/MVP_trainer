@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { isPromotable, notPromotableReason } from "../../../../lib/insights.ts";
@@ -138,7 +139,12 @@ export function InsightsPanel({
         ) : (
           <ul className="mt-3 space-y-3">
             {recordings.map((recording) => (
-              <li className="rounded-card border border-border bg-surface p-4" key={recording.id}>
+              <li
+                className={`rounded-card border bg-surface p-4 ${
+                  recording.id === selectedId ? "border-primary" : "border-border"
+                }`}
+                key={recording.id}
+              >
                 {recording.title ? (
                   <p className="font-semibold text-fg">{recording.title}</p>
                 ) : null}
@@ -163,6 +169,17 @@ export function InsightsPanel({
                   >
                     {pending ? "Transcribiendo…" : "Transcribir ahora"}
                   </button>
+                ) : null}
+                {recording.status === "analyzed" && recording.id !== selectedId ? (
+                  <Link
+                    className="mt-3 inline-block min-h-11 rounded-card border border-primary px-3 py-2 text-sm font-semibold text-primary"
+                    href={`/app/intelligence?grabacion=${recording.id}`}
+                  >
+                    Ver hallazgos
+                  </Link>
+                ) : null}
+                {recording.status === "analyzed" && recording.id === selectedId ? (
+                  <p className="mt-3 text-sm font-semibold text-primary">Viendo sus hallazgos</p>
                 ) : null}
                 {recording.status === "transcribed" ? (
                   <button
