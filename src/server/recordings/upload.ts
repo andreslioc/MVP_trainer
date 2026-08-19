@@ -7,20 +7,12 @@ import { db } from "../../db/client.ts";
 import { liveRecordings } from "../../db/schema.ts";
 import { createAdminSupabaseClient, type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { env } from "../../lib/env.ts";
+import { MAX_RECORDING_BYTES, RECORDING_MIME_EXTENSIONS } from "../../lib/recordings.ts";
 import { enqueueTranscription, type DeepgramConfig } from "./transcription.ts";
-
-const MAX_RECORDING_BYTES = 200 * 1024 * 1024;
-const mimeExtensions = {
-  "audio/mpeg": "mp3",
-  "audio/mp4": "m4a",
-  "audio/wav": "wav",
-  "audio/webm": "webm",
-  "video/mp4": "mp4",
-} as const;
 
 const recordingFileSchema = z.object({
   name: z.string().trim().min(1),
-  type: z.enum(Object.keys(mimeExtensions) as [keyof typeof mimeExtensions]),
+  type: z.enum(Object.keys(RECORDING_MIME_EXTENSIONS) as [keyof typeof RECORDING_MIME_EXTENSIONS]),
   size: z.number().int().positive().max(MAX_RECORDING_BYTES),
   arrayBuffer: z.function(),
 });
@@ -94,7 +86,7 @@ export async function uploadRecording(
   const storage = options.storage ?? defaultStorage(bucket);
   const recordingId = (options.randomId ?? randomUUID)();
   const callbackToken = (options.randomToken ?? (() => randomBytes(32).toString("hex")))();
-  const storagePath = `${authorization.data.id}/${recordingId}.${mimeExtensions[parsed.data.type]}`;
+  const storagePath = `${authorization.data.id}/${recordingId}.${RECORDING_MIME_EXTENSIONS[parsed.data.type]}`;
   const createdAt = (options.now ?? (() => new Date()))();
   const expiresAt = new Date(
     createdAt.getTime() + (options.retentionDays ?? env.RECORDING_RETENTION_DAYS) * 86_400_000,

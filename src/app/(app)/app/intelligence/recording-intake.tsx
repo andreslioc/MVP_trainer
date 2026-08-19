@@ -2,6 +2,12 @@
 
 import { useRef, useState, useTransition } from "react";
 
+import {
+  megabytes,
+  MAX_RECORDING_BYTES,
+  RECORDING_ACCEPT,
+  recordingFileProblem,
+} from "../../../../lib/recordings.ts";
 import { ingestTranscriptAction, uploadRecordingAction } from "./actions.ts";
 
 type Mode = "transcript" | "audio";
@@ -44,6 +50,14 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
     const file = fileInput.current?.files?.[0];
     if (!file) {
       report(false, "Selecciona un archivo.");
+      return;
+    }
+    // Rechazar aqui y no en el servidor: un cuerpo que excede el tope de la
+    // server action se corta a medias y falla con un error de multipart que no
+    // dice nada sobre el tamano.
+    const problem = recordingFileProblem(file);
+    if (problem) {
+      report(false, problem);
       return;
     }
     const data = new FormData();
@@ -135,7 +149,8 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
             Grabación descargada del live
           </label>
           <p className="mt-1 text-sm text-fg-muted">
-            mp3, m4a, wav, webm o mp4, hasta 200 MB. Se guarda en un bucket privado bajo tu usuario.
+            mp3, m4a, wav, webm o mp4, hasta {megabytes(MAX_RECORDING_BYTES)} MB. Se guarda en un
+            bucket privado bajo tu usuario.
           </p>
           {!callbackReady ? (
             <p
@@ -148,7 +163,7 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
             </p>
           ) : null}
           <input
-            accept="audio/mpeg,audio/mp4,audio/wav,audio/webm,video/mp4"
+            accept={RECORDING_ACCEPT}
             className="mt-3 block w-full cursor-pointer rounded-card border border-border-control bg-surface p-3 text-fg"
             id="recording-file"
             name="file"
