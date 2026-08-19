@@ -148,6 +148,7 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
             placeholder="[Speaker 0] Hola a todas, hoy tenemos la creatina…"
             value={transcript}
           />
+          {nameField("title-transcript")}
           <ChatLogField disabled={pending} id="chat-log" onChange={setChatLog} value={chatLog} />
           <button
             className="mt-3 min-h-11 rounded-card bg-primary px-5 font-semibold text-white disabled:opacity-60"
