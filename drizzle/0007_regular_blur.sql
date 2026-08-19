@@ -1,0 +1,1 @@
+ALTER TABLE "live_recordings" ADD COLUMN "title" text;

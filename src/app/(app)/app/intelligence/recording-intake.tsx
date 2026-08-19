@@ -17,6 +17,7 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
   const [mode, setMode] = useState<Mode>("transcript");
   const [transcript, setTranscript] = useState("");
   const [chatLog, setChatLog] = useState("");
+  const [title, setTitle] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -34,10 +35,12 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
       const result = await ingestTranscriptAction({
         transcript,
         chatLog: chatLog.trim() || undefined,
+        title: title.trim() || undefined,
       });
       if (result.ok) {
         setTranscript("");
         setChatLog("");
+        setTitle("");
         report(true, "Transcripción cargada. Ya puedes analizarla.");
       } else {
         report(false, result.error.message);
@@ -64,9 +67,13 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
     const data = new FormData();
     data.set("file", file);
     if (chatLog.trim()) data.set("chatLog", chatLog.trim());
+    if (title.trim()) data.set("title", title.trim());
     startTransition(async () => {
       const result = await uploadRecordingAction(data);
-      if (result.ok) setChatLog("");
+      if (result.ok) {
+        setChatLog("");
+        setTitle("");
+      }
       report(
         result.ok,
         result.ok
@@ -75,6 +82,24 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
       );
     });
   }
+
+  const nameField = (id: string) => (
+    <>
+      <label className="mt-4 block text-sm font-semibold text-fg" htmlFor={id}>
+        Nombre del live (opcional)
+      </label>
+      <input
+        className="mt-2 w-full rounded-card border border-border-control bg-surface p-3 text-fg"
+        disabled={pending}
+        id={id}
+        maxLength={120}
+        onChange={(event) => setTitle(event.target.value)}
+        placeholder="Live de creatina, martes por la tarde"
+        type="text"
+        value={title}
+      />
+    </>
+  );
 
   return (
     <section
@@ -160,6 +185,7 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
             ref={fileInput}
             type="file"
           />
+          {nameField("title-audio")}
           <ChatLogField
             disabled={pending}
             id="chat-log-audio"

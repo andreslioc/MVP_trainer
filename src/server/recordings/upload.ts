@@ -20,6 +20,7 @@ const recordingFileSchema = z.object({
 });
 
 const chatLogSchema = z.string().trim().min(1).max(200_000).optional();
+const titleSchema = z.string().trim().min(1).max(120).optional();
 
 type RecordingFile = z.infer<typeof recordingFileSchema>;
 type RecordingDatabase = Pick<typeof db, "insert" | "update">;
@@ -64,7 +65,7 @@ function defaultStorage(bucket: string): RecordingStorage {
 }
 
 export async function uploadRecording(
-  input: { file: RecordingFile; chatLog?: string },
+  input: { file: RecordingFile; chatLog?: string; title?: string },
   options: UploadRecordingDependencies = {},
 ) {
   const authorization = await (options.authorize ?? requireRole)("asesor");
@@ -81,6 +82,14 @@ export async function uploadRecording(
         message: "El chat del live es demasiado largo.",
         field: "chatLog",
       },
+    };
+  }
+
+  const parsedTitle = titleSchema.safeParse(input.title);
+  if (!parsedTitle.success) {
+    return {
+      ok: false as const,
+      error: { code: "VALIDATION", message: "El nombre es demasiado largo.", field: "title" },
     };
   }
 
@@ -162,6 +171,7 @@ export async function uploadRecording(
           id: recordingId,
           advisorId: authorization.data.id,
           storagePath,
+          title: parsedTitle.data ?? null,
           chatLog: parsedChatLog.data ?? null,
           callbackToken,
           createdAt,

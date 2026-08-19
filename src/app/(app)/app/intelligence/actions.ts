@@ -29,6 +29,7 @@ export async function promoteInsightAction(insightId: string) {
 export async function ingestTranscriptAction(input: {
   transcript: string;
   chatLog?: string;
+  title?: string;
   durationS?: number;
 }) {
   const result = await ingestTranscript(input);
@@ -48,9 +49,11 @@ export async function uploadRecordingAction(formData: FormData) {
   // Zod; aqui solo cruzamos el borde de FormData, donde el tipo MIME llega como
   // string. La validacion real sigue estando del lado del servidor.
   const chatLog = formData.get("chatLog");
+  const title = formData.get("title");
   const result = await uploadRecording({
     file: file as unknown as Parameters<typeof uploadRecording>[0]["file"],
     chatLog: typeof chatLog === "string" && chatLog.trim() ? chatLog : undefined,
+    title: typeof title === "string" && title.trim() ? title : undefined,
   });
   if (result.ok) revalidatePath("/app/intelligence");
   return result;

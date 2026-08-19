@@ -26,6 +26,7 @@ const ingestSchema = z
   .object({
     transcript: z.string().trim().min(40).max(500_000),
     chatLog: z.string().trim().min(1).max(200_000).optional(),
+    title: z.string().trim().min(1).max(120).optional(),
     durationS: z.number().int().positive().max(86_400).optional(),
   })
   .strict();
@@ -71,6 +72,7 @@ export async function ingestTranscript(input: unknown, options: IngestDependenci
         // No hay objeto en Storage: la ruta lo dice en vez de fingir una.
         storagePath: `manual/${randomUUID()}.txt`,
         status: "transcribed",
+        title: parsed.data.title ?? null,
         transcript: parsed.data.transcript,
         chatLog: parsed.data.chatLog ?? null,
         durationS: parsed.data.durationS ?? null,

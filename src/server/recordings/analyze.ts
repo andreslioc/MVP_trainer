@@ -327,6 +327,7 @@ export async function listAnalyzableRecordings(options: AnalyzeDependencies = {}
     const rows = await database
       .select({
         id: liveRecordings.id,
+        title: liveRecordings.title,
         status: liveRecordings.status,
         durationS: liveRecordings.durationS,
         createdAt: liveRecordings.createdAt,

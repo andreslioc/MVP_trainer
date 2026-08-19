@@ -11,6 +11,7 @@ import {
 
 type Recording = {
   id: string;
+  title: string | null;
   status: string;
   durationS: number | null;
   createdAt: Date;
@@ -55,6 +56,18 @@ function duration(seconds: number | null) {
   if (seconds === null) return "duración desconocida";
   const minutes = Math.floor(seconds / 60);
   return `${minutes} min`;
+}
+
+/**
+ * Con varias grabaciones del mismo dia la fecha sola no distingue nada, y el
+ * nombre del archivo tampoco: las descargas de un live se llaman todas igual.
+ * La hora es lo unico que siempre esta y siempre desambigua.
+ */
+function stamp(createdAt: Date) {
+  return `${createdAt.toLocaleDateString("es-CO")} · ${createdAt.toLocaleTimeString("es-CO", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
 }
 
 export function InsightsPanel({
@@ -113,9 +126,15 @@ export function InsightsPanel({
           <ul className="mt-3 space-y-3">
             {recordings.map((recording) => (
               <li className="rounded-card border border-border bg-surface p-4" key={recording.id}>
-                <p className="font-semibold text-fg">
-                  {recording.createdAt.toLocaleDateString("es-CO")} ·{" "}
-                  {duration(recording.durationS)}
+                {recording.title ? (
+                  <p className="font-semibold text-fg">{recording.title}</p>
+                ) : null}
+                <p
+                  className={
+                    recording.title ? "mt-1 text-sm text-fg-muted" : "font-semibold text-fg"
+                  }
+                >
+                  {stamp(recording.createdAt)} · {duration(recording.durationS)}
                 </p>
                 <p className="mt-1 text-sm text-fg-muted">
                   {STATUS_LABEL[recording.status] ?? recording.status}

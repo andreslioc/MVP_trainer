@@ -255,6 +255,11 @@ export const liveRecordings = pgTable(
       .notNull()
       .references(() => advisors.id, { onDelete: "cascade" }),
     storagePath: text("storage_path").notNull(),
+    // Como la asesora reconoce este live entre los demas. El nombre del archivo
+    // no sirve: las descargas de TikTok se llaman todas igual y lo que distingue
+    // esta en la carpeta, que el navegador no ve. Nulo cuando no lo escribio, y
+    // entonces la fecha y la hora hacen de identificador.
+    title: text("title"),
     status: recordingStatus("status").notNull().default("uploaded"),
     transcript: text("transcript"),
     chatLog: text("chat_log"),

@@ -376,4 +376,60 @@ describe("recording upload", () => {
       .where(eq(liveRecordings.id, id));
     expect(persisted?.chatLog).toBeNull();
   });
+
+  it("guarda el nombre con que la asesora reconoce el live", async () => {
+    const id = randomUUID();
+    const result = await uploadRecording(
+      { file: fileLike(wav(1), "audio/wav", "live.wav"), title: "Live de creatina, martes" },
+      {
+        authorize: async () => ({ ok: true, data: { id: advisorId, role: "asesor" } }),
+        database: connection.db,
+        storage: {
+          upload: async () => ({ error: null }),
+          createSignedUrl: async () => ({ data: { signedUrl: "x" }, error: null }),
+          remove: async () => ({}),
+        },
+        bucket: "live-recordings",
+        retentionDays: 90,
+        now: () => now,
+        randomId: () => id,
+        randomToken: () => "g".repeat(64),
+        enqueue: async () => ({ ok: true as const, data: { requestId: "r" } }),
+        provider: "groq",
+      },
+    );
+
+    expect(result.ok).toBe(true);
+    const [persisted] = await connection.db
+      .select()
+      .from(liveRecordings)
+      .where(eq(liveRecordings.id, id));
+    expect(persisted?.title).toBe("Live de creatina, martes");
+  });
+
+  it("rechaza un nombre desmedido sin perder nada mas", async () => {
+    const result = await uploadRecording(
+      { file: fileLike(wav(1), "audio/wav", "live.wav"), title: "x".repeat(200) },
+      {
+        authorize: async () => ({ ok: true, data: { id: advisorId, role: "asesor" } }),
+        database: connection.db,
+        storage: {
+          upload: async () => ({ error: null }),
+          createSignedUrl: async () => ({ data: { signedUrl: "x" }, error: null }),
+          remove: async () => ({}),
+        },
+        bucket: "live-recordings",
+        retentionDays: 90,
+        now: () => now,
+        randomId: () => randomUUID(),
+        randomToken: () => "h".repeat(64),
+        enqueue: async () => ({ ok: true as const, data: { requestId: "r" } }),
+        provider: "groq",
+      },
+    );
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("VALIDATION");
+  });
 });
