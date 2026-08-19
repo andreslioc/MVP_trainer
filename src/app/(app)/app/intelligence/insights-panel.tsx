@@ -174,6 +174,10 @@ export function InsightsPanel({
                   <Link
                     className="mt-3 inline-block min-h-11 rounded-card border border-primary px-3 py-2 text-sm font-semibold text-primary"
                     href={`/app/intelligence?grabacion=${recording.id}`}
+                    // Sin esto Next sube al inicio al navegar. La lista de
+                    // grabaciones vive por debajo del pliegue, asi que elegir una
+                    // te sacaba del sitio donde estabas mirando.
+                    scroll={false}
                   >
                     Ver hallazgos
                   </Link>
