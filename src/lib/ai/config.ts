@@ -34,18 +34,43 @@ export type ModelPricing = {
   cacheWrite: number;
 };
 
-const FREE = Object.freeze({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0 });
-
 /**
- * USD por millon de tokens.
+ * USD por millon de tokens. Precios de lista del proveedor.
  *
- * En cero porque este despliegue corre contra el tier gratuito del proveedor. La
- * tabla se conserva —y `llm_calls` sigue registrando cada token— porque el dia
- * que se pase a un plan pago el unico cambio es esta tabla, y el historico de
- * consumo ya existe para estimar la factura antes de recibirla. Un costo de 0
- * registrado no es lo mismo que no registrar el costo.
+ * Fuente: https://ai.google.dev/gemini-api/docs/pricing, consultada el
+ * 19-ago-2026. Cuando cambien, se cambian aqui y en ningun otro lado.
+ *
+ * La tabla se indexa por **id de modelo**, no por `AI_MODELS.default`. Antes se
+ * construia con la llave del env apuntando a cero, asi que mover
+ * `AI_MODEL_DEFAULT` dejaba la tabla alineada por accidente y siempre en cero.
+ * Con un catalogo por id, cambiar de modelo trae su precio real, y un modelo que
+ * no este aqui cae al cero del gateway — que es visible en `llm_calls` porque el
+ * consumo de tokens si queda registrado.
+ *
+ * `cost_usd` pasa a significar **precio de lista de lo consumido**, no lo
+ * facturado. Sobre el tier gratuito no te cobran, pero el ledger ya te dice
+ * cuanto costaria ese mismo uso pagando, que es justo lo que hace falta para
+ * estimar la factura antes de recibirla.
+ *
+ * Dos cosas que esta tabla NO modela:
+ *
+ * - **`input` es el precio del TEXTO.** El audio cuesta entre el doble y el
+ *   triple (flash-lite: $0.25 texto contra $0.50 audio). Hoy da igual porque
+ *   nada manda audio a este proveedor —la transcripcion va por Deepgram o
+ *   Groq—, pero el dia que alguien lo intente, el ledger lo subestimaria.
+ * - **`cacheWrite` es 0 a proposito.** El proveedor no reporta escritura de
+ *   cache porque su cacheo implicito no la cobra aparte. Cero medido, no cero
+ *   inventado.
  */
 export const MODEL_PRICING_USD_PER_MTOK: Readonly<Record<string, ModelPricing>> = Object.freeze({
-  [AI_MODELS.default]: FREE,
-  [AI_MODELS.small]: FREE,
+  "gemini-2.5-flash-lite": { input: 0.1, output: 0.4, cacheRead: 0.01, cacheWrite: 0 },
+  "gemini-2.5-flash": { input: 0.3, output: 2.5, cacheRead: 0.03, cacheWrite: 0 },
+  "gemini-3-flash-preview": { input: 0.5, output: 3.0, cacheRead: 0.05, cacheWrite: 0 },
+  "gemini-3.1-flash-lite": { input: 0.25, output: 1.5, cacheRead: 0.025, cacheWrite: 0 },
+  "gemini-3.5-flash": { input: 1.5, output: 9.0, cacheRead: 0.15, cacheWrite: 0 },
+  // OJO: 3.6 y 3.7 estan en precio promocional hasta el 31-dic-2026. El
+  // 1-ene-2027 se DUPLICAN los tres valores ($1.50 / $7.50 / $0.15). Si alguno
+  // sigue en uso para entonces, esta tabla miente hasta que se actualice.
+  "gemini-3.6-flash": { input: 0.75, output: 3.75, cacheRead: 0.075, cacheWrite: 0 },
+  "gemini-3.7-flash": { input: 0.75, output: 3.75, cacheRead: 0.075, cacheWrite: 0 },
 });
