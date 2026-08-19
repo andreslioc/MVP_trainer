@@ -64,7 +64,9 @@ async function callOllama(
     throw new Error(`Ollama error ${response.status}: ${text}`);
   }
 
-  return stream ? response.body! : response.json();
+  if (!stream) return response.json();
+  if (!response.body) throw new Error("Ollama no devolvio cuerpo de stream.");
+  return response.body;
 }
 
 export function createOllamaClient(modelName: string = "llama2:7b"): AiProviderClient {

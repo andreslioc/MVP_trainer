@@ -42,11 +42,19 @@ export const deepgramCallbackSchema = z
   })
   .passthrough();
 
-export type DeepgramConfig = {
+/**
+ * Lo minimo para pedir una transcripcion. El modo sincrono no necesita callback
+ * ni URL publica, y exigirselos lo volveria inutilizable en local, que es
+ * justamente donde hace falta.
+ */
+export type TranscriptionConfig = {
   apiKey: string;
   baseUrl: string;
   model: string;
   language: string;
+};
+
+export type DeepgramConfig = TranscriptionConfig & {
   callbackSecret: string;
   publicBaseUrl: string;
 };
@@ -79,6 +87,22 @@ export function getDeepgramConfig(): DeepgramConfig {
     });
 }
 
+export function getTranscriptionConfig(): TranscriptionConfig {
+  return z
+    .object({
+      apiKey: z.string().min(1),
+      baseUrl: z.url(),
+      model: z.string().min(1),
+      language: z.string().min(1),
+    })
+    .parse({
+      apiKey: env.DEEPGRAM_API_KEY,
+      baseUrl: env.DEEPGRAM_BASE_URL,
+      model: env.DEEPGRAM_MODEL,
+      language: env.DEEPGRAM_LANGUAGE,
+    });
+}
+
 export function secretsMatch(received: string | null, expected: string) {
   const receivedDigest = createHash("sha256")
     .update(received ?? "")
@@ -101,6 +125,20 @@ export function callbackSecretFromRequest(request: Request) {
   }
 }
 
+/**
+ * `utterances` es lo que produce las lineas por hablante con su marca de tiempo;
+ * `diarize_model` activa la diarizacion que las separa. Sin ambos, la
+ * transcripcion llega como un bloque unico sin quien dijo que ni cuando.
+ */
+export function applyTranscriptionParams(endpoint: URL, config: TranscriptionConfig) {
+  endpoint.searchParams.set("model", config.model);
+  endpoint.searchParams.set("language", config.language);
+  endpoint.searchParams.set("diarize_model", "latest");
+  endpoint.searchParams.set("punctuate", "true");
+  endpoint.searchParams.set("smart_format", "true");
+  endpoint.searchParams.set("utterances", "true");
+}
+
 export function buildDeepgramRequest(
   input: { audioUrl: string; callbackToken: string },
   config: DeepgramConfig,
@@ -110,12 +148,7 @@ export function buildDeepgramRequest(
   callback.username = "deepgram";
   callback.password = config.callbackSecret;
   callback.searchParams.set("token", input.callbackToken);
-  endpoint.searchParams.set("model", config.model);
-  endpoint.searchParams.set("language", config.language);
-  endpoint.searchParams.set("diarize_model", "latest");
-  endpoint.searchParams.set("punctuate", "true");
-  endpoint.searchParams.set("smart_format", "true");
-  endpoint.searchParams.set("utterances", "true");
+  applyTranscriptionParams(endpoint, config);
   endpoint.searchParams.set("callback_method", "POST");
   endpoint.searchParams.set("callback", callback.toString());
 
@@ -161,7 +194,7 @@ export async function enqueueTranscription(
   }
 }
 
-function transcriptFromPayload(payload: z.infer<typeof deepgramCallbackSchema>) {
+export function transcriptFromPayload(payload: z.infer<typeof deepgramCallbackSchema>) {
   if (payload.results.utterances?.length) {
     return payload.results.utterances
       .map((utterance) => {

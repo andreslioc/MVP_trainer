@@ -3,7 +3,11 @@
 import { useState, useTransition } from "react";
 
 import { isPromotable, notPromotableReason } from "../../../../lib/insights.ts";
-import { analyzeRecordingAction, promoteInsightAction } from "./actions.ts";
+import {
+  analyzeRecordingAction,
+  promoteInsightAction,
+  transcribeRecordingAction,
+} from "./actions.ts";
 
 type Recording = {
   id: string;
@@ -75,6 +79,14 @@ export function InsightsPanel({
     });
   }
 
+  function transcribe(recordingId: string) {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await transcribeRecordingAction(recordingId);
+      setMessage(result.ok ? "Grabación transcrita. Ya puedes analizarla." : result.error.message);
+    });
+  }
+
   function promote(insightId: string) {
     setMessage(null);
     startTransition(async () => {
@@ -108,6 +120,18 @@ export function InsightsPanel({
                 <p className="mt-1 text-sm text-fg-muted">
                   {STATUS_LABEL[recording.status] ?? recording.status}
                 </p>
+                {recording.status === "uploaded" ||
+                recording.status === "transcribing" ||
+                recording.status === "failed" ? (
+                  <button
+                    className="mt-3 min-h-11 rounded-card border border-primary px-3 py-2 text-sm font-semibold text-primary disabled:opacity-60"
+                    disabled={pending}
+                    onClick={() => transcribe(recording.id)}
+                    type="button"
+                  >
+                    {pending ? "Transcribiendo…" : "Transcribir ahora"}
+                  </button>
+                ) : null}
                 {recording.status === "transcribed" ? (
                   <button
                     className="mt-3 rounded-card bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
