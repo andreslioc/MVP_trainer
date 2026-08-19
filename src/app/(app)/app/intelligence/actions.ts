@@ -47,8 +47,10 @@ export async function uploadRecordingAction(formData: FormData) {
   // `uploadRecording` valida tipo, tamano y contenido con su propio esquema de
   // Zod; aqui solo cruzamos el borde de FormData, donde el tipo MIME llega como
   // string. La validacion real sigue estando del lado del servidor.
+  const chatLog = formData.get("chatLog");
   const result = await uploadRecording({
     file: file as unknown as Parameters<typeof uploadRecording>[0]["file"],
+    chatLog: typeof chatLog === "string" && chatLog.trim() ? chatLog : undefined,
   });
   if (result.ok) revalidatePath("/app/intelligence");
   return result;

@@ -19,6 +19,8 @@ const recordingFileSchema = z.object({
   arrayBuffer: z.function(),
 });
 
+const chatLogSchema = z.string().trim().min(1).max(200_000).optional();
+
 type RecordingFile = z.infer<typeof recordingFileSchema>;
 type RecordingDatabase = Pick<typeof db, "insert" | "update">;
 type AuthorizationResult =
@@ -62,11 +64,26 @@ function defaultStorage(bucket: string): RecordingStorage {
 }
 
 export async function uploadRecording(
-  input: { file: RecordingFile },
+  input: { file: RecordingFile; chatLog?: string },
   options: UploadRecordingDependencies = {},
 ) {
   const authorization = await (options.authorize ?? requireRole)("asesor");
   if (!authorization.ok) return authorization;
+  // El chat se valida aparte y su fallo no invalida el archivo: viene vacio la
+  // mayoria de las veces y perder la subida entera por un chat mal pegado seria
+  // desproporcionado.
+  const parsedChatLog = chatLogSchema.safeParse(input.chatLog);
+  if (!parsedChatLog.success) {
+    return {
+      ok: false as const,
+      error: {
+        code: "VALIDATION",
+        message: "El chat del live es demasiado largo.",
+        field: "chatLog",
+      },
+    };
+  }
+
   const parsed = recordingFileSchema.safeParse(input.file);
   if (!parsed.success) {
     return {
@@ -145,6 +162,7 @@ export async function uploadRecording(
           id: recordingId,
           advisorId: authorization.data.id,
           storagePath,
+          chatLog: parsedChatLog.data ?? null,
           callbackToken,
           createdAt,
           expiresAt,

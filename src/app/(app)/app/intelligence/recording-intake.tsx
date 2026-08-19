@@ -9,6 +9,7 @@ import {
   recordingFileProblem,
 } from "../../../../lib/recordings.ts";
 import { ingestTranscriptAction, uploadRecordingAction } from "./actions.ts";
+import { ChatLogField } from "./chat-log-field.tsx";
 
 type Mode = "transcript" | "audio";
 
@@ -62,8 +63,10 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
     }
     const data = new FormData();
     data.set("file", file);
+    if (chatLog.trim()) data.set("chatLog", chatLog.trim());
     startTransition(async () => {
       const result = await uploadRecordingAction(data);
+      if (result.ok) setChatLog("");
       report(
         result.ok,
         result.ok
@@ -120,21 +123,7 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
             placeholder="[Speaker 0] Hola a todas, hoy tenemos la creatina…"
             value={transcript}
           />
-          <label className="mt-4 block text-sm font-semibold text-fg" htmlFor="chat-log">
-            Chat del live (opcional)
-          </label>
-          <p className="mt-1 text-sm text-fg-muted">
-            Pega los mensajes del chat para analizar cuáles preguntas fueron respondidas. Un mensaje
-            por línea.
-          </p>
-          <textarea
-            className="mt-2 min-h-24 w-full rounded-card border border-border-control bg-surface p-3 text-fg"
-            disabled={pending}
-            id="chat-log"
-            onChange={(event) => setChatLog(event.target.value)}
-            placeholder="usuario123: ¿es seguro en el embarazo?&#10;maria_shop: ¿cuál es el beneficio?"
-            value={chatLog}
-          />
+          <ChatLogField disabled={pending} id="chat-log" onChange={setChatLog} value={chatLog} />
           <button
             className="mt-3 min-h-11 rounded-card bg-primary px-5 font-semibold text-white disabled:opacity-60"
             disabled={pending || transcript.trim().length < 40}
@@ -170,6 +159,12 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
             name="file"
             ref={fileInput}
             type="file"
+          />
+          <ChatLogField
+            disabled={pending}
+            id="chat-log-audio"
+            onChange={setChatLog}
+            value={chatLog}
           />
           <button
             className="mt-3 min-h-11 rounded-card bg-primary px-5 font-semibold text-white disabled:opacity-60"

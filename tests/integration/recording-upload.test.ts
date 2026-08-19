@@ -311,4 +311,69 @@ describe("recording upload", () => {
     expect(persisted?.status).toBe("uploaded");
     expect(persisted?.providerRequestId).toBeNull();
   });
+
+  it("guarda el chat que viaja junto al audio", async () => {
+    // El chat nunca llega del proveedor de transcripcion: las clientas escriben,
+    // no hablan. Si la asesora lo pega al subir, tiene que quedar en la misma
+    // fila que el audio o el analisis de cobertura no tiene con que cruzar.
+    const id = randomUUID();
+    const result = await uploadRecording(
+      {
+        file: fileLike(wav(1), "audio/wav", "live.wav"),
+        chatLog: "usuario123: ¿es seguro en el embarazo?\nmaria: ¿cuál es el precio?",
+      },
+      {
+        authorize: async () => ({ ok: true, data: { id: advisorId, role: "asesor" } }),
+        database: connection.db,
+        storage: {
+          upload: async () => ({ error: null }),
+          createSignedUrl: async () => ({ data: { signedUrl: "x" }, error: null }),
+          remove: async () => ({}),
+        },
+        bucket: "live-recordings",
+        retentionDays: 90,
+        now: () => now,
+        randomId: () => id,
+        randomToken: () => "e".repeat(64),
+        enqueue: async () => ({ ok: true as const, data: { requestId: "r" } }),
+        provider: "groq",
+      },
+    );
+
+    expect(result.ok).toBe(true);
+    const [persisted] = await connection.db
+      .select()
+      .from(liveRecordings)
+      .where(eq(liveRecordings.id, id));
+    expect(persisted?.chatLog).toContain("¿es seguro en el embarazo?");
+  });
+
+  it("sin chat guarda null, no una cadena vacia que el analisis leeria como chat", async () => {
+    const id = randomUUID();
+    await uploadRecording(
+      { file: fileLike(wav(1), "audio/wav", "live.wav") },
+      {
+        authorize: async () => ({ ok: true, data: { id: advisorId, role: "asesor" } }),
+        database: connection.db,
+        storage: {
+          upload: async () => ({ error: null }),
+          createSignedUrl: async () => ({ data: { signedUrl: "x" }, error: null }),
+          remove: async () => ({}),
+        },
+        bucket: "live-recordings",
+        retentionDays: 90,
+        now: () => now,
+        randomId: () => id,
+        randomToken: () => "f".repeat(64),
+        enqueue: async () => ({ ok: true as const, data: { requestId: "r" } }),
+        provider: "groq",
+      },
+    );
+
+    const [persisted] = await connection.db
+      .select()
+      .from(liveRecordings)
+      .where(eq(liveRecordings.id, id));
+    expect(persisted?.chatLog).toBeNull();
+  });
 });
