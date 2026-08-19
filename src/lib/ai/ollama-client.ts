@@ -41,6 +41,7 @@ function toProviderResponse(
 
 async function callOllama(
   request: AiProviderRequest,
+  model: string,
   stream: boolean,
 ): Promise<Record<string, unknown> | ReadableStream<Uint8Array>> {
   const prompt = `${request.system}\n\n${request.messages.map((m) => m.content).join("\n\n")}`;
@@ -49,7 +50,7 @@ async function callOllama(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: request.model,
+      model,
       prompt,
       stream,
       raw: true,
@@ -69,13 +70,13 @@ async function callOllama(
 export function createOllamaClient(modelName: string = "llama2:7b"): AiProviderClient {
   return {
     async createMessage(request) {
-      const response = (await callOllama(request, false)) as Record<string, unknown>;
-      return toProviderResponse(response, request.model);
+      const response = (await callOllama(request, modelName, false)) as Record<string, unknown>;
+      return toProviderResponse(response, modelName);
     },
 
     async parseMessage(request) {
-      const response = (await callOllama(request, false)) as Record<string, unknown>;
-      const base = toProviderResponse(response, request.model);
+      const response = (await callOllama(request, modelName, false)) as Record<string, unknown>;
+      const base = toProviderResponse(response, modelName);
       let parsedOutput: unknown;
       try {
         parsedOutput = base.text ? JSON.parse(base.text) : undefined;
@@ -95,7 +96,7 @@ export function createOllamaClient(modelName: string = "llama2:7b"): AiProviderC
 
       async function* iterate() {
         try {
-          const body = (await callOllama(request, true)) as ReadableStream<Uint8Array>;
+          const body = (await callOllama(request, modelName, true)) as ReadableStream<Uint8Array>;
           const reader = body.getReader();
           const decoder = new TextDecoder();
           let buffer = "";
@@ -143,7 +144,7 @@ export function createOllamaClient(modelName: string = "llama2:7b"): AiProviderC
           }
 
           if (!lastResponse) throw new Error("Ollama no produjo respuesta.");
-          const base = toProviderResponse(lastResponse, request.model);
+          const base = toProviderResponse(lastResponse, modelName);
           let parsedOutput: unknown;
           try {
             parsedOutput = text ? JSON.parse(text) : undefined;
