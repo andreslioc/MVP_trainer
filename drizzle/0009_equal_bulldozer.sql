@@ -1,0 +1,2 @@
+ALTER TABLE "chat_coverage" ADD COLUMN "asked_count" integer DEFAULT 1 NOT NULL;--> statement-breakpoint
+ALTER TABLE "chat_coverage" ADD CONSTRAINT "chat_coverage_asked_count_positive" CHECK ("chat_coverage"."asked_count" > 0);

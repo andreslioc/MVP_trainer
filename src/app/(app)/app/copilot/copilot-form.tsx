@@ -3,6 +3,9 @@
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 
+import { DurationChoice } from "./duration-choice.tsx";
+import { PromoControl } from "./promo-control.tsx";
+
 import {
   AnswerPanel,
   type CopilotCompositionView,
@@ -39,10 +42,12 @@ type StreamEvent =
 
 export function CopilotForm({
   products,
+  productPromos,
   activeRules,
   initialSessionId,
 }: {
-  products: Array<{ id: string; name: string; brand: string }>;
+  products: Array<{ id: string; name: string; brand: string; priceCop: number | null }>;
+  productPromos: Array<{ product_id: string; percent: number }>;
   activeRules: Array<{ key: string }>;
   initialSessionId: string | null;
 }) {
@@ -63,6 +68,7 @@ export function CopilotForm({
   });
   const variant = watch("lengthVariant");
   const hasActivePromotion = activeRules.some((rule) => rule.key === "promo_live");
+  const selectedProduct = products.find((product) => product.id === watch("productId")) ?? null;
 
   async function ensureSession() {
     if (sessionId) return sessionId;
@@ -182,6 +188,19 @@ export function CopilotForm({
           ))}
         </select>
 
+        {selectedProduct ? (
+          <PromoControl
+            initialPercent={
+              productPromos.find((promo) => promo.product_id === selectedProduct.id)?.percent ??
+              null
+            }
+            key={selectedProduct.id}
+            priceCop={selectedProduct.priceCop}
+            productId={selectedProduct.id}
+            sessionId={sessionId}
+          />
+        ) : null}
+
         <label className="mt-4 block text-sm font-semibold text-fg" htmlFor="customer-question">
           Pregunta
         </label>
@@ -218,27 +237,7 @@ export function CopilotForm({
           </label>
         </div>
 
-        <fieldset className="mt-4">
-          <legend className="text-sm font-semibold text-fg">Duración</legend>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {(
-              [
-                ["express", "Express", COPILOT_VIEW_DEFAULTS.durationLabels.express],
-                ["estandar", "Estándar", COPILOT_VIEW_DEFAULTS.durationLabels.estandar],
-                ["profunda", "Profunda", COPILOT_VIEW_DEFAULTS.durationLabels.profunda],
-              ] as const
-            ).map(([value, label, duration]) => (
-              <label
-                className="rounded-card border border-border-control p-2 text-center text-sm"
-                key={value}
-              >
-                <input className="mr-1" type="radio" value={value} {...register("lengthVariant")} />
-                <span className="font-semibold">{label}</span>
-                <span className="block text-xs text-fg-muted">{duration}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <DurationChoice register={register} />
 
         <p className="mt-4 text-xs text-fg-muted">
           {activeRules.length} reglas comerciales activas disponibles en esta respuesta.

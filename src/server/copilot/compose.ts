@@ -32,6 +32,7 @@ import {
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { writeLlmCall } from "../llm-calls.ts";
 import { availableCtasFromRules, orchestrateCopilot } from "./orchestrator.ts";
+import { promoPercentFor } from "./session.ts";
 import { applyResponsibleCommunication, type ResponsibleAlert } from "./responsible.ts";
 
 const composeInputSchema = z
@@ -93,13 +94,29 @@ export function safeCopilotFallback(intent: CopilotIntent["intent"]): CopilotCom
   };
 }
 
+/**
+ * Como pregunta por precio una clienta en un live.
+ *
+ * El patron viejo era `precio|cuanto cuesta|cuanto vale`, y medido contra 250
+ * preguntas reales dejaba pasar 34 de las 108 de precio: "a como", "que vale",
+ * "q cuesta", "que costo tiene", "a cuanto", "presio". Las que se colaban
+ * llegaban al modelo sin dato y sin nada que las validara.
+ *
+ * La raiz va suelta —`preci\w*`— porque en un chat de live se escribe rapido y
+ * mal: "preciob", "precioo", "preciooo" aparecen tal cual en el live medido.
+ */
+const PRICE_QUESTION =
+  /\b(preci\w*|presi\w*|valor|cuesta|costo|cuanto vale|que vale|a como|a cuanto)\b|\bcuanto\b/;
+
 export function asksForMissingSensitiveFact(
   question: string,
   product: typeof products.$inferSelect,
 ) {
   const normalizedQuestion = normalize(question);
   const knowledge = normalize(JSON.stringify(product));
-  if (/\b(precio|cuanto cuesta|cuanto vale)\b/.test(normalizedQuestion)) return true;
+  // Solo se corta si NO hay precio cargado. Con precio en la ficha el modelo
+  // ya no tiene que inventarlo: se lo entregamos calculado.
+  if (product.priceCop === null && PRICE_QUESTION.test(normalizedQuestion)) return true;
   return ["fda", "certificacion", "estudio", "porcentaje", "dosis"]
     .filter((term) => normalizedQuestion.includes(term))
     .some((term) => !knowledge.includes(term));
@@ -178,6 +195,7 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
           id: liveSessions.id,
           ctasUsed: liveSessions.ctasUsed,
           promosMentioned: liveSessions.promosMentioned,
+          productPromos: liveSessions.productPromos,
         })
         .from(liveSessions)
         .where(
@@ -216,12 +234,6 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
         error: { code: "COPILOT_PROMPT_MISSING", message: "El Copilot no esta configurado." },
       };
     }
-    const orchestration = orchestrateCopilot({
-      availableCtas: availableCtasFromRules(activeRules),
-      rules: activeRules,
-      ctasUsed: session.ctasUsed,
-      promosMentioned: session.promosMentioned,
-    });
     const rulesForPrompt = activeRules
       .filter((rule) => rule.active)
       .map(({ key, value }) => ({ key, value }));
@@ -239,6 +251,17 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
     });
     if (!classified.ok) return copilotFailure(classified.error);
 
+    // La orquestacion va DESPUES de clasificar y no antes: elegir el CTA sin
+    // saber que pregunto la clienta es como termino respondiendo "sigue la
+    // cuenta" a alguien que pregunto el precio.
+    const orchestration = orchestrateCopilot({
+      availableCtas: availableCtasFromRules(activeRules),
+      rules: activeRules,
+      ctasUsed: session.ctasUsed,
+      promosMentioned: session.promosMentioned,
+      intent: classified.data.value.intent,
+    });
+
     let composition: CopilotComposition;
     let alerts: ResponsibleAlert[] = [];
     let timeToFirstTokenMs: number;
@@ -251,6 +274,8 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
     } else {
       const rendered = buildCopilotComposePrompt({
         product,
+        // El descuento sale de ESTA sesion de live, no de la ficha.
+        promoPercent: promoPercentFor(session.productPromos, product.id),
         activeRules: rulesForPrompt,
         customerQuestion: parsedInput.data.customerQuestion,
         intent: classified.data.value.intent,
@@ -294,6 +319,7 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
 
     const responsible = applyResponsibleCommunication({
       question: parsedInput.data.customerQuestion,
+      promoPercent: promoPercentFor(session.productPromos, product.id),
       composition,
       product,
       refusal: providerRefusal,

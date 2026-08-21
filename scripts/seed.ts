@@ -4,6 +4,7 @@ import { COPILOT_CLASSIFY_PROMPT, COPILOT_COMPOSE_PROMPT } from "../src/lib/ai/p
 import { GENERATE_QUESTIONS_PROMPT } from "../src/lib/ai/prompts/generate-questions.ts";
 import { EVALUATE_ANSWER_PROMPT } from "../src/lib/ai/prompts/evaluate-answer.ts";
 import { ANALYZE_TRANSCRIPT_PROMPT } from "../src/lib/ai/prompts/analyze-transcript.ts";
+import { CHAT_COVERAGE_PROMPT } from "../src/lib/ai/prompts/chat-coverage.ts";
 import { loadEnv } from "../src/lib/load-env.ts";
 
 loadEnv();
@@ -29,7 +30,14 @@ const commercialRuleSeeds = [
   },
   {
     key: "canal_whatsapp",
-    value: { cta: "Consulta disponibilidad por el canal de WhatsApp" },
+    // `closes_sale` le dice al orquestador que este CTA cierra una venta, asi
+    // que es el que sale cuando la pregunta es de precio o de compra en vez de
+    // rotar a "sigue la cuenta". Es un campo de la regla y no una lista de
+    // claves en el codigo: un CTA nuevo se marca aqui sin tocar el orquestador.
+    value: {
+      cta: "Escríbenos al número que ves en pantalla y te apartamos el tuyo",
+      closes_sale: true,
+    },
     active: true,
   },
   {
@@ -48,6 +56,7 @@ const promptNames = [
   "copilot_compose_profunda",
   "structured_repair",
   "analyze_transcript",
+  "chat_coverage",
   "promote_insight",
 ] as const;
 
@@ -91,7 +100,9 @@ async function main(): Promise<void> {
                       ? COPILOT_COMPOSE_PROMPT
                       : name === "analyze_transcript"
                         ? ANALYZE_TRANSCRIPT_PROMPT
-                        : `Plantilla inicial versionada para ${name}.`,
+                        : name === "chat_coverage"
+                          ? CHAT_COVERAGE_PROMPT
+                          : `Plantilla inicial versionada para ${name}.`,
             active: true,
           })),
         )
@@ -132,8 +143,18 @@ async function main(): Promise<void> {
           ],
           faqs: [
             {
+              // Una respuesta de FAQ es la que el Copilot va a decir tal cual,
+              // asi que tiene que responder. "Sigue la porcion indicada en la
+              // etiqueta" era el ejemplo sembrado, y en camara salia como
+              // "mira la etiqueta": la clienta pregunta justamente porque no la
+              // tiene enfrente.
               question: "¿Como se usa?",
-              answer: "Sigue la porcion indicada en la etiqueta del producto.",
+              answer:
+                "Una porcion al dia, disuelta en agua o en tu bebida, en cualquier momento del dia.",
+            },
+            {
+              question: "¿Cuanto dura un frasco?",
+              answer: "Trae 60 porciones, asi que tomando una al dia rinde dos meses.",
             },
           ],
           objections: [
@@ -144,8 +165,12 @@ async function main(): Promise<void> {
           ],
           differentiators: [
             {
-              claim: "Ficha revisable",
-              evidence: "La informacion se mantiene en el Knowledge Hub.",
+              // Un diferencial se le dice a la clienta, asi que se escribe en
+              // sus palabras. "Se mantiene en el Knowledge Hub" nombraba una
+              // herramienta interna que ella no conoce, y el Copilot lo repetia
+              // tal cual en camara porque el modelo usa la ficha con fidelidad.
+              claim: "Etiqueta e ingredientes a la vista",
+              evidence: "La porcion y los ingredientes vienen declarados en el empaque.",
             },
           ],
           precautions:
@@ -232,7 +257,7 @@ async function main(): Promise<void> {
       const bucketResult = bucket
         ? await supabase.storage.updateBucket(env.SUPABASE_RECORDINGS_BUCKET, {
             public: false,
-            fileSizeLimit: 200 * 1024 * 1024,
+            fileSizeLimit: env.SUPABASE_MAX_UPLOAD_BYTES,
             allowedMimeTypes: [
               "audio/mpeg",
               "audio/mp4",
@@ -244,7 +269,7 @@ async function main(): Promise<void> {
           })
         : await supabase.storage.createBucket(env.SUPABASE_RECORDINGS_BUCKET, {
             public: false,
-            fileSizeLimit: 200 * 1024 * 1024,
+            fileSizeLimit: env.SUPABASE_MAX_UPLOAD_BYTES,
             allowedMimeTypes: [
               "audio/mpeg",
               "audio/mp4",

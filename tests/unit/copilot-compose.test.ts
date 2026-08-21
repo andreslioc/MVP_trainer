@@ -39,6 +39,7 @@ function product() {
     verifiedAt: new Date("2026-08-18T12:00:00Z"),
     createdAt: new Date("2026-08-18T12:00:00Z"),
     updatedAt: new Date("2026-08-18T12:00:00Z"),
+    priceCop: value.priceCop ?? null,
   };
 }
 
@@ -77,12 +78,36 @@ describe("Copilot composition", () => {
   });
 
   it("uses a cautious fallback instead of completing absent facts", () => {
-    expect(asksForMissingSensitiveFact("¿Cuál es el precio?", product())).toBe(true);
+    const sinPrecio = { ...product(), priceCop: null };
+    expect(asksForMissingSensitiveFact("¿Cuál es el precio?", sinPrecio)).toBe(true);
     expect(asksForMissingSensitiveFact("¿Tiene certificación FDA?", product())).toBe(true);
     const fallback = safeCopilotFallback("precio");
     expect(fallback.express).toContain("no está verificado");
     expect(fallback.confidence).toBe("revisar");
     expect(fallback.cta_used).toBeNull();
+  });
+
+  it("con precio en la ficha ya no corta: el dato existe y se entrega calculado", () => {
+    // Antes cortaba TODA pregunta de precio, incluso con la ficha cargada, y la
+    // asesora recibia "ese dato no esta verificado" para la pregunta mas
+    // frecuente del live.
+    expect(asksForMissingSensitiveFact("¿Cuál es el precio?", product())).toBe(false);
+  });
+
+  it("reconoce las formas reales en que se pregunta el precio", () => {
+    // Medido contra 250 preguntas de un live: el patron viejo dejaba pasar 34.
+    const sinPrecio = { ...product(), priceCop: null };
+    for (const pregunta of [
+      "a como",
+      "A cuánto",
+      "Que vale el Maxi Call?",
+      "q cuesta el maxiclan",
+      "hola que costo tiene el maxcalm",
+      "Que preciob",
+      "valor",
+    ]) {
+      expect(asksForMissingSensitiveFact(pregunta, sinPrecio)).toBe(true);
+    }
   });
 
   it("streams a structured result with local first token under 250 ms", async () => {

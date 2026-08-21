@@ -11,12 +11,30 @@ const serverEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.string().min(1),
   DIRECT_DATABASE_URL: z.string().min(1),
-  TEST_DATABASE_URL: z.string().min(1),
+  /**
+   * Opcional a proposito: en produccion no existe una base de pruebas.
+   *
+   * Exigirla aqui hacia que la app no arrancara en Vercel sin inventarse un
+   * valor falso, y `env` se valida al importar, asi que el fallo era total y
+   * sin relacion aparente con la causa. Quien la necesita —`tests/setup.ts` y
+   * `openDirectDatabase("test")`— la exige por su cuenta y con un mensaje que
+   * dice como resolverlo.
+   */
+  TEST_DATABASE_URL: optionalString,
   SUPABASE_LOCAL_DATABASE_URL: optionalString,
   NEXT_PUBLIC_SUPABASE_URL: optionalString,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: optionalString,
   SUPABASE_SECRET_KEY: optionalString,
   SUPABASE_RECORDINGS_BUCKET: optionalString,
+  /**
+   * Tope por archivo del bucket, en bytes.
+   *
+   * Configurable porque no lo decide este proyecto: es el plan de Supabase. El
+   * gratuito corta en 50 MB y rechaza crear un bucket que pida mas —"The object
+   * exceeded the maximum allowed size"—, un error que no menciona el plan y deja
+   * la semilla a medias.
+   */
+  SUPABASE_MAX_UPLOAD_BYTES: positiveInteger.default(200 * 1024 * 1024),
   DEEPGRAM_API_KEY: optionalString,
   DEEPGRAM_BASE_URL: optionalString,
   DEEPGRAM_MODEL: optionalString,

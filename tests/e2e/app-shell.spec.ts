@@ -84,6 +84,29 @@ test("shows the advisor navigation and collapses it below 768px", async ({ page 
   }
 });
 
+test("cierra el menu movil al entrar a un modulo", async ({ page }) => {
+  // Caso real a 320 px: el layout no se remonta al navegar, asi que el panel
+  // del `details` seguia abierto sobre la pagina nueva y tapaba el titulo, el
+  // selector de ficha y el primer campo del Copilot.
+  const advisor = await createActiveAdvisor("asesor");
+  try {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, advisor.email, advisor.password);
+    const mobileMenu = page.locator("details");
+    await mobileMenu.locator("summary").click();
+    await expect(mobileMenu).toHaveAttribute("open", "");
+
+    await page
+      .getByRole("navigation", { name: "Navegación móvil" })
+      .getByRole("link", { name: /Copilot/ })
+      .click();
+    await expect(page).toHaveURL(/\/app\/copilot$/);
+    await expect(mobileMenu).not.toHaveAttribute("open", "");
+  } finally {
+    await advisor.cleanup();
+  }
+});
+
 test("shows Settings to an admin", async ({ page }) => {
   const admin = await createActiveAdvisor("admin");
   try {

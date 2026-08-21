@@ -101,6 +101,14 @@ export const products = pgTable(
       .$type<Array<{ claim: string; evidence: string }>>()
       .notNull()
       .default([]),
+    /**
+     * Precio de lista en pesos colombianos, sin decimales. Nulo mientras la
+     * ficha esta en borrador; una ficha verificada obligatoriamente lo tiene,
+     * porque el precio es la pregunta mas frecuente de un live —108 de 250 en
+     * el live medido— y una ficha verificada que no puede responderla no esta
+     * verificada para lo que importa.
+     */
+    priceCop: integer("price_cop"),
     precautions: text("precautions").notNull().default(""),
     claimsAllowed: jsonb("claims_allowed").$type<string[]>().notNull().default([]),
     claimsCaution: jsonb("claims_caution").$type<string[]>().notNull().default([]),
@@ -120,6 +128,13 @@ export const products = pgTable(
   (table) => [
     index("products_verified_at_idx").on(table.verifiedAt),
     uniqueIndex("products_natural_key_unique").on(table.brand, table.name, table.presentation),
+    check("products_price_positive", sql`${table.priceCop} is null or ${table.priceCop} > 0`),
+    // Verificar una ficha sin precio la deja sin poder responder la pregunta
+    // mas frecuente del live.
+    check(
+      "products_verified_needs_price",
+      sql`${table.verifiedAt} is null or ${table.priceCop} is not null`,
+    ),
   ],
 );
 
@@ -212,6 +227,19 @@ export const liveSessions = pgTable(
     ctasUsed: jsonb("ctas_used").$type<Array<{ cta: string; at: string }>>().notNull().default([]),
     promosMentioned: jsonb("promos_mentioned")
       .$type<Array<{ rule_key: string; at: string }>>()
+      .notNull()
+      .default([]),
+    /**
+     * Precios especiales encendidos durante ESTE live, por producto.
+     *
+     * Vive en la sesion y no en `products` por dos razones. La ficha es dato
+     * durable —el precio de lista— y el descuento es del momento: se prende
+     * para un live y no deberia sobrevivirlo. Y `products` solo lo escribe
+     * admin, mientras que una asesora si es duena de su propia sesion, asi que
+     * aqui puede prenderlo sin romper la regla de escritura del catalogo.
+     */
+    productPromos: jsonb("product_promos")
+      .$type<Array<{ product_id: string; percent: number }>>()
       .notNull()
       .default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -324,6 +352,13 @@ export const chatCoverage = pgTable(
     evidenceQuote: text("evidence_quote"),
     /** Segundo en que la asesora la respondio. Nulo si no la respondio. */
     atSeconds: integer("at_seconds"),
+    /**
+     * Cuantas personas hicieron esta misma pregunta en el chat. Las
+     * repeticiones se agrupan antes de llamar al modelo, asi que la fila es
+     * una y el conteo vive aqui: veinte "cuanto vale" son una pregunta con
+     * demanda alta, no veinte filas que la asesora tiene que leer una por una.
+     */
+    askedCount: integer("asked_count").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
@@ -333,6 +368,72 @@ export const chatCoverage = pgTable(
       "chat_coverage_at_seconds_nonnegative",
       sql`${table.atSeconds} is null or ${table.atSeconds} >= 0`,
     ),
+    check("chat_coverage_asked_count_positive", sql`${table.askedCount} > 0`),
+  ],
+);
+
+export const simulationSpeed = pgEnum("simulation_speed", [
+  "despacio",
+  "normal",
+  "rapido",
+  "aleatorio",
+]);
+
+/**
+ * Un simulacro de live: la asesora frente a la camara con un chat corriendo.
+ *
+ * Tabla propia y no `training_sessions` porque un simulacro mezcla preguntas de
+ * VARIAS fichas —es lo que pasa en un live real— y una sesion de practica esta
+ * atada a un solo producto. Y tampoco `live_recordings`: un simulacro no tiene
+ * PII de clientas, asi que no debe arrastrar sus obligaciones de retencion.
+ */
+export const liveSimulations = pgTable(
+  "live_simulations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    advisorId: uuid("advisor_id")
+      .notNull()
+      .references(() => advisors.id, { onDelete: "cascade" }),
+    speed: simulationSpeed("speed").notNull(),
+    durationS: integer("duration_s").notNull(),
+    /**
+     * El guion: que pregunta se inyecto, de que ficha y en que milisegundo.
+     *
+     * Se arma en el servidor y es la VERDAD contra la que se mide todo. Si lo
+     * armara el navegador, el momento en que aparecio una pregunta seria un dato
+     * que el cliente puede cambiar, y con el se cae la metrica de atencion.
+     */
+    script: jsonb("script")
+      .$type<Array<{ question_id: string; product_id: string; at_ms: number; text: string }>>()
+      .notNull()
+      .default([]),
+    /** El chat completo tal como salio, para poder revisarlo despues. */
+    chatLog: text("chat_log"),
+    /** Lo que dijo la asesora, con marcas [Xs]. Solo audio: la camara no se graba. */
+    transcript: text("transcript"),
+    /** Resultado por pregunta: si la respondio, en que segundo y con que nota. */
+    results: jsonb("results")
+      .$type<
+        Array<{
+          question_id: string;
+          appeared_at_s: number;
+          answered: boolean;
+          answered_at_s: number | null;
+          reaction_s: number | null;
+          advisor_answer: string | null;
+          scores: Record<string, { score: number; reason: string }> | null;
+          feedback: string | null;
+        }>
+      >()
+      .notNull()
+      .default([]),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("live_simulations_advisor_started_idx").on(table.advisorId, table.startedAt.desc()),
+    check("live_simulations_duration_positive", sql`${table.durationS} > 0`),
   ],
 );
 

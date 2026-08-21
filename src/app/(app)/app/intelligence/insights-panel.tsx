@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { isPromotable, notPromotableReason } from "../../../../lib/insights.ts";
+import { formatMark } from "../../../../lib/recordings.ts";
+import { ChatCoverageList, type ChatCoverageItem } from "./chat-coverage-list.tsx";
+import { TranscriptViewer } from "./transcript-viewer.tsx";
 import {
   analyzeRecordingAction,
   promoteInsightAction,
@@ -16,6 +19,8 @@ type Recording = {
   status: string;
   durationS: number | null;
   createdAt: Date;
+  hasTranscript: boolean;
+  hasChatLog: boolean;
 };
 
 type Insight = {
@@ -27,14 +32,6 @@ type Insight = {
   frequency: number;
   atSeconds: number | null;
   promotedToQuestionId: string | null;
-};
-
-type ChatCoverage = {
-  id: string;
-  question: string;
-  answered: boolean;
-  evidenceQuote: string | null;
-  atSeconds: number | null;
 };
 
 const TYPE_LABEL: Record<string, string> = {
@@ -70,13 +67,6 @@ function duration(seconds: number | null) {
  * Minuto y segundo del live, no segundos crudos: es como esta rotulada la barra
  * de un reproductor, y el hallazgo existe para poder ir a ese punto del video.
  */
-function mark(atSeconds: number | null) {
-  if (atSeconds === null) return null;
-  const minutes = Math.floor(atSeconds / 60);
-  const seconds = atSeconds % 60;
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
-}
-
 function stamp(createdAt: Date) {
   return `${createdAt.toLocaleDateString("es-CO")} · ${createdAt.toLocaleTimeString("es-CO", {
     hour: "2-digit",
@@ -92,7 +82,7 @@ export function InsightsPanel({
 }: {
   recordings: Recording[];
   insights: Insight[];
-  chatCoverage: ChatCoverage[];
+  chatCoverage: ChatCoverageItem[];
   selectedId: string | null;
 }) {
   const [pending, startTransition] = useTransition();
@@ -145,19 +135,30 @@ export function InsightsPanel({
                 }`}
                 key={recording.id}
               >
-                {recording.title ? (
-                  <p className="font-semibold text-fg">{recording.title}</p>
-                ) : null}
-                <p
-                  className={
-                    recording.title ? "mt-1 text-sm text-fg-muted" : "font-semibold text-fg"
-                  }
-                >
-                  {stamp(recording.createdAt)} · {duration(recording.durationS)}
-                </p>
-                <p className="mt-1 text-sm text-fg-muted">
-                  {STATUS_LABEL[recording.status] ?? recording.status}
-                </p>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    {recording.title ? (
+                      <p className="font-semibold text-fg">{recording.title}</p>
+                    ) : null}
+                    <p
+                      className={
+                        recording.title ? "mt-1 text-sm text-fg-muted" : "font-semibold text-fg"
+                      }
+                    >
+                      {stamp(recording.createdAt)} · {duration(recording.durationS)}
+                    </p>
+                    <p className="mt-1 text-sm text-fg-muted">
+                      {STATUS_LABEL[recording.status] ?? recording.status}
+                    </p>
+                  </div>
+                  {recording.hasTranscript ? (
+                    <TranscriptViewer
+                      hasChatLog={recording.hasChatLog}
+                      label={recording.title ?? stamp(recording.createdAt)}
+                      recordingId={recording.id}
+                    />
+                  ) : null}
+                </div>
                 {recording.status === "uploaded" ||
                 recording.status === "transcribing" ||
                 recording.status === "failed" ? (
@@ -223,9 +224,9 @@ export function InsightsPanel({
               <li className="rounded-card border border-border bg-surface p-4" key={insight.id}>
                 <p className="text-sm font-semibold text-primary">
                   {TYPE_LABEL[insight.type] ?? insight.type} · {insight.frequency}×
-                  {mark(insight.atSeconds) ? (
+                  {formatMark(insight.atSeconds) ? (
                     <span className="ml-2 tabular-nums font-normal text-fg-muted">
-                      min {mark(insight.atSeconds)}
+                      {formatMark(insight.atSeconds)}
                     </span>
                   ) : null}
                 </p>
@@ -255,40 +256,7 @@ export function InsightsPanel({
         )}
       </section>
 
-      {chatCoverage.length > 0 ? (
-        <section aria-labelledby="chat-title">
-          <h2 className="text-lg font-semibold text-fg" id="chat-title">
-            Preguntas del chat
-          </h2>
-          <ul className="mt-3 space-y-2">
-            {chatCoverage.map((item) => (
-              <li
-                className={`rounded-card border p-3 text-sm ${
-                  item.answered
-                    ? "border-confidence-high-border bg-confidence-high-bg text-confidence-high-fg"
-                    : "border-confidence-low-border bg-confidence-low-bg text-confidence-low-fg"
-                }`}
-                key={item.id}
-              >
-                <div className="flex items-start gap-2">
-                  <span className="mt-0.5 flex-shrink-0">{item.answered ? "✓" : "✗"}</span>
-                  <div className="flex-1">
-                    <p className="font-semibold">{item.question}</p>
-                    {item.evidenceQuote ? (
-                      <p className="mt-1 text-xs opacity-90">
-                        {mark(item.atSeconds) ? (
-                          <span className="tabular-nums">min {mark(item.atSeconds)} · </span>
-                        ) : null}
-                        Respuesta: {item.evidenceQuote}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      <ChatCoverageList items={chatCoverage} />
     </div>
   );
 }

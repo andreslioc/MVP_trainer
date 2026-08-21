@@ -31,6 +31,14 @@ export const deepgramCallbackSchema = z
               .object({
                 speaker: z.number().int().nonnegative(),
                 transcript: z.string().trim().min(1),
+                // Deepgram nombra estos campos `start` y `end`. `start_time` y
+                // `end_time` se aceptan porque el modo sincrono de algunas
+                // versiones los emite asi, pero el nombre canonico es el corto:
+                // leer solo el largo dejaba TODA transcripcion sin marcas [Xs],
+                // y con ellas se cae el `at_seconds` de los hallazgos y el
+                // recorte por ventana de la cobertura de chat.
+                start: z.number().finite().nonnegative().optional(),
+                end: z.number().finite().nonnegative().optional(),
                 start_time: z.number().finite().nonnegative().optional(),
                 end_time: z.number().finite().nonnegative().optional(),
               })
@@ -198,9 +206,9 @@ export function transcriptFromPayload(payload: z.infer<typeof deepgramCallbackSc
   if (payload.results.utterances?.length) {
     return payload.results.utterances
       .map((utterance) => {
-        const timestamp =
-          utterance.start_time !== undefined ? `[${Math.round(utterance.start_time)}s]` : "";
-        return `${timestamp} [Speaker ${utterance.speaker}] ${utterance.transcript}`;
+        const start = utterance.start ?? utterance.start_time;
+        const timestamp = start !== undefined ? `[${Math.round(start)}s] ` : "";
+        return `${timestamp}[Speaker ${utterance.speaker}] ${utterance.transcript}`;
       })
       .join("\n");
   }

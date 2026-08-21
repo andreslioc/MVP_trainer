@@ -143,6 +143,8 @@ describe("database schema", () => {
       ["insights_recording_id_live_recordings_id_fk", "c"],
       ["live_recordings_advisor_id_advisors_id_fk", "c"],
       ["live_sessions_advisor_id_advisors_id_fk", "c"],
+      // Un simulacro es de la asesora: si se borra la cuenta, se van con ella.
+      ["live_simulations_advisor_id_advisors_id_fk", "c"],
       ["llm_calls_advisor_id_advisors_id_fk", "n"],
       ["llm_calls_prompt_id_prompts_id_fk", "n"],
       ["training_answers_question_id_training_questions_id_fk", "r"],

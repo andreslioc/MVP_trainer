@@ -50,6 +50,7 @@ export function validProductInput(overrides: Partial<ProductInput> = {}): Produc
     complementProductIds: [],
     sources: [{ label: "Etiqueta del producto", note: "Ficha interna verificada" }],
     verifiedAt: null,
+    priceCop: 135_000,
     ...overrides,
   };
 }

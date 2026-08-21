@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNotNull } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
@@ -7,8 +7,8 @@ import { createAiGateway } from "../../lib/ai/gateway.ts";
 import {
   buildAnalyzeTranscriptPrompt,
   containsPii,
+  hasSubstance,
   redactPii,
-  REDACTION_TOKENS,
 } from "../../lib/ai/prompts/analyze-transcript.ts";
 import { type TranscriptInsights, transcriptInsightsSchema } from "../../lib/ai/schemas.ts";
 import {
@@ -17,6 +17,7 @@ import {
   type StructuredOutputResult,
 } from "../../lib/ai/structured.ts";
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
+import { type ChatCoverageOutcome, collectChatCoverage } from "./chat-coverage.ts";
 import { writeLlmCall } from "../llm-calls.ts";
 import { logFailure } from "../../lib/log.ts";
 
@@ -29,10 +30,13 @@ type Generate = (
   input: StructuredOutputInput<TranscriptInsights>,
 ) => Promise<StructuredOutputResult<TranscriptInsights>>;
 
+type CollectCoverage = typeof collectChatCoverage;
+
 export type AnalyzeDependencies = {
   authorize?: Authorize;
   database?: AnalyzeDatabase;
   generate?: Generate;
+  generateCoverage?: Parameters<CollectCoverage>[1];
 };
 
 const aiGateway = createAiGateway({ writeCall: writeLlmCall });
@@ -41,11 +45,16 @@ async function defaultGenerate(input: Parameters<Generate>[0]) {
   return generateStructured(input, aiGateway);
 }
 
+async function defaultGenerateCoverage(input: Parameters<Parameters<CollectCoverage>[1]>[0]) {
+  return generateStructured(input, aiGateway);
+}
+
 function dependencies(options: AnalyzeDependencies) {
   return {
     authorize: options.authorize ?? requireRole,
     database: options.database ?? db,
     generate: options.generate ?? defaultGenerate,
+    generateCoverage: options.generateCoverage ?? defaultGenerateCoverage,
   };
 }
 
@@ -72,15 +81,6 @@ function parseUuid(value: string, field: string) {
  * `redacted` cuenta los que traían PII en crudo, porque un modelo que filtra
  * identificadores es una señal que vale la pena ver.
  */
-/** Queda algo legible una vez retirados los tokens de redaccion. */
-function hasSubstance(text: string) {
-  const withoutTokens = Object.values(REDACTION_TOKENS).reduce(
-    (accumulator, token) => accumulator.split(token).join(" "),
-    text,
-  );
-  return /\p{L}|\p{N}/u.test(withoutTokens);
-}
-
 export function sanitizeInsights(
   value: TranscriptInsights,
   allowedProductIds: ReadonlySet<string>,
@@ -117,54 +117,6 @@ export function sanitizeInsights(
 }
 
 /**
- * Sanitiza la cobertura de chat aplicando la misma lógica de redacción y descarte que sanitizeInsights.
- * Una pregunta que contiene PII tras redactar se descarta, y una pregunta que queda vacía se descarta.
- */
-function sanitizeChatCoverage(value: TranscriptInsights["chat_coverage"]) {
-  if (!value || !Array.isArray(value)) return { kept: [], discarded: 0, redacted: 0 };
-
-  const kept: Array<{
-    question: string;
-    answered: boolean;
-    evidenceQuote: string | null;
-    atSeconds: number | null;
-  }> = [];
-  let discarded = 0;
-  let redacted = 0;
-
-  for (const item of value) {
-    const questionContainsPii = containsPii(item.question);
-    if (questionContainsPii) redacted += 1;
-
-    const question = redactPii(item.question).trim();
-    if (!hasSubstance(question)) {
-      discarded += 1;
-      continue;
-    }
-
-    const evidenceContainsPii = item.evidence_quote ? containsPii(item.evidence_quote) : false;
-    if (evidenceContainsPii) redacted += 1;
-
-    const evidenceQuote = item.evidence_quote ? redactPii(item.evidence_quote).trim() : null;
-    if (evidenceQuote && !hasSubstance(evidenceQuote)) {
-      discarded += 1;
-      continue;
-    }
-
-    kept.push({
-      question,
-      answered: item.answered,
-      evidenceQuote: evidenceQuote || null,
-      // Un segundo sin respuesta no significa nada: si no la respondio, no hay
-      // punto del video al que mandar a la asesora.
-      atSeconds: item.answered ? item.at_seconds : null,
-    });
-  }
-
-  return { kept, discarded, redacted };
-}
-
-/**
  * Analiza una grabación transcrita y persiste sus insights.
  *
  * La transición `transcribed → analyzing` es condicional y por eso sirve de
@@ -173,7 +125,7 @@ function sanitizeChatCoverage(value: TranscriptInsights["chat_coverage"]) {
  * `transcribed`.
  */
 export async function analyzeRecording(recordingId: string, options: AnalyzeDependencies = {}) {
-  const { authorize, database, generate } = dependencies(options);
+  const { authorize, database, generate, generateCoverage } = dependencies(options);
   const authorization = await authorize("asesor");
   if (!authorization.ok) return authorization;
   const parsedId = parseUuid(recordingId, "recordingId");
@@ -230,26 +182,34 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
       .where(isNotNull(products.verifiedAt))
       .orderBy(asc(products.name));
 
-    const [prompt] = await database
-      .select({ id: prompts.id })
+    const activePrompts = await database
+      .select({ id: prompts.id, name: prompts.name })
       .from(prompts)
-      .where(and(eq(prompts.name, "analyze_transcript"), eq(prompts.active, true)))
-      .orderBy(desc(prompts.version))
-      .limit(1);
-    if (!prompt) {
+      .where(
+        and(
+          inArray(prompts.name, ["analyze_transcript", "chat_coverage"]),
+          eq(prompts.active, true),
+        ),
+      )
+      .orderBy(desc(prompts.version));
+    const analyzePromptId = activePrompts.find((row) => row.name === "analyze_transcript")?.id;
+    const coveragePromptId = activePrompts.find((row) => row.name === "chat_coverage")?.id;
+    if (!analyzePromptId) {
       throw new Error("No existe un prompt activo para analizar transcripciones.");
     }
 
+    // El chat NO entra a esta llamada. Los hallazgos salen de la transcripcion;
+    // la cobertura de chat corre aparte y por lotes, porque compartir llamada
+    // hacia que el modelo procesara los primeros minutos del chat y parara.
     const rendered = buildAnalyzeTranscriptPrompt({
       transcript: recording.transcript,
-      chatLog: recording.chatLog,
       durationS: recording.durationS,
       products: catalog,
     });
     const generated = await generate({
       advisorId: authorization.data.id,
       purpose: "analyze_transcript",
-      promptId: prompt.id,
+      promptId: analyzePromptId,
       schema: transcriptInsightsSchema,
       system: rendered.system,
       messages: rendered.messages,
@@ -263,7 +223,28 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
       new Set(catalog.map((product) => product.id)),
     );
 
-    const sanitizedChat = sanitizeChatCoverage(generated.data.value.chat_coverage);
+    const coverage: ChatCoverageOutcome =
+      recording.chatLog && coveragePromptId
+        ? await collectChatCoverage(
+            {
+              advisorId: authorization.data.id,
+              promptId: coveragePromptId,
+              chatLog: recording.chatLog,
+              transcript: recording.transcript,
+              durationS: recording.durationS,
+            },
+            generateCoverage,
+          )
+        : {
+            rows: [],
+            droppedNoise: 0,
+            questionCount: 0,
+            notQuestions: 0,
+            batches: 0,
+            failedBatches: 0,
+            lagS: null,
+            chatBeyondAudioS: null,
+          };
 
     const saved = await database.transaction(async (tx) => {
       const rows =
@@ -283,17 +264,18 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
               )
               .returning();
       const chatRows =
-        sanitizedChat.kept.length === 0
+        coverage.rows.length === 0
           ? []
           : await tx
               .insert(chatCoverage)
               .values(
-                sanitizedChat.kept.map((item) => ({
+                coverage.rows.map((item) => ({
                   recordingId: recording.id,
                   question: item.question,
                   answered: item.answered,
                   evidenceQuote: item.evidenceQuote,
                   atSeconds: item.atSeconds,
+                  askedCount: item.askedCount,
                 })),
               )
               .returning();
@@ -311,6 +293,17 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
         chatCoverage: saved.chatCoverage,
         discarded: sanitized.discarded,
         redacted: sanitized.redacted,
+        coverage: {
+          questionCount: coverage.questionCount,
+          notQuestions: coverage.notQuestions,
+          droppedNoise: coverage.droppedNoise,
+          batches: coverage.batches,
+          // Mayor que cero significa que la cobertura guardada es PARCIAL.
+          failedBatches: coverage.failedBatches,
+          // Desfase medido entre el reloj del chat y el del audio.
+          lagS: coverage.lagS,
+          chatBeyondAudioS: coverage.chatBeyondAudioS,
+        },
       },
     };
   } catch (error) {
@@ -344,6 +337,11 @@ export async function listAnalyzableRecordings(options: AnalyzeDependencies = {}
         status: liveRecordings.status,
         durationS: liveRecordings.durationS,
         createdAt: liveRecordings.createdAt,
+        // Solo el booleano: el texto se pide aparte cuando alguien lo abre.
+        // Una transcripcion de dos horas pesa 144 KB y traer la de todas las
+        // grabaciones en cada carga costaria mas que el resto de la pantalla.
+        hasTranscript: sql<boolean>`${liveRecordings.transcript} is not null`,
+        hasChatLog: sql<boolean>`${liveRecordings.chatLog} is not null`,
       })
       .from(liveRecordings)
       .where(eq(liveRecordings.advisorId, authorization.data.id))

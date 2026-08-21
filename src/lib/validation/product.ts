@@ -68,6 +68,16 @@ export const productInputSchema = z
     complementProductIds: z.array(z.uuid()).max(3),
     sources: z.array(sourceSchema),
     verifiedAt: z.coerce.date().nullable().optional(),
+    // Pesos colombianos sin decimales: nadie cobra centavos en un live.
+    priceCop: z.preprocess(
+      (value) => (value === "" || value === null ? undefined : value),
+      z.coerce
+        .number()
+        .int("El precio va en pesos, sin decimales.")
+        .positive()
+        .nullable()
+        .default(null),
+    ),
   })
   .superRefine((product, context) => {
     const ranks = new Set(product.benefits.map((benefit) => benefit.rank));
@@ -76,6 +86,16 @@ export const productInputSchema = z
         code: "custom",
         message: "Los beneficios deben usar los rangos 1, 2 y 3 una sola vez.",
         path: ["benefits"],
+      });
+    }
+
+    // Verificar una ficha sin precio la deja sin poder responder la pregunta
+    // mas frecuente de un live: 108 de 250 en el live medido.
+    if (product.verifiedAt && product.priceCop == null) {
+      context.addIssue({
+        code: "custom",
+        message: "Carga el precio antes de marcar la ficha como verificada.",
+        path: ["priceCop"],
       });
     }
 

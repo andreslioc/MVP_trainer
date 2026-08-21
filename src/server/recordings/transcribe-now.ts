@@ -122,8 +122,21 @@ const DEEPGRAM = {
  * Si la duracion no se pudo medir se intenta con Groq igual: fallara con un
  * mensaje claro, que es mejor que gastar credito por una sospecha.
  */
-export function resolveProvider(durationS: number | null) {
+export function resolveProvider(durationS: number | null, sizeBytes: number | null = null) {
   if (env.TRANSCRIPTION_PROVIDER !== "groq") return DEEPGRAM;
+
+  // Por TAMANO ademas de por duracion. Desde que la subida no comprime —ffmpeg
+  // no existe en Vercel—, un archivo sobre el tope de Groq no se puede encoger:
+  // el unico camino es Deepgram, que admite 2 GB sin comprimir. Y el tamano
+  // siempre se conoce, mientras que la duracion viene nula hasta transcribir.
+  const noCabePorTamano = sizeBytes !== null && sizeBytes > env.TRANSCRIPTION_MAX_BYTES;
+  if (noCabePorTamano && env.DEEPGRAM_API_KEY) {
+    logFailure(
+      "transcribeRecording",
+      `grabación de ${Math.round(sizeBytes / (1024 * 1024))} MB: excede el tope de Groq y no se puede comprimir, se usa Deepgram`,
+    );
+    return DEEPGRAM;
+  }
 
   const noLeCabe = durationS !== null && durationS > GROQ_MAX_AUDIO_SECONDS;
   if (noLeCabe && env.DEEPGRAM_API_KEY) {
@@ -147,6 +160,8 @@ type AuthorizationResult =
   | { ok: false; error: { code: string; message: string } };
 type TranscribeStorage = {
   download: (path: string) => Promise<{ data: Blob | null; error: { message: string } | null }>;
+  /** Se llama al terminar bien: el audio ya no hace falta. */
+  remove: (paths: string[]) => Promise<unknown>;
 };
 
 export type TranscribeRecordingDependencies = {
@@ -161,7 +176,10 @@ export type TranscribeRecordingDependencies = {
 
 function defaultStorage(bucket: string): TranscribeStorage {
   const storage = createAdminSupabaseClient().storage.from(bucket);
-  return { download: (path) => storage.download(path) };
+  return {
+    download: (path) => storage.download(path),
+    remove: (paths) => storage.remove(paths),
+  };
 }
 
 /**
@@ -263,12 +281,10 @@ export async function transcribeRecording(
     return await fail("INTERNAL", "No se pudo leer el audio guardado.");
   }
 
-  const provider = resolveProvider(recording.durationS);
+  const audio = await downloaded.data.arrayBuffer();
+  const provider = resolveProvider(recording.durationS, audio.byteLength);
   const compressed = await compressForTranscription(
-    {
-      audio: await downloaded.data.arrayBuffer(),
-      contentType: downloaded.data.type || "application/octet-stream",
-    },
+    { audio, contentType: downloaded.data.type || "application/octet-stream" },
     { maxBytes: options.maxBytes ?? provider.maxBytes },
   );
   if (!compressed.ok) return await fail(compressed.error.code, compressed.error.message);
@@ -289,6 +305,18 @@ export async function transcribeRecording(
     .where(and(eq(liveRecordings.id, recording.id), eq(liveRecordings.status, "transcribing")))
     .returning();
   if (!updated) return await fail("CONFLICT", "La grabación cambió de estado.");
+
+  // El audio ya no hace falta: el activo es la transcripcion, y el original
+  // sigue en el computador de la asesora, que lo descargo del live. Borrarlo
+  // deja el bucket en unos pocos MB en vez de acumular 90 dias de audio, y
+  // saca de encima la copia que arrastra PII de clientas.
+  //
+  // Si el borrado falla no se toca el resultado: la transcripcion ya esta
+  // guardada, y la retencion volvera a intentarlo cuando expire la fila.
+  const removed = await storage.remove([recording.storagePath]).catch(() => null);
+  if (removed === null) {
+    logFailure("transcribeRecording/remove", `quedo el audio de ${recording.id} en Storage`);
+  }
 
   return { ok: true as const, data: updated };
 }

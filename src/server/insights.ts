@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../db/client.ts";
@@ -243,9 +243,18 @@ export async function listChatCoverage(recordingId: string, options: InsightsDep
         answered: chatCoverage.answered,
         evidenceQuote: chatCoverage.evidenceQuote,
         atSeconds: chatCoverage.atSeconds,
+        askedCount: chatCoverage.askedCount,
       })
       .from(chatCoverage)
-      .where(eq(chatCoverage.recordingId, recordingId));
+      .where(eq(chatCoverage.recordingId, recordingId))
+      // Sin responder primero, y dentro de esas las mas preguntadas: el modulo
+      // existe para mostrar lo que se quedo sin contestar, no para felicitar
+      // por lo que si. Despues, orden cronologico del live.
+      .orderBy(
+        asc(chatCoverage.answered),
+        desc(chatCoverage.askedCount),
+        asc(chatCoverage.createdAt),
+      );
 
     return { ok: true as const, data: rows };
   } catch (error) {

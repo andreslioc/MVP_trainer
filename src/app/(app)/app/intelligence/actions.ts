@@ -5,8 +5,10 @@ import { revalidatePath } from "next/cache";
 import { promoteInsight } from "../../../../server/insights.ts";
 import { analyzeRecording } from "../../../../server/recordings/analyze.ts";
 import { transcribeRecording } from "../../../../server/recordings/transcribe-now.ts";
+import { getRecordingTranscript } from "../../../../server/recordings/transcript-view.ts";
 import { ingestTranscript } from "../../../../server/recordings/ingest.ts";
-import { uploadRecording } from "../../../../server/recordings/upload.ts";
+import { registerRecording } from "../../../../server/recordings/register.ts";
+import { prepareRecordingUpload } from "../../../../server/recordings/upload.ts";
 
 export async function analyzeRecordingAction(recordingId: string) {
   const result = await analyzeRecording(recordingId);
@@ -18,6 +20,11 @@ export async function transcribeRecordingAction(recordingId: string) {
   const result = await transcribeRecording(recordingId);
   if (result.ok) revalidatePath("/app/intelligence");
   return result;
+}
+
+/** Lectura, no mutacion: no revalida nada. */
+export async function getRecordingTranscriptAction(recordingId: string) {
+  return getRecordingTranscript(recordingId);
 }
 
 export async function promoteInsightAction(insightId: string) {
@@ -37,24 +44,25 @@ export async function ingestTranscriptAction(input: {
   return result;
 }
 
-export async function uploadRecordingAction(formData: FormData) {
-  const file = formData.get("file");
-  if (!(file instanceof File)) {
-    return {
-      ok: false as const,
-      error: { code: "VALIDATION", message: "Selecciona un archivo.", field: "file" },
-    };
-  }
-  // `uploadRecording` valida tipo, tamano y contenido con su propio esquema de
-  // Zod; aqui solo cruzamos el borde de FormData, donde el tipo MIME llega como
-  // string. La validacion real sigue estando del lado del servidor.
-  const chatLog = formData.get("chatLog");
-  const title = formData.get("title");
-  const result = await uploadRecording({
-    file: file as unknown as Parameters<typeof uploadRecording>[0]["file"],
-    chatLog: typeof chatLog === "string" && chatLog.trim() ? chatLog : undefined,
-    title: typeof title === "string" && title.trim() ? title : undefined,
-  });
+/**
+ * Paso 1: pide la URL firmada. Peticion diminuta —solo tipo y tamano—, asi que
+ * pasa sin problema por el tope de cuerpo de Vercel.
+ */
+export async function prepareRecordingUploadAction(input: {
+  contentType: string;
+  sizeBytes: number;
+}) {
+  return prepareRecordingUpload(input);
+}
+
+/** Paso 2: el navegador ya subio el archivo; se registra la grabacion. */
+export async function registerRecordingAction(input: {
+  recordingId: string;
+  storagePath: string;
+  chatLog?: string;
+  title?: string;
+}) {
+  const result = await registerRecording(input);
   if (result.ok) revalidatePath("/app/intelligence");
   return result;
 }

@@ -32,11 +32,17 @@ async function createRecording(status: Status, owner = advisorId, path?: string)
   return recording;
 }
 
+const removed: string[][] = [];
+
 const storage = {
   download: async () => ({
     data: new Blob([new Uint8Array(16)], { type: "audio/mpeg" }),
     error: null,
   }),
+  remove: async (paths: string[]) => {
+    removed.push(paths);
+    return {};
+  },
 };
 
 const transcribeOk = async () => ({
@@ -62,6 +68,24 @@ afterAll(async () => {
 });
 
 describe("transcribeRecording", () => {
+  it("borra el audio de Storage cuando la transcripción sale bien", async () => {
+    // El activo es la transcripción; el original sigue en el computador de la
+    // asesora. Guardar 90 días de audio llena el bucket y conserva PII de
+    // clientas que ya no hace falta.
+    removed.length = 0;
+    const recording = await createRecording("transcribing");
+    const result = await transcribeRecording(recording.id, {
+      transcribe: transcribeOk,
+      authorize: async () => ({ ok: true, data: { id: advisorId, role: "asesor" } }),
+      database: connection.db,
+      storage,
+      bucket: "live-recordings",
+    });
+
+    expect(result.ok).toBe(true);
+    expect(removed).toContainEqual([recording.storagePath]);
+  });
+
   it("deja lista para analizar una grabación recién subida", async () => {
     const recording = await createRecording("uploaded");
 

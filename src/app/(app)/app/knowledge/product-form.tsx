@@ -7,6 +7,9 @@ import { useForm } from "react-hook-form";
 
 import { deleteProductAction, saveProductAction } from "./actions.ts";
 import { BenefitsFields } from "./benefits-fields.tsx";
+import { IngredientFields, SourceFields } from "./ingredient-fields.tsx";
+import { PairListFields } from "./pair-list-fields.tsx";
+import { PriceFields } from "./price-fields.tsx";
 import {
   type EditableProduct,
   productFormDefaults,
@@ -24,6 +27,8 @@ export function ProductForm({ product }: { product?: EditableProduct }) {
     register,
     handleSubmit,
     setError,
+    watch,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productFormSchema),
@@ -41,16 +46,12 @@ export function ProductForm({ product }: { product?: EditableProduct }) {
           result.error.field
         ) {
           const fieldMap: Partial<Record<string, keyof ProductFormValues>> = {
-            activeIngredients: "activeIngredientsJson",
             benefits: "benefits",
-            faqs: "faqsJson",
-            objections: "objectionsJson",
-            differentiators: "differentiatorsJson",
             claimsAllowed: "claimsAllowedText",
             claimsCaution: "claimsCautionText",
             claimsForbidden: "claimsForbiddenText",
             complementProductIds: "complementProductIdsText",
-            sources: "sourcesJson",
+            priceCop: "priceCopText",
           };
           const field =
             fieldMap[result.error.field] ?? (result.error.field as keyof ProductFormValues);
@@ -109,40 +110,50 @@ export function ProductForm({ product }: { product?: EditableProduct }) {
 
         <BenefitsFields errors={errors} register={register} />
 
+        <PriceFields errors={errors} register={register} watch={watch} />
+
         <section className="rounded-card border border-border bg-surface p-4">
           <h2 className="text-xl font-semibold text-fg">Conocimiento estructurado</h2>
           <p className="mt-1 text-sm text-fg-muted">
-            Los campos JSON aceptan arreglos. Los ejemplos vacíos pueden conservarse cuando no hay
-            datos.
+            Es lo que el Copilot puede decir en cámara. Todo lo que escribas aquí se dice tal cual,
+            así que va en palabras de la clienta.
           </p>
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            {(
-              [
-                [
-                  "activeIngredientsJson",
-                  "Ingredientes activos",
-                  '[{"name":"Magnesio","verified":false}]',
-                ],
-                ["faqsJson", "Preguntas frecuentes", '[{"question":"...","answer":"..."}]'],
-                ["objectionsJson", "Objeciones", '[{"objection":"...","response":"..."}]'],
-                ["differentiatorsJson", "Diferenciadores", '[{"claim":"...","evidence":"..."}]'],
-                ["sourcesJson", "Fuentes", '[{"label":"Etiqueta","url":"https://..."}]'],
-              ] as const
-            ).map(([name, label, placeholder]) => (
-              <label className="text-sm font-medium text-fg" key={name}>
-                {label}
-                <textarea
-                  className={`${inputClass} min-h-32 font-mono text-sm`}
-                  placeholder={placeholder}
-                  {...register(name)}
-                />
-                {errors[name] ? (
-                  <span className="mt-1 block text-sm text-destructive">
-                    {errors[name]?.message}
-                  </span>
-                ) : null}
-              </label>
-            ))}
+          <div className="mt-4 space-y-4">
+            <IngredientFields control={control} errors={errors} register={register} />
+            <PairListFields
+              control={control}
+              errors={errors}
+              hint="Lo que preguntan seguido. La respuesta es la que dirá el Copilot."
+              labels={["Pregunta de la clienta", "Respuesta"]}
+              name="faqs"
+              placeholders={["¿Cómo se toma?", "Una porción al día con agua."]}
+              register={register}
+              title="Preguntas frecuentes"
+            />
+            <PairListFields
+              control={control}
+              errors={errors}
+              hint="Las dudas que frenan la compra, con la respuesta que las desarma."
+              labels={["Lo que dice la clienta", "Cómo se responde"]}
+              name="objections"
+              placeholders={["No conozco la marca", "Es importado de Estados Unidos."]}
+              register={register}
+              title="Objeciones"
+            />
+            <PairListFields
+              control={control}
+              errors={errors}
+              hint="Por qué creerte. La evidencia es lo que lo sostiene, y tiene que ser comprobable."
+              labels={["Qué lo diferencia", "Con qué se comprueba"]}
+              name="differentiators"
+              placeholders={[
+                "Etiqueta e ingredientes a la vista",
+                "Vienen declarados en el empaque.",
+              ]}
+              register={register}
+              title="Diferenciadores"
+            />
+            <SourceFields control={control} errors={errors} register={register} />
           </div>
         </section>
 

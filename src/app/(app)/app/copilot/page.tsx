@@ -20,6 +20,7 @@ export default async function CopilotPage() {
         <CopilotForm
           activeRules={result.data.activeRules}
           initialSessionId={result.data.activeSession?.id ?? null}
+          productPromos={result.data.activeSession?.productPromos ?? []}
           products={result.data.products}
         />
       ) : (

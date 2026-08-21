@@ -25,7 +25,12 @@ export async function getCopilotSetup(options: CopilotSessionDependencies = {}) 
   try {
     const [productRows, ruleRows, activeRows] = await Promise.all([
       database
-        .select({ id: products.id, name: products.name, brand: products.brand })
+        .select({
+          id: products.id,
+          name: products.name,
+          brand: products.brand,
+          priceCop: products.priceCop,
+        })
         .from(products)
         .where(isNotNull(products.verifiedAt))
         .orderBy(asc(products.name)),
@@ -35,7 +40,11 @@ export async function getCopilotSetup(options: CopilotSessionDependencies = {}) 
         .where(eq(commercialRules.active, true))
         .orderBy(asc(commercialRules.key)),
       database
-        .select({ id: liveSessions.id, startedAt: liveSessions.startedAt })
+        .select({
+          id: liveSessions.id,
+          startedAt: liveSessions.startedAt,
+          productPromos: liveSessions.productPromos,
+        })
         .from(liveSessions)
         .where(and(eq(liveSessions.advisorId, authorization.data.id), isNull(liveSessions.endedAt)))
         .orderBy(desc(liveSessions.startedAt))
@@ -111,4 +120,89 @@ export async function endLiveSession(sessionId: string, options: CopilotSessionD
       error: { code: "LIVE_SESSION_END_FAILED", message: "No se pudo finalizar el live." },
     };
   }
+}
+
+const promoInputSchema = z.object({
+  sessionId: z.uuid(),
+  productId: z.uuid(),
+  /** Nulo apaga el precio especial de ese producto. */
+  percent: z
+    .number()
+    .int()
+    .min(1, "El descuento minimo es 1%.")
+    .max(99, "El descuento maximo es 99%.")
+    .nullable(),
+});
+
+/**
+ * Prende o apaga el precio especial de un producto durante ESTE live.
+ *
+ * Vive en la sesion y no en la ficha a proposito: el precio de lista es dato
+ * durable del catalogo —que solo escribe admin—, y el descuento es del momento.
+ * Una asesora si es duena de su sesion, asi que puede prenderlo sin tocar
+ * `products`, y al terminar el live el descuento no sobrevive por descuido.
+ */
+export async function setSessionPromo(input: unknown, options: CopilotSessionDependencies = {}) {
+  const { database, authorize } = dependencies(options);
+  const authorization = await authorize("asesor");
+  if (!authorization.ok) return authorization;
+
+  const parsed = promoInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      ok: false as const,
+      error: {
+        code: "VALIDATION",
+        message: z.prettifyError(parsed.error),
+        field: parsed.error.issues[0]?.path[0]?.toString(),
+      },
+    };
+  }
+
+  try {
+    const [session] = await database
+      .select({ id: liveSessions.id, productPromos: liveSessions.productPromos })
+      .from(liveSessions)
+      .where(
+        and(
+          eq(liveSessions.id, parsed.data.sessionId),
+          eq(liveSessions.advisorId, authorization.data.id),
+          isNull(liveSessions.endedAt),
+        ),
+      )
+      .limit(1);
+    if (!session) {
+      return { ok: false as const, error: { code: "NOT_FOUND", message: "El live no existe." } };
+    }
+
+    // Se reemplaza la entrada del producto, nunca se acumulan dos para el mismo:
+    // dos descuentos vigentes a la vez no se pueden resolver.
+    const rest = session.productPromos.filter(
+      (promo) => promo.product_id !== parsed.data.productId,
+    );
+    const productPromos =
+      parsed.data.percent === null
+        ? rest
+        : [...rest, { product_id: parsed.data.productId, percent: parsed.data.percent }];
+
+    const [updated] = await database
+      .update(liveSessions)
+      .set({ productPromos })
+      .where(eq(liveSessions.id, session.id))
+      .returning({ productPromos: liveSessions.productPromos });
+    return { ok: true as const, data: updated ?? { productPromos } };
+  } catch {
+    return {
+      ok: false as const,
+      error: { code: "PROMO_FAILED", message: "No se pudo cambiar el precio especial." },
+    };
+  }
+}
+
+/** Descuento vigente de un producto en esta sesion, o nulo si no hay. */
+export function promoPercentFor(
+  productPromos: Array<{ product_id: string; percent: number }>,
+  productId: string,
+) {
+  return productPromos.find((promo) => promo.product_id === productId)?.percent ?? null;
 }

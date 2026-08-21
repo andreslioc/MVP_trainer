@@ -8,7 +8,11 @@ import {
   RECORDING_ACCEPT,
   recordingFileProblem,
 } from "../../../../lib/recordings.ts";
-import { ingestTranscriptAction, uploadRecordingAction } from "./actions.ts";
+import {
+  ingestTranscriptAction,
+  prepareRecordingUploadAction,
+  registerRecordingAction,
+} from "./actions.ts";
 import { ChatLogField } from "./chat-log-field.tsx";
 
 type Mode = "transcript" | "audio";
@@ -48,6 +52,12 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
     });
   }
 
+  /**
+   * Sube en dos pasos porque el archivo NO puede pasar por el servidor: Vercel
+   * corta cualquier cuerpo sobre ~4,5 MB antes de que el codigo corra, y un
+   * audio de live comprimido ronda los 17 MB. El servidor solo firma la URL; el
+   * archivo va del navegador a Storage directo.
+   */
   function submitAudio(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
@@ -56,20 +66,46 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
       report(false, "Selecciona un archivo.");
       return;
     }
-    // Rechazar aqui y no en el servidor: un cuerpo que excede el tope de la
-    // server action se corta a medias y falla con un error de multipart que no
-    // dice nada sobre el tamano.
     const problem = recordingFileProblem(file);
     if (problem) {
       report(false, problem);
       return;
     }
-    const data = new FormData();
-    data.set("file", file);
-    if (chatLog.trim()) data.set("chatLog", chatLog.trim());
-    if (title.trim()) data.set("title", title.trim());
+
     startTransition(async () => {
-      const result = await uploadRecordingAction(data);
+      const prepared = await prepareRecordingUploadAction({
+        contentType: file.type,
+        sizeBytes: file.size,
+      });
+      if (!prepared.ok) {
+        report(false, prepared.error.message);
+        return;
+      }
+
+      let uploaded: Response;
+      try {
+        // Sin cabeceras de autenticacion: el permiso viaja en el token de la
+        // URL firmada, y por eso esta subida no toca el servidor de la app.
+        uploaded = await fetch(prepared.data.uploadUrl, {
+          method: "PUT",
+          body: file,
+          headers: { "content-type": file.type },
+        });
+      } catch {
+        report(false, "Se cortó la subida. Revisa tu conexión y vuelve a intentar.");
+        return;
+      }
+      if (!uploaded.ok) {
+        report(false, "Storage rechazó el archivo. Puede pesar más de lo permitido.");
+        return;
+      }
+
+      const result = await registerRecordingAction({
+        recordingId: prepared.data.recordingId,
+        storagePath: prepared.data.storagePath,
+        chatLog: chatLog.trim() || undefined,
+        title: title.trim() || undefined,
+      });
       if (result.ok) {
         setChatLog("");
         setTitle("");
@@ -77,7 +113,7 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
       report(
         result.ok,
         result.ok
-          ? "Grabación subida y comprimida. Dale «Transcribir ahora» en la lista de grabaciones."
+          ? "Grabación subida. Dale «Transcribir ahora» en la lista de grabaciones."
           : result.error.message,
       );
     });

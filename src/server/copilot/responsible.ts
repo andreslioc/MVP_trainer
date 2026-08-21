@@ -8,6 +8,17 @@ type ResponsibleInput = {
   composition: CopilotComposition;
   product: typeof products.$inferSelect;
   refusal?: boolean;
+  /**
+   * Descuento vigente en la sesion de live, si hay precio especial activo.
+   *
+   * El gate prohibe cualquier porcentaje que no este en la ficha, porque
+   * inventar una cifra de eficacia es el fallo que existe para evitar. Un
+   * descuento tambien es un porcentaje, y desde que vive en la sesion y no en
+   * la ficha, el gate lo leia como evidencia inventada y bloqueaba la respuesta
+   * entera. Se pasa aparte para poder distinguirlos: se acepta ESE numero, no
+   * los porcentajes en general.
+   */
+  promoPercent?: number | null;
 };
 
 export type ResponsibleResult =
@@ -36,6 +47,20 @@ function normalize(value: string) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("es");
+}
+
+/**
+ * El porcentaje encontrado es exactamente el descuento de esta sesion.
+ *
+ * Se compara el numero, no la cadena: "10 %", "10%" y "10 por ciento" son el
+ * mismo descuento escrito distinto, y un 95% sigue estando prohibido aunque el
+ * descuento sea del 10.
+ */
+function isSessionDiscount(match: string, promoPercent: number | null) {
+  if (promoPercent === null) return false;
+  const digits = match.match(/\d+(?:[.,]\d+)?/)?.[0];
+  if (digits === undefined) return false;
+  return Number(digits.replace(",", ".")) === promoPercent;
 }
 
 function answerText(composition: CopilotComposition) {
@@ -120,7 +145,11 @@ export function applyResponsibleCommunication(input: ResponsibleInput): Responsi
 
   const productKnowledge = normalize(JSON.stringify(input.product));
   const unsupportedEvidence = combined.match(unsupportedEvidencePattern)?.[0];
-  if (unsupportedEvidence && !productKnowledge.includes(normalize(unsupportedEvidence))) {
+  if (
+    unsupportedEvidence &&
+    !productKnowledge.includes(normalize(unsupportedEvidence)) &&
+    !isSessionDiscount(unsupportedEvidence, input.promoPercent ?? null)
+  ) {
     return blocked({
       code: "UNVERIFIED_CLAIM",
       message: `La evidencia mencionada no está respaldada por la ficha: ${unsupportedEvidence}`,

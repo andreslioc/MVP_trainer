@@ -58,6 +58,21 @@ export function redactPii(text: string) {
 }
 
 /**
+ * Queda algo legible una vez retirados los tokens de redaccion.
+ *
+ * Vive aqui, junto a `REDACTION_TOKENS`, porque la usan tanto los hallazgos
+ * como la cobertura de chat: un mensaje que era solo un telefono queda solo
+ * como token y no dice nada, y guardarlo seria una fila vacia con forma de dato.
+ */
+export function hasSubstance(text: string) {
+  const withoutTokens = Object.values(REDACTION_TOKENS).reduce(
+    (accumulator, token) => accumulator.split(token).join(" "),
+    text,
+  );
+  return /\p{L}|\p{N}/u.test(withoutTokens);
+}
+
+/**
  * Puerta de salida. Un insight que todavia contiene un identificador directo no
  * se persiste: se descarta. Preferimos perder un insight a filtrar un telefono
  * hacia el material de entrenamiento.
@@ -90,28 +105,12 @@ Reglas obligatorias para insights:
   transcripcion no trae marcas, o el patron no se localiza en un punto concreto, null. No lo
   estimes ni lo deduzcas del orden de las lineas: o lo lees de una marca, o es null.
 - Si la transcripcion no da para un tipo, simplemente no lo incluyas. Es preferible devolver pocos
-  insights solidos a rellenar los seis tipos con material debil.
-`.trim();
-
-export const CHAT_COVERAGE_PROMPT = `
-Cuando recibas el chat del live, tu tarea adicional es:
-1. Identifica cada pregunta real que hace un viewer en el chat (no spam, no saludos, preguntas concretas).
-2. Para cada pregunta, busca en la TRANSCRIPCION si la asesora la respondio.
-3. Si la respondio: marca answered=true, copia la frase exacta de la transcripcion como
-   evidence_quote, y pon en at_seconds el segundo de la marca [Xs] de esa linea.
-4. Si no la respondio o la pregunta queda sin respuesta clara: marca answered=false,
-   evidence_quote=null y at_seconds=null.
-5. Usa exclusivamente lo que aparece en la transcripcion. No inventes respuestas.
-6. Si una pregunta pide informacion sobre un producto especifico, busca respuestas sobre ese producto.
-7. No redactes ni reemplaces [telefono], [correo] o [nombre] en las preguntas del chat; ya vienen
-  redactadas. Tampoco inventes un question si solo quedaron tokens.
-
-Devuelve la lista en chat_coverage, vacia si no hay preguntas reales en el chat.
+  insights solidos a rellenar los seis tipos con material debil. Esta preferencia por lo breve
+  aplica UNICAMENTE a los insights de esta lista y a nada mas.
 `.trim();
 
 export type AnalyzeTranscriptInput = {
   transcript: string;
-  chatLog?: string | null;
   durationS: number | null;
   products: Array<{ id: string; name: string }>;
 };
@@ -120,20 +119,14 @@ export function buildAnalyzeTranscriptPrompt(input: AnalyzeTranscriptInput) {
   const catalog = input.products.map((product) => ({ id: product.id, name: product.name }));
   const systemParts = [
     ANALYZE_TRANSCRIPT_PROMPT,
-    input.chatLog ? CHAT_COVERAGE_PROMPT : null,
     `\n\nPRODUCTOS DISPONIBLES:\n${JSON.stringify(catalog)}`,
-  ].filter(Boolean);
+  ];
 
   const userContentParts = [
     `DURACION_SEGUNDOS: ${input.durationS ?? "desconocida"}`,
     "TRANSCRIPCION REDACTADA:",
     redactPii(input.transcript),
   ];
-
-  if (input.chatLog) {
-    userContentParts.push("CHAT DEL LIVE:");
-    userContentParts.push(redactPii(input.chatLog));
-  }
 
   return {
     system: systemParts.join("\n"),

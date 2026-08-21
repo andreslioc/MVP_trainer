@@ -106,18 +106,30 @@ export const transcriptInsightsSchema = z
         })
         .strict(),
     ),
-    chat_coverage: z
-      .array(
-        z
-          .object({
-            question: z.string().trim().min(1),
-            answered: z.boolean(),
-            evidence_quote: z.string().trim().min(1).nullable(),
-            at_seconds: z.number().int().nonnegative().nullable(),
-          })
-          .strict(),
-      )
-      .optional(),
+  })
+  .strict();
+
+/**
+ * Cobertura de chat, un lote a la vez.
+ *
+ * `i` es el indice del mensaje en la lista que se le entrego al modelo, no un
+ * id de base. El modelo nunca reescribe el texto de la pregunta: lo referencia.
+ * Asi la fila que se guarda conserva el texto que entro —ya redactado— y no una
+ * parafrasis que pudo reintroducir un identificador.
+ */
+export const chatCoverageBatchSchema = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          i: z.number().int().nonnegative(),
+          es_pregunta: z.boolean(),
+          answered: z.boolean(),
+          evidence_quote: z.string().trim().min(1).nullable(),
+          at_seconds: z.number().int().nonnegative().nullable(),
+        })
+        .strict(),
+    ),
   })
   .strict();
 
@@ -126,3 +138,4 @@ export type Evaluation = z.infer<typeof evaluationSchema>;
 export type CopilotComposition = z.infer<typeof copilotCompositionSchema>;
 export type CopilotIntent = z.infer<typeof copilotIntentSchema>;
 export type TranscriptInsights = z.infer<typeof transcriptInsightsSchema>;
+export type ChatCoverageBatch = z.infer<typeof chatCoverageBatchSchema>;

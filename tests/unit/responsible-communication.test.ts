@@ -129,3 +129,69 @@ describe("comunicación responsable", () => {
     expect(result.data.alerts).toContainEqual(expect.objectContaining({ code: "AI_REFUSAL" }));
   });
 });
+
+describe("porcentaje del descuento del live", () => {
+  it("deja pasar el descuento vigente de la sesion", () => {
+    // Caso real: con precio especial al 10% el gate bloqueaba la respuesta
+    // entera con UNVERIFIED_CLAIM, porque el descuento no vive en la ficha.
+    const result = applyResponsibleCommunication({
+      question: "cuanto cuesta",
+      composition: composition({
+        express: "Hoy tiene 10% de descuento: $170.000.",
+        estandar: "Hoy tiene 10% de descuento: $170.000.",
+        profunda: "Hoy tiene 10% de descuento: $170.000.",
+      }),
+      product: product(),
+      promoPercent: 10,
+    });
+
+    expect(result.ok).toBe(true);
+  });
+
+  it("sigue bloqueando un porcentaje que no es el descuento", () => {
+    const result = applyResponsibleCommunication({
+      question: "funciona?",
+      composition: composition({
+        express: "Tiene 95% de efectividad comprobada.",
+        estandar: "Tiene 95% de efectividad comprobada.",
+        profunda: "Tiene 95% de efectividad comprobada.",
+      }),
+      product: product(),
+      promoPercent: 10,
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("RESPONSIBLE_CONTENT_BLOCKED");
+  });
+
+  it("sin precio especial activo, ningun porcentaje pasa", () => {
+    const result = applyResponsibleCommunication({
+      question: "cuanto cuesta",
+      composition: composition({
+        express: "Hoy tiene 10% de descuento.",
+        estandar: "Hoy tiene 10% de descuento.",
+        profunda: "Hoy tiene 10% de descuento.",
+      }),
+      product: product(),
+      promoPercent: null,
+    });
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("reconoce el descuento escrito con espacio antes del signo", () => {
+    const result = applyResponsibleCommunication({
+      question: "cuanto cuesta",
+      composition: composition({
+        express: "Hoy tiene 10 % de descuento.",
+        estandar: "Hoy tiene 10 % de descuento.",
+        profunda: "Hoy tiene 10 % de descuento.",
+      }),
+      product: product(),
+      promoPercent: 10,
+    });
+
+    expect(result.ok).toBe(true);
+  });
+});

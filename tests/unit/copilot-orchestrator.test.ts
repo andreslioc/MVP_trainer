@@ -79,3 +79,165 @@ describe("Copilot commercial orchestrator", () => {
     expect(result).toEqual({ cta: null, incentive: null, ruleApplied: null });
   });
 });
+
+describe("CTA segun la intencion de la pregunta", () => {
+  const rules = [
+    {
+      key: "canal_whatsapp",
+      value: {
+        cta: "Escríbenos al número que ves en pantalla y te apartamos el tuyo",
+        closes_sale: true,
+      },
+      active: true,
+    },
+    {
+      key: "seguir_tiktok",
+      value: { cta: "Sigue la cuenta para ver los proximos lives" },
+      active: true,
+    },
+  ];
+  const availableCtas = availableCtasFromRules(rules);
+
+  it("con pregunta de precio elige el CTA que cierra venta", () => {
+    // Caso real: se respondio "sigue la cuenta" a un "cuanto cuesta", porque la
+    // rotacion no miraba la intencion.
+    const result = orchestrateCopilot({
+      availableCtas,
+      rules,
+      ctasUsed: [],
+      promosMentioned: [],
+      intent: "precio",
+    });
+
+    expect(result.cta?.ruleKey).toBe("canal_whatsapp");
+  });
+
+  it("no rota el CTA de cierre aunque acabe de usarse", () => {
+    // Dos clientas seguidas preguntando el precio deben recibir las dos la
+    // invitacion a apartar. Repetir aqui es correcto.
+    const result = orchestrateCopilot({
+      availableCtas,
+      rules,
+      ctasUsed: [
+        {
+          cta: "Escríbenos al número que ves en pantalla y te apartamos el tuyo",
+          at: "2026-08-20T12:00:00.000Z",
+        },
+      ],
+      promosMentioned: [],
+      intent: "precio",
+    });
+
+    expect(result.cta?.ruleKey).toBe("canal_whatsapp");
+  });
+
+  it("con intencion de compra tambien cierra", () => {
+    const result = orchestrateCopilot({
+      availableCtas,
+      rules,
+      ctasUsed: [],
+      promosMentioned: [],
+      intent: "compra",
+    });
+
+    expect(result.cta?.ruleKey).toBe("canal_whatsapp");
+  });
+
+  it("en las demas intenciones sigue rotando para no repetirse", () => {
+    const result = orchestrateCopilot({
+      availableCtas,
+      rules,
+      ctasUsed: [
+        {
+          cta: "Escríbenos al número que ves en pantalla y te apartamos el tuyo",
+          at: "2026-08-20T12:00:00.000Z",
+        },
+      ],
+      promosMentioned: [],
+      intent: "uso",
+    });
+
+    expect(result.cta?.ruleKey).toBe("seguir_tiktok");
+  });
+
+  it("sin ningun CTA marcado como de cierre, rota como siempre", () => {
+    const sinCierre = rules.map((rule) => ({
+      ...rule,
+      value: { cta: (rule.value as { cta: string }).cta },
+    }));
+    const result = orchestrateCopilot({
+      availableCtas: availableCtasFromRules(sinCierre),
+      rules: sinCierre,
+      ctasUsed: [],
+      promosMentioned: [],
+      intent: "precio",
+    });
+
+    expect(result.cta).not.toBeNull();
+  });
+});
+
+describe("incentivo segun la intencion de la pregunta", () => {
+  const rules: CommercialRule[] = [
+    { key: "envio_gratis", value: { threshold_cop: 120_000 }, active: true },
+    { key: "promo_live", value: { message: "Promoción del live" }, active: true },
+    {
+      key: "canal_whatsapp",
+      value: { cta: "Escríbenos al número que ves en pantalla", closes_sale: true },
+      active: true,
+    },
+  ];
+
+  it("con pregunta de precio siempre sale el envio gratis por monto", () => {
+    // Es el unico incentivo que se puede decir pegado al precio: la clienta
+    // acaba de escuchar el numero y ya sabe si pasa el umbral. La rotacion lo
+    // cambiaba por la promo del live y la respuesta de precio quedaba sin nada.
+    const result = orchestrateCopilot({
+      availableCtas: availableCtasFromRules(rules),
+      rules,
+      ctasUsed: [],
+      promosMentioned: [{ rule_key: "envio_gratis", at: "2026-08-18T12:00:00Z" }],
+      intent: "precio",
+    });
+
+    expect(result.incentive?.ruleKey).toBe("envio_gratis");
+    expect(result.ruleApplied).toBe("envio_gratis");
+  });
+
+  it("con intencion de compra tampoco rota", () => {
+    const result = orchestrateCopilot({
+      availableCtas: availableCtasFromRules(rules),
+      rules,
+      ctasUsed: [],
+      promosMentioned: [{ rule_key: "envio_gratis", at: "2026-08-18T12:00:00Z" }],
+      intent: "compra",
+    });
+
+    expect(result.incentive?.ruleKey).toBe("envio_gratis");
+  });
+
+  it("en las demas intenciones sigue rotando para no repetirse", () => {
+    const result = orchestrateCopilot({
+      availableCtas: availableCtasFromRules(rules),
+      rules,
+      ctasUsed: [],
+      promosMentioned: [{ rule_key: "envio_gratis", at: "2026-08-18T12:00:00Z" }],
+      intent: "uso",
+    });
+
+    expect(result.incentive?.ruleKey).toBe("promo_live");
+  });
+
+  it("sin incentivo con umbral activo no se inventa uno", () => {
+    const sinUmbral = rules.filter((rule) => rule.key !== "envio_gratis");
+    const result = orchestrateCopilot({
+      availableCtas: availableCtasFromRules(sinUmbral),
+      rules: sinUmbral,
+      ctasUsed: [],
+      promosMentioned: [],
+      intent: "precio",
+    });
+
+    expect(result.incentive?.ruleKey).toBe("promo_live");
+  });
+});

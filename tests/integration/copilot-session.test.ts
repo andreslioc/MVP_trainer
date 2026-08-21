@@ -208,6 +208,12 @@ describe("Copilot session and exchange", () => {
   });
 
   it("does not call composition for an absent fact and persists a cautious answer", async () => {
+    // La ficha se deja sin precio a proposito: con precio cargado esta pregunta
+    // ya no es un dato ausente, y esa es justamente la mejora.
+    await connection.db
+      .update(products)
+      .set({ verifiedAt: null, priceCop: null })
+      .where(eq(products.id, productId));
     const stream = vi.fn();
     const result = await composeCopilotAnswer(
       {

@@ -41,7 +41,22 @@ export default async function TrainingPage() {
           </p>
         </div>
       ) : (
-        <TrainingLauncher products={result.data} />
+        <>
+          <TrainingLauncher products={result.data} />
+          <div className="mt-6 max-w-xl rounded-card border border-border bg-surface p-5">
+            <h2 className="text-xl font-semibold text-fg">O practica con el chat corriendo</h2>
+            <p className="mt-1 text-sm text-fg-muted">
+              Te ves en cámara, el chat pasa solo con comentarios y preguntas de varias fichas, y
+              contestas en voz alta. Se mide qué alcanzaste a responder y cómo lo respondiste.
+            </p>
+            <Link
+              className="mt-4 inline-flex min-h-11 items-center rounded-card border border-primary px-4 font-semibold text-primary"
+              href="/app/training/simulacro"
+            >
+              Abrir simulacro de live
+            </Link>
+          </div>
+        </>
       )}
     </section>
   );
