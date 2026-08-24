@@ -3,19 +3,19 @@
 import { revalidatePath } from "next/cache";
 
 import {
-  generateTrainingQuestions,
-  startTrainingSession,
-} from "../../../../server/training/questions.ts";
+  generateCategoryTrainingQuestions,
+  startCategoryTrainingSession,
+} from "../../../../server/training/categories.ts";
 import { evaluateTrainingAnswer } from "../../../../server/training/evaluate.ts";
 
-export async function generateTrainingQuestionsAction(productId: string) {
-  const result = await generateTrainingQuestions(productId);
+export async function generateCategoryQuestionsAction(category: string) {
+  const result = await generateCategoryTrainingQuestions(category);
   if (result.ok) revalidatePath("/app/training");
   return result;
 }
 
-export async function startTrainingSessionAction(productId: string) {
-  return startTrainingSession(productId);
+export async function startCategorySessionAction(category: string) {
+  return startCategoryTrainingSession(category);
 }
 
 export async function evaluateTrainingAnswerAction(input: {

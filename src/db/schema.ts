@@ -185,9 +185,22 @@ export const trainingSessions = pgTable(
     advisorId: uuid("advisor_id")
       .notNull()
       .references(() => advisors.id, { onDelete: "cascade" }),
-    productId: uuid("product_id")
-      .notNull()
-      .references(() => products.id, { onDelete: "restrict" }),
+    /**
+     * Practica de una sola ficha. Excluyente con `category`.
+     *
+     * Sigue existiendo porque una practica dirigida a un producto recien
+     * verificado es un caso real, y porque las sesiones ya creadas la usan.
+     */
+    productId: uuid("product_id").references(() => products.id, { onDelete: "restrict" }),
+    /**
+     * Practica por categoria: las preguntas salen de VARIAS fichas verificadas
+     * de esa categoria, barajadas.
+     *
+     * Es texto y no una llave a otra tabla porque la categoria vive en
+     * `products.category` como texto libre del catalogo; una tabla de
+     * categorias seria un segundo lugar donde la misma verdad puede diferir.
+     */
+    category: text("category"),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -195,6 +208,14 @@ export const trainingSessions = pgTable(
   (table) => [
     index("training_sessions_advisor_started_idx").on(table.advisorId, table.startedAt.desc()),
     index("training_sessions_product_id_idx").on(table.productId),
+    index("training_sessions_category_idx").on(table.category),
+    // Una practica apunta a una ficha o a una categoria, nunca a las dos ni a
+    // ninguna: sin esto una sesion sin destino no tendria de donde sacar
+    // preguntas y la pantalla quedaria vacia sin explicacion.
+    check(
+      "training_sessions_target_exclusive",
+      sql`num_nonnulls(${table.productId}, ${table.category}) = 1`,
+    ),
   ],
 );
 

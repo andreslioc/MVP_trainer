@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull, or } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
@@ -80,18 +80,22 @@ export async function evaluateTrainingAnswer(input: unknown, options: Evaluation
     const [context] = await database
       .select({ session: trainingSessions, question: trainingQuestions, product: products })
       .from(trainingSessions)
-      .innerJoin(products, eq(products.id, trainingSessions.productId))
-      .innerJoin(
-        trainingQuestions,
-        and(
-          eq(trainingQuestions.id, parsed.data.questionId),
-          eq(trainingQuestions.productId, trainingSessions.productId),
-        ),
-      )
+      // La ficha se deriva de la pregunta, no de la sesion: una practica por
+      // categoria mezcla fichas y su product_id es null.
+      .innerJoin(trainingQuestions, eq(trainingQuestions.id, parsed.data.questionId))
+      .innerJoin(products, eq(products.id, trainingQuestions.productId))
       .where(
         and(
           eq(trainingSessions.id, parsed.data.sessionId),
           eq(trainingSessions.advisorId, authorization.data.id),
+          isNotNull(products.verifiedAt),
+          // La pregunta tiene que caer dentro del alcance de la sesion. Sin
+          // esto, el id de cualquier pregunta del Hub se evaluaria contra
+          // cualquier sesion propia.
+          or(
+            eq(trainingSessions.productId, trainingQuestions.productId),
+            eq(trainingSessions.category, products.category),
+          ),
         ),
       )
       .limit(1);

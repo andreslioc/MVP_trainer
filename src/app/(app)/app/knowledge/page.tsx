@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { getSession } from "../../../../lib/auth.ts";
+import { formatCop } from "../../../../lib/pricing.ts";
 import { listProducts } from "../../../../server/products.ts";
 
 export default async function KnowledgePage() {
@@ -89,6 +90,15 @@ export default async function KnowledgePage() {
                   </h2>
                   <p className="mt-1 text-sm text-fg-muted">
                     {product.presentation} · {product.format}
+                  </p>
+                  {/* El precio es lo primero que pregunta una clienta en el
+                      chat: se lee desde la tarjeta, sin abrir la ficha. */}
+                  <p className="mt-2 text-lg font-semibold tabular-nums text-fg">
+                    {formatCop(product.priceCop) ?? (
+                      <span className="text-sm font-semibold text-confidence-mid-fg">
+                        Sin precio
+                      </span>
+                    )}
                   </p>
                   {product.description ? (
                     <p className="mt-2 line-clamp-3 text-sm text-fg-muted">{product.description}</p>

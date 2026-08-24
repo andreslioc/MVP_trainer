@@ -3,40 +3,39 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import { generateTrainingQuestionsAction, startTrainingSessionAction } from "./actions.ts";
+import { generateCategoryQuestionsAction, startCategorySessionAction } from "./actions.ts";
 
-type TrainingProduct = {
-  id: string;
-  name: string;
-  brand: string;
+type TrainingCategory = {
+  category: string;
+  productCount: number;
   questionCount: number;
 };
 
 type Feedback = { type: "success" | "error"; message: string };
 
-export function TrainingLauncher({ products }: { products: TrainingProduct[] }) {
+export function TrainingLauncher({ categories }: { categories: TrainingCategory[] }) {
   const router = useRouter();
-  const [selectedId, setSelectedId] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [counts, setCounts] = useState(() =>
-    Object.fromEntries(products.map((product) => [product.id, product.questionCount])),
+    Object.fromEntries(categories.map((item) => [item.category, item.questionCount])),
   );
   const [pending, setPending] = useState<"generate" | "start" | null>(null);
   const [feedback, setFeedback] = useState<Feedback>();
   const selected = useMemo(
-    () => products.find((product) => product.id === selectedId),
-    [products, selectedId],
+    () => categories.find((item) => item.category === selectedCategory),
+    [categories, selectedCategory],
   );
-  const questionCount = selected ? (counts[selected.id] ?? 0) : 0;
+  const questionCount = selected ? (counts[selected.category] ?? 0) : 0;
 
   async function generate() {
     if (!selected) return;
     setPending("generate");
     setFeedback(undefined);
-    const result = await generateTrainingQuestionsAction(selected.id);
+    const result = await generateCategoryQuestionsAction(selected.category);
     if (result.ok) {
       setCounts((current) => ({
         ...current,
-        [selected.id]: (current[selected.id] ?? 0) + result.data.length,
+        [selected.category]: (current[selected.category] ?? 0) + result.data.length,
       }));
       setFeedback({ type: "success", message: "La nueva tanda quedó lista para practicar." });
     } else {
@@ -49,7 +48,7 @@ export function TrainingLauncher({ products }: { products: TrainingProduct[] }) 
     if (!selected) return;
     setPending("start");
     setFeedback(undefined);
-    const result = await startTrainingSessionAction(selected.id);
+    const result = await startCategorySessionAction(selected.category);
     if (result.ok) {
       router.push(`/app/training/${result.data.id}`);
       return;
@@ -61,39 +60,41 @@ export function TrainingLauncher({ products }: { products: TrainingProduct[] }) 
   return (
     <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="rounded-card border border-border bg-surface p-5">
-        <h2 className="text-xl font-semibold text-fg">Elige qué producto practicar</h2>
-        <label className="mt-4 block text-sm font-medium text-fg" htmlFor="training-product">
-          Producto verificado
+        <h2 className="text-xl font-semibold text-fg">Elige qué categoría practicar</h2>
+        <label className="mt-4 block text-sm font-medium text-fg" htmlFor="training-category">
+          Categoría verificada
         </label>
         <select
           className="mt-1 min-h-11 w-full rounded-card border bg-surface px-3"
-          id="training-product"
+          id="training-category"
           onChange={(event) => {
-            setSelectedId(event.target.value);
+            setSelectedCategory(event.target.value);
             setFeedback(undefined);
           }}
-          value={selectedId}
+          value={selectedCategory}
         >
-          <option value="">Selecciona una ficha</option>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name} · {product.brand}
+          <option value="">Selecciona una categoría</option>
+          {categories.map((item) => (
+            <option key={item.category} value={item.category}>
+              {item.category} · {item.productCount} {item.productCount === 1 ? "ficha" : "fichas"}
             </option>
           ))}
         </select>
 
         {!selected ? (
           <p className="mt-4 rounded-card border border-border bg-background p-3 text-sm text-fg-muted">
-            Selecciona un producto para ver sus preguntas disponibles.
+            Selecciona una categoría para ver sus preguntas disponibles.
           </p>
         ) : questionCount === 0 ? (
           <p className="mt-4 rounded-card border border-warning-border bg-confidence-mid-bg p-3 text-sm text-confidence-mid-fg">
-            Este producto todavía no tiene preguntas. Genera una tanda antes de comenzar.
+            Esta categoría todavía no tiene preguntas. Genera una tanda antes de comenzar.
           </p>
         ) : (
           <p className="mt-4 text-sm text-fg-muted" role="status">
             <strong className="tabular-nums text-fg">{questionCount}</strong>{" "}
-            {questionCount === 1 ? "pregunta disponible" : "preguntas disponibles"}.
+            {questionCount === 1 ? "pregunta disponible" : "preguntas disponibles"} entre{" "}
+            <strong className="tabular-nums text-fg">{selected.productCount}</strong>{" "}
+            {selected.productCount === 1 ? "ficha" : "fichas"}. No sabes de cuál te va a tocar.
           </p>
         )}
 
@@ -133,9 +134,9 @@ export function TrainingLauncher({ products }: { products: TrainingProduct[] }) 
       <aside className="rounded-card border border-border bg-background p-5">
         <h2 className="font-semibold text-fg">Cómo funciona</h2>
         <ol className="mt-3 space-y-3 text-sm text-fg-muted">
-          <li>1. Elige una ficha revisada por el equipo.</li>
+          <li>1. Elige una categoría, no una ficha.</li>
           <li>2. Genera preguntas si necesitas una tanda nueva.</li>
-          <li>3. Abre la práctica y responde como si estuvieras en vivo.</li>
+          <li>3. Las preguntas llegan barajadas de varias fichas, como en un live.</li>
         </ol>
       </aside>
     </div>

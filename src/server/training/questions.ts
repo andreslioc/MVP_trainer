@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, isNotNull } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
@@ -42,7 +42,7 @@ async function defaultGenerate(input: Parameters<Generate>[0]) {
   return generateStructured(input, aiGateway);
 }
 
-function dependencies(options: TrainingDependencies) {
+export function trainingDependencies(options: TrainingDependencies) {
   return {
     authorize: options.authorize ?? requireRole,
     database: options.database ?? db,
@@ -178,7 +178,7 @@ export function validateGeneratedQuestionBatch(value: unknown, product: Product)
 }
 
 export async function listTrainingProducts(options: TrainingDependencies = {}) {
-  const { authorize, database } = dependencies(options);
+  const { authorize, database } = trainingDependencies(options);
   const authorization = await authorize("asesor");
   if (!authorization.ok) return authorization;
 
@@ -204,11 +204,19 @@ export async function listTrainingProducts(options: TrainingDependencies = {}) {
   }
 }
 
+/**
+ * Cuantas preguntas se ponen en una practica por categoria.
+ *
+ * El chat de un live no da para mas de una decena de preguntas seguidas, y una
+ * practica que no se puede terminar no se termina.
+ */
+const PRACTICE_QUESTION_LIMIT = 10;
+
 export async function generateTrainingQuestions(
   productId: string,
   options: TrainingDependencies = {},
 ) {
-  const { authorize, database, generate } = dependencies(options);
+  const { authorize, database, generate } = trainingDependencies(options);
   const authorization = await authorize("asesor");
   if (!authorization.ok) return authorization;
   const parsedId = parseUuid(productId, "productId");
@@ -288,7 +296,7 @@ export async function generateTrainingQuestions(
 }
 
 export async function startTrainingSession(productId: string, options: TrainingDependencies = {}) {
-  const { authorize, database } = dependencies(options);
+  const { authorize, database } = trainingDependencies(options);
   const authorization = await authorize("asesor");
   if (!authorization.ok) return authorization;
   const parsedId = parseUuid(productId, "productId");
@@ -334,7 +342,7 @@ export async function startTrainingSession(productId: string, options: TrainingD
 }
 
 export async function getTrainingSession(sessionId: string, options: TrainingDependencies = {}) {
-  const { authorize, database } = dependencies(options);
+  const { authorize, database } = trainingDependencies(options);
   const authorization = await authorize("asesor");
   if (!authorization.ok) return authorization;
   const parsedId = parseUuid(sessionId, "sessionId");
@@ -345,11 +353,13 @@ export async function getTrainingSession(sessionId: string, options: TrainingDep
       .select({
         id: trainingSessions.id,
         productId: trainingSessions.productId,
+        category: trainingSessions.category,
         productName: products.name,
         startedAt: trainingSessions.startedAt,
       })
       .from(trainingSessions)
-      .innerJoin(products, eq(products.id, trainingSessions.productId))
+      // leftJoin y no innerJoin: una practica por categoria no tiene ficha.
+      .leftJoin(products, eq(products.id, trainingSessions.productId))
       .where(
         and(
           eq(trainingSessions.id, parsedId.data),
@@ -360,16 +370,28 @@ export async function getTrainingSession(sessionId: string, options: TrainingDep
     if (!session) {
       return { ok: false as const, error: { code: "NOT_FOUND", message: "La sesion no existe." } };
     }
-    const questions = await database
+    const scope = session.category
+      ? and(eq(products.category, session.category), isNotNull(products.verifiedAt))
+      : eq(trainingQuestions.productId, session.productId ?? "");
+    // El barajado sale del id de la sesion: aleatorio para la asesora y estable
+    // entre recargas, que es lo que necesita el `?q=` de la URL. Con random()
+    // cada recarga mostraria otra pregunta en la misma posicion.
+    const order = session.category
+      ? sql`md5(${session.id} || ${trainingQuestions.id}::text)`
+      : asc(trainingQuestions.createdAt);
+    const query = database
       .select({
         id: trainingQuestions.id,
         text: trainingQuestions.text,
         intent: trainingQuestions.intent,
         difficulty: trainingQuestions.difficulty,
+        productName: products.name,
       })
       .from(trainingQuestions)
-      .where(eq(trainingQuestions.productId, session.productId))
-      .orderBy(asc(trainingQuestions.createdAt));
+      .innerJoin(products, eq(products.id, trainingQuestions.productId))
+      .where(scope)
+      .orderBy(order);
+    const questions = session.category ? await query.limit(PRACTICE_QUESTION_LIMIT) : await query;
     const answers = await database
       .select({
         id: trainingAnswers.id,
@@ -383,7 +405,17 @@ export async function getTrainingSession(sessionId: string, options: TrainingDep
       .from(trainingAnswers)
       .where(eq(trainingAnswers.sessionId, session.id))
       .orderBy(desc(trainingAnswers.createdAt));
-    return { ok: true as const, data: { ...session, questions, answers } };
+    return {
+      ok: true as const,
+      // `title` es lo que se muestra como encabezado: la categoria cuando la
+      // practica mezcla fichas, el nombre de la ficha cuando es dirigida.
+      data: {
+        ...session,
+        title: session.category ?? session.productName ?? "Practica",
+        questions,
+        answers,
+      },
+    };
   } catch {
     return {
       ok: false as const,

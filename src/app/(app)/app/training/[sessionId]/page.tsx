@@ -39,10 +39,11 @@ export default async function TrainingSessionPage({
     <section aria-labelledby="page-title" className="max-w-4xl">
       <p className="text-sm font-semibold text-primary">Práctica en curso</p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg" id="page-title">
-        {result.data.productName}
+        {result.data.title}
       </h1>
       <p className="mt-2 text-fg-muted">
         {questions.length} preguntas en esta práctica privada · {answered} respondidas
+        {result.data.category ? " · fichas barajadas al azar" : null}
       </p>
 
       {questions.length > 0 ? (
@@ -79,6 +80,12 @@ export default async function TrainingSessionPage({
             <span>{question.difficulty}</span>
             <span aria-hidden="true">·</span>
             <span>{question.intent}</span>
+            {result.data.category ? (
+              <>
+                <span aria-hidden="true">·</span>
+                <span className="text-primary-deep">{question.productName}</span>
+              </>
+            ) : null}
           </div>
           <h2 className="mt-3 text-2xl font-semibold text-fg">{question.text}</h2>
           <TrainingResponseForm

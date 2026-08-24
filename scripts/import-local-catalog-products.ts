@@ -35,17 +35,57 @@ function ingredientName(value: string) {
     .trim();
 }
 
-function capsuleCount(presentation: string) {
-  return presentation.match(/\b(\d+)\s*(?:cápsulas|capsulas|cap)\b/i)?.[1];
+/**
+ * El formato sale del texto del catalogo, no de una constante: el catalogo
+ * tiene polvos, gomitas, liquidos y topicos, y una ficha que dice "Capsulas"
+ * sobre un serum es informacion inventada, justo lo que el Hub no permite.
+ * El orden importa: "capsulas blandas" tiene que ganarle a "capsulas".
+ */
+const FORMAT_PATTERNS: Array<[RegExp, string]> = [
+  [/c[áa]psulas?\s+blandas|softgel/iu, "Cápsulas blandas"],
+  [/gomit|gummy|gummies/iu, "Gomitas"],
+  [/s[ée]rum|crema|ung[üu]ento|loci[óo]n|aceite\s+corporal/iu, "Tópico"],
+  [/tabletas?|comprimid/iu, "Tabletas"],
+  [/c[áa]psulas?|\bcaps?\b/iu, "Cápsulas"],
+  [/gomas|barra/iu, "Barra"],
+  [/polvo|powder|gramos|\bg\b/iu, "Polvo"],
+  [/l[íi]quid|jarabe|gotas|drops|bebida|latas?|\bml\b|\boz\b/iu, "Líquido"],
+  [/unidades|sobres|sachet/iu, "Unidades"],
+];
+
+function productFormat(product: CatalogProduct) {
+  const text = `${product.presentacion} ${product.nombre}`;
+  for (const [pattern, format] of FORMAT_PATTERNS) {
+    if (pattern.test(text)) return format;
+  }
+  // Sin senal en el texto no se adivina: la presentacion literal del catalogo
+  // es un dato que si existe, y la revision humana lo corrige.
+  return product.presentacion.trim() || "Formato sin declarar";
+}
+
+const UNIT_NOUNS = /(c[áa]psulas?|capsulas?|cap|tabletas?|gomitas?|unidades?|sobres?|latas?)/iu;
+
+function unitCount(presentation: string) {
+  const match = presentation.match(new RegExp(`\\b(\\d+)\\s*${UNIT_NOUNS.source}\\b`, "iu"));
+  return match ? { count: match[1], noun: match[2].toLowerCase() } : undefined;
+}
+
+/**
+ * "Suplemento" solo se afirma donde el catalogo lo respalda. Un serum, una
+ * bebida energizante o un producto para mascotas no son suplementos dietarios
+ * y la ficha no los va a llamar asi.
+ */
+function productKind(product: CatalogProduct) {
+  return product.categoria === "Salud y equipamento medico" ? "Suplemento" : "Producto";
 }
 
 function neutralBenefits(product: CatalogProduct) {
-  const count = capsuleCount(product.presentacion);
+  const unit = unitCount(product.presentacion);
   const ingredients = product.ingredientes.map(ingredientName).filter(Boolean);
   return [
     {
       rank: 1,
-      claim: "Presentación en cápsulas",
+      claim: `Presentación en ${productFormat(product).toLowerCase()}`,
       science_note: "Formato declarado en el catálogo de origen; pendiente de revisión humana.",
       evidence_level: "baja" as const,
     },
@@ -60,7 +100,7 @@ function neutralBenefits(product: CatalogProduct) {
     },
     {
       rank: 3,
-      claim: count ? `Frasco con ${count} cápsulas` : product.presentacion,
+      claim: unit ? `Empaque con ${unit.count} ${unit.noun}` : product.presentacion,
       science_note: "Presentación informada por el catálogo de origen; pendiente de verificación.",
       evidence_level: "baja" as const,
     },
@@ -70,7 +110,23 @@ function neutralBenefits(product: CatalogProduct) {
 function neutralDescription(product: CatalogProduct) {
   const ingredients = product.ingredientes.map(ingredientName).filter(Boolean);
   const content = ingredients.length ? ingredients.join(" y ") : product.nombre;
-  return `Suplemento en cápsulas con ${content}. ${product.presentacion}.`;
+  const format = productFormat(product).toLowerCase();
+  return `${productKind(product)} en ${format} con ${content}. ${product.presentacion}.`;
+}
+
+/**
+ * La unica afirmacion que la ficha hace por si sola: que es, en que formato y
+ * de quien. "Sin marca" es un valor real del catalogo y decir "de la marca Sin
+ * marca" seria un dato falso, asi que esa rama se escribe distinto.
+ */
+function neutralIdentity(product: CatalogProduct) {
+  const kind = productKind(product).toLowerCase();
+  const format = productFormat(product).toLowerCase();
+  const brand = product.marca.trim();
+  const unbranded = brand === "" || /^sin\s+marca$/iu.test(brand);
+  return unbranded
+    ? `Es un ${kind} en ${format} sin marca declarada en el catálogo.`
+    : `Es un ${kind} en ${format} de la marca ${brand}.`;
 }
 
 function currentCatalogImageUrl(value: string) {
@@ -89,7 +145,7 @@ function adaptProduct(product: CatalogProduct) {
     brand: product.marca,
     category: product.categoria,
     presentation: product.presentacion,
-    format: "Cápsulas",
+    format: productFormat(product),
     imageUrl: currentCatalogImageUrl(product.imagen),
     description: neutralDescription(product),
     activeIngredients: product.ingredientes.map((name) => ({
@@ -102,7 +158,7 @@ function adaptProduct(product: CatalogProduct) {
     differentiators: [],
     priceCop: product.precioBase > 0 ? product.precioBase : null,
     precautions: product.advertencias,
-    claimsAllowed: [`Es un suplemento en cápsulas de la marca ${product.marca}.`],
+    claimsAllowed: [neutralIdentity(product)],
     claimsCaution: [
       `Descripción del catálogo pendiente de verificación: ${product.descripcion}`,
       ...product.beneficios.map(
@@ -132,8 +188,13 @@ function adaptProduct(product: CatalogProduct) {
 async function main() {
   const [catalogPath, ...requestedSkus] = process.argv.slice(2);
   if (!catalogPath || requestedSkus.length === 0) {
-    throw new Error("Uso: pnpm tsx scripts/import-local-catalog-products.ts <json> <sku...>");
+    throw new Error(
+      "Uso: pnpm tsx scripts/import-local-catalog-products.ts <json> <sku... | --all>",
+    );
   }
+  // `--all` existe para no pasar 89 SKUs por linea de comandos. Sigue siendo
+  // explicito: nadie importa el catalogo completo sin escribirlo.
+  const importAll = requestedSkus.length === 1 && requestedSkus[0] === "--all";
 
   const [{ openDirectDatabase }, { products }, { env }, { productInputSchema }] = await Promise.all(
     [
@@ -147,7 +208,8 @@ async function main() {
 
   const catalog = JSON.parse(readFileSync(catalogPath, "utf8")) as CatalogProduct[];
   const bySku = new Map(catalog.map((product) => [product.sku.toLowerCase(), product]));
-  const selected = requestedSkus.map((sku) => {
+  const requested = importAll ? catalog.map((product) => product.sku) : requestedSkus;
+  const selected = requested.map((sku) => {
     const product = bySku.get(sku.toLowerCase());
     if (!product) throw new Error(`No se encontró el SKU ${sku} en el catálogo.`);
     return productInputSchema.parse(adaptProduct(product));
