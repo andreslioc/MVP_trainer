@@ -201,6 +201,15 @@ export const trainingSessions = pgTable(
      * categorias seria un segundo lugar donde la misma verdad puede diferir.
      */
     category: text("category"),
+    /**
+     * Cuantas preguntas trae la practica por categoria.
+     *
+     * Vive en la sesion y no en la URL porque el barajado tiene que ser el
+     * mismo en cada recarga: si el tamano cambiara entre visitas, el `?q=3` de
+     * la asesora apuntaria a otra pregunta. Null en las practicas de una sola
+     * ficha, que muestran su tanda completa.
+     */
+    practiceSize: integer("practice_size"),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -215,6 +224,10 @@ export const trainingSessions = pgTable(
     check(
       "training_sessions_target_exclusive",
       sql`num_nonnulls(${table.productId}, ${table.category}) = 1`,
+    ),
+    check(
+      "training_sessions_practice_size_range",
+      sql`${table.practiceSize} is null or ${table.practiceSize} between 1 and 50`,
     ),
   ],
 );

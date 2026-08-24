@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { generateCategoryQuestionsAction, startCategorySessionAction } from "./actions.ts";
+import { DEFAULT_PRACTICE_SIZE, PRACTICE_SIZES } from "../../../../lib/practice-sizes.ts";
 
 type TrainingCategory = {
   category: string;
@@ -16,6 +17,7 @@ type Feedback = { type: "success" | "error"; message: string };
 export function TrainingLauncher({ categories }: { categories: TrainingCategory[] }) {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [practiceSize, setPracticeSize] = useState<number>(DEFAULT_PRACTICE_SIZE);
   const [counts, setCounts] = useState(() =>
     Object.fromEntries(categories.map((item) => [item.category, item.questionCount])),
   );
@@ -33,11 +35,18 @@ export function TrainingLauncher({ categories }: { categories: TrainingCategory[
     setFeedback(undefined);
     const result = await generateCategoryQuestionsAction(selected.category);
     if (result.ok) {
+      // Se asigna, no se suma: la tanda nueva reemplaza a la anterior.
+      const replaced = result.replaced ?? 0;
       setCounts((current) => ({
         ...current,
-        [selected.category]: (current[selected.category] ?? 0) + result.data.length,
+        [selected.category]: (current[selected.category] ?? 0) - replaced + result.data.length,
       }));
-      setFeedback({ type: "success", message: "La nueva tanda quedó lista para practicar." });
+      setFeedback({
+        type: "success",
+        message: replaced
+          ? `Tanda nueva: ${result.data.length} preguntas de otras fichas. Las ${replaced} anteriores se reemplazaron.`
+          : `Listas ${result.data.length} preguntas nuevas de varias fichas.`,
+      });
     } else {
       setFeedback({ type: "error", message: result.error.message });
     }
@@ -48,7 +57,7 @@ export function TrainingLauncher({ categories }: { categories: TrainingCategory[
     if (!selected) return;
     setPending("start");
     setFeedback(undefined);
-    const result = await startCategorySessionAction(selected.category);
+    const result = await startCategorySessionAction(selected.category, practiceSize);
     if (result.ok) {
       router.push(`/app/training/${result.data.id}`);
       return;
@@ -87,7 +96,8 @@ export function TrainingLauncher({ categories }: { categories: TrainingCategory[
           </p>
         ) : questionCount === 0 ? (
           <p className="mt-4 rounded-card border border-warning-border bg-confidence-mid-bg p-3 text-sm text-confidence-mid-fg">
-            Esta categoría todavía no tiene preguntas. Genera una tanda antes de comenzar.
+            Esta categoría todavía no tiene preguntas. Genera una tanda antes de comenzar: cubre
+            tres fichas de una vez.
           </p>
         ) : (
           <p className="mt-4 text-sm text-fg-muted" role="status">
@@ -97,6 +107,30 @@ export function TrainingLauncher({ categories }: { categories: TrainingCategory[
             {selected.productCount === 1 ? "ficha" : "fichas"}. No sabes de cuál te va a tocar.
           </p>
         )}
+
+        <div className="mt-5">
+          <label className="block text-sm font-medium text-fg" htmlFor="training-size">
+            Preguntas de la práctica
+          </label>
+          <select
+            className="mt-1 min-h-11 w-full rounded-card border bg-surface px-3 sm:w-48"
+            id="training-size"
+            onChange={(event) => setPracticeSize(Number(event.target.value))}
+            value={practiceSize}
+          >
+            {PRACTICE_SIZES.map((size) => (
+              <option key={size} value={size}>
+                {size} preguntas
+              </option>
+            ))}
+          </select>
+          {selected && questionCount > 0 && questionCount < practiceSize ? (
+            <p className="mt-2 text-sm text-fg-muted" role="status">
+              Hay {questionCount} disponibles: la práctica traerá esas. Genera otra tanda para
+              llegar a {practiceSize}.
+            </p>
+          ) : null}
+        </div>
 
         <div className="mt-5 flex flex-wrap gap-3">
           <button
@@ -135,8 +169,9 @@ export function TrainingLauncher({ categories }: { categories: TrainingCategory[
         <h2 className="font-semibold text-fg">Cómo funciona</h2>
         <ol className="mt-3 space-y-3 text-sm text-fg-muted">
           <li>1. Elige una categoría, no una ficha.</li>
-          <li>2. Genera preguntas si necesitas una tanda nueva.</li>
-          <li>3. Las preguntas llegan barajadas de varias fichas, como en un live.</li>
+          <li>2. Cada tanda sortea tres fichas y reemplaza a la anterior.</li>
+          <li>3. Elige cuántas quieres responder: de 3 para un repaso a 24 para una sesión.</li>
+          <li>4. Llegan barajadas de varias fichas, como en un live.</li>
         </ol>
       </aside>
     </div>

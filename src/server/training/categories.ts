@@ -1,7 +1,8 @@
-import { and, asc, count, countDistinct, eq, isNotNull } from "drizzle-orm";
+import { and, asc, count, countDistinct, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
-import { products, trainingQuestions, trainingSessions } from "../../db/schema.ts";
+import { products, trainingAnswers, trainingQuestions, trainingSessions } from "../../db/schema.ts";
+import { PRACTICE_SIZES } from "../../lib/practice-sizes.ts";
 import {
   generateTrainingQuestions,
   type TrainingDependencies,
@@ -9,6 +10,11 @@ import {
 } from "./questions.ts";
 
 const categorySchema = z.string().trim().min(1).max(120);
+
+// Lista cerrada y no un numero libre: el tamano se guarda en la sesion y entra
+// en un check de la base, asi que un 500 escrito a mano en la peticion tiene que
+// morir aqui, en el borde, y no en Postgres.
+const practiceSizeSchema = z.union(PRACTICE_SIZES.map((size) => z.literal(size)));
 
 function parseCategory(value: string) {
   const parsed = categorySchema.safeParse(value);
@@ -48,11 +54,31 @@ export async function listTrainingCategories(options: TrainingDependencies = {})
 }
 
 /**
- * Genera una tanda para la categoria, sobre la ficha que menos preguntas tiene.
+ * Cuantas fichas distintas cubre un clic de "Generar preguntas".
  *
- * Es una sola llamada al modelo por clic, igual que la version por producto: 89
- * fichas por 3 preguntas cada una en un clic seria una factura sorpresa. La
- * ficha con menos preguntas es la que hace crecer la variedad de la categoria.
+ * Con una sola ficha por clic la practica no tiene azar: las seis preguntas
+ * salen del mismo producto y la asesora responde en piloto automatico. Con tres
+ * ya hay mezcla desde el primer clic. No son las 64 de la categoria porque cada
+ * ficha es una llamada al modelo, y 64 llamadas por clic es una factura
+ * sorpresa.
+ */
+const FICHAS_POR_TANDA = 3;
+
+/**
+ * Genera una tanda nueva para la categoria y REEMPLAZA la anterior.
+ *
+ * No se acumula: la asesora quiere practicar preguntas distintas, no una bolsa
+ * que crece hasta que las mismas seis del principio ya se saben de memoria. Las
+ * fichas se sortean, asi que dos tandas seguidas casi nunca caen en las mismas.
+ *
+ * Lo unico que sobrevive al reemplazo son las preguntas ya respondidas y las de
+ * origen `seed`: las primeras son historia de practica que el panel usa, y las
+ * segundas las escribio una persona en un archivo de investigacion. Borrarlas
+ * seria perder trabajo humano por un clic.
+ *
+ * Cada ficha se valida por separado: si el modelo se sale del Hub en una, esa
+ * se descarta y las demas se guardan. Una sola frase mala no debe costar las
+ * tres tandas.
  */
 export async function generateCategoryTrainingQuestions(
   category: string,
@@ -65,15 +91,15 @@ export async function generateCategoryTrainingQuestions(
   if (!parsedCategory.ok) return parsedCategory;
 
   try {
-    const [target] = await database
-      .select({ id: products.id, questionCount: count(trainingQuestions.id) })
+    const targets = await database
+      .select({ id: products.id })
       .from(products)
-      .leftJoin(trainingQuestions, eq(trainingQuestions.productId, products.id))
       .where(and(isNotNull(products.verifiedAt), eq(products.category, parsedCategory.data)))
-      .groupBy(products.id)
-      .orderBy(asc(count(trainingQuestions.id)), asc(products.name))
-      .limit(1);
-    if (!target) {
+      // Al azar y no por nombre: si la tanda reemplaza a la anterior, ordenar
+      // por nombre devolveria siempre las mismas tres fichas de la categoria.
+      .orderBy(sql`random()`)
+      .limit(FICHAS_POR_TANDA);
+    if (targets.length === 0) {
       return {
         ok: false as const,
         error: {
@@ -82,7 +108,41 @@ export async function generateCategoryTrainingQuestions(
         },
       };
     }
-    return await generateTrainingQuestions(target.id, options);
+
+    // En paralelo: el gateway ya limita la concurrencia con AI_MAX_CONCURRENCY,
+    // y en serie la asesora esperaria el triple frente a la pantalla.
+    const batches = await Promise.all(
+      targets.map((target) => generateTrainingQuestions(target.id, options)),
+    );
+    const questions = batches.flatMap((batch) => (batch.ok ? batch.data : []));
+    if (questions.length === 0) {
+      const failed = batches.find((batch) => !batch.ok);
+      if (failed && !failed.ok) return failed;
+      return {
+        ok: false as const,
+        error: { code: "INTERNAL", message: "No se genero ninguna pregunta." },
+      };
+    }
+    // El reemplazo va DESPUES de generar: si se borrara primero y el modelo
+    // fallara, la asesora se quedaria sin ninguna pregunta que practicar.
+    const fresh = new Set(questions.map((question) => question.id));
+    const previous = await database
+      .select({ id: trainingQuestions.id })
+      .from(trainingQuestions)
+      .innerJoin(products, eq(products.id, trainingQuestions.productId))
+      .leftJoin(trainingAnswers, eq(trainingAnswers.questionId, trainingQuestions.id))
+      .where(
+        and(
+          eq(products.category, parsedCategory.data),
+          eq(trainingQuestions.source, "generated"),
+          isNull(trainingAnswers.id),
+        ),
+      );
+    const stale = previous.map((row) => row.id).filter((id) => !fresh.has(id));
+    if (stale.length > 0) {
+      await database.delete(trainingQuestions).where(inArray(trainingQuestions.id, stale));
+    }
+    return { ok: true as const, data: questions, replaced: stale.length };
   } catch {
     return {
       ok: false as const,
@@ -100,6 +160,7 @@ export async function generateCategoryTrainingQuestions(
  */
 export async function startCategoryTrainingSession(
   category: string,
+  practiceSize: number,
   options: TrainingDependencies = {},
 ) {
   const { authorize, database } = trainingDependencies(options);
@@ -107,6 +168,17 @@ export async function startCategoryTrainingSession(
   if (!authorization.ok) return authorization;
   const parsedCategory = parseCategory(category);
   if (!parsedCategory.ok) return parsedCategory;
+  const parsedSize = practiceSizeSchema.safeParse(practiceSize);
+  if (!parsedSize.success) {
+    return {
+      ok: false as const,
+      error: {
+        code: "VALIDATION",
+        message: "Elige un tamano de practica de la lista.",
+        field: "practiceSize",
+      },
+    };
+  }
 
   try {
     return await database.transaction(async (tx) => {
@@ -126,7 +198,11 @@ export async function startCategoryTrainingSession(
       }
       const [session] = await tx
         .insert(trainingSessions)
-        .values({ advisorId: authorization.data.id, category: parsedCategory.data })
+        .values({
+          advisorId: authorization.data.id,
+          category: parsedCategory.data,
+          practiceSize: parsedSize.data,
+        })
         .returning();
       if (!session) throw new Error("No se creo la sesion.");
       return { ok: true as const, data: session };

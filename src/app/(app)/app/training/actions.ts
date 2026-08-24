@@ -14,8 +14,8 @@ export async function generateCategoryQuestionsAction(category: string) {
   return result;
 }
 
-export async function startCategorySessionAction(category: string) {
-  return startCategoryTrainingSession(category);
+export async function startCategorySessionAction(category: string, practiceSize: number) {
+  return startCategoryTrainingSession(category, practiceSize);
 }
 
 export async function evaluateTrainingAnswerAction(input: {

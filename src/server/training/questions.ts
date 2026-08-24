@@ -22,7 +22,7 @@ import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { writeLlmCall } from "../llm-calls.ts";
 
 type Product = typeof products.$inferSelect;
-type TrainingDatabase = Pick<typeof db, "insert" | "select" | "transaction">;
+type TrainingDatabase = Pick<typeof db, "delete" | "insert" | "select" | "transaction">;
 type AuthorizationResult =
   | { ok: true; data: { id: string; role: AdvisorRole } }
   | { ok: false; error: { code: string; message: string } };
@@ -403,6 +403,7 @@ export async function getTrainingSession(sessionId: string, options: TrainingDep
         id: trainingSessions.id,
         productId: trainingSessions.productId,
         category: trainingSessions.category,
+        practiceSize: trainingSessions.practiceSize,
         productName: products.name,
         startedAt: trainingSessions.startedAt,
       })
@@ -440,7 +441,9 @@ export async function getTrainingSession(sessionId: string, options: TrainingDep
       .innerJoin(products, eq(products.id, trainingQuestions.productId))
       .where(scope)
       .orderBy(order);
-    const questions = session.category ? await query.limit(PRACTICE_QUESTION_LIMIT) : await query;
+    const questions = session.category
+      ? await query.limit(session.practiceSize ?? PRACTICE_QUESTION_LIMIT)
+      : await query;
     const answers = await database
       .select({
         id: trainingAnswers.id,

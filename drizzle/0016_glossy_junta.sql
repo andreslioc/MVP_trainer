@@ -1,0 +1,2 @@
+ALTER TABLE "training_sessions" ADD COLUMN "practice_size" integer;--> statement-breakpoint
+ALTER TABLE "training_sessions" ADD CONSTRAINT "training_sessions_practice_size_range" CHECK ("training_sessions"."practice_size" is null or "training_sessions"."practice_size" between 1 and 50);

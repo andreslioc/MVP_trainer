@@ -1,0 +1,388 @@
+{
+  "schema_version": 1,
+  "research_date": "2026-08-24",
+  "sku": "AliCel-280",
+  "review_status": "pending_human_verification",
+  "product_patch": {
+    "id": "906b2a6f-63f3-4950-b333-0552e471f478",
+    "sku": "AliCel-280",
+    "name": "CELSIUS Live Fit Orange On-The-Go",
+    "brand": "CELSIUS",
+    "category": "Alimentos y Bebidas",
+    "presentation": "Caja con 14 sobres de 5,25 g (73,5 g netos) · sabor naranja",
+    "format": "Polvo para preparar bebida",
+    "imageUrl": "https://pub-74be3f08e8ab44c490fe4d652d79a419.r2.dev/uploads/6f902a13-7dd0-4d27-a81a-964f4e11ca21",
+    "description": "Mezcla en polvo sabor naranja, en 14 sobres individuales, para preparar una bebida con agua. Cada sobre de 5,25 g aporta 200 mg de cafeína y el empaque declara cero azúcar. Contiene vitaminas C, B2, B3, B6, B12, biotina y ácido pantoténico, además de calcio, cromo y una mezcla con taurina, semilla de guaraná, extracto de té verde, glucuronolactona y raíz de jengibre.",
+    "activeIngredients": [
+      {
+        "name": "Cafeína total",
+        "amount_per_serving": 200,
+        "unit": "mg",
+        "verified": true
+      },
+      {
+        "name": "Vitamina C",
+        "amount_per_serving": 60,
+        "unit": "mg",
+        "verified": true
+      },
+      {
+        "name": "Riboflavina (vitamina B2)",
+        "amount_per_serving": 1.7,
+        "unit": "mg",
+        "verified": true
+      },
+      {
+        "name": "Niacina (vitamina B3)",
+        "amount_per_serving": 20,
+        "unit": "mg",
+        "verified": true
+      },
+      {
+        "name": "Vitamina B6",
+        "amount_per_serving": 2,
+        "unit": "mg",
+        "verified": true
+      },
+      {
+        "name": "Vitamina B12",
+        "amount_per_serving": 6,
+        "unit": "mcg",
+        "verified": true
+      },
+      {
+        "name": "Biotina",
+        "amount_per_serving": 300,
+        "unit": "mcg",
+        "verified": true
+      },
+      {
+        "name": "Ácido pantoténico (vitamina B5)",
+        "amount_per_serving": 10,
+        "unit": "mg",
+        "verified": true
+      },
+      {
+        "name": "Calcio",
+        "amount_per_serving": 50,
+        "unit": "mg",
+        "verified": true
+      },
+      {
+        "name": "Cromo",
+        "amount_per_serving": 50,
+        "unit": "mcg",
+        "verified": true
+      },
+      {
+        "name": "Taurina",
+        "verified": true
+      },
+      {
+        "name": "Extracto de semilla de guaraná",
+        "verified": true
+      },
+      {
+        "name": "Extracto de hoja de té verde",
+        "verified": true
+      },
+      {
+        "name": "Glucuronolactona",
+        "verified": true
+      },
+      {
+        "name": "Extracto de raíz de jengibre",
+        "verified": true
+      }
+    ],
+    "benefits": [
+      {
+        "rank": 1,
+        "claim": "Aporta 200 mg de cafeína por sobre",
+        "science_note": "Cantidad declarada por el fabricante para los polvos CELSIUS On-The-Go y por la etiqueta del producto. La respuesta y tolerancia a la cafeína varían entre personas.",
+        "evidence_level": "alta"
+      },
+      {
+        "rank": 2,
+        "claim": "Formato práctico de 14 porciones individuales",
+        "science_note": "Beneficio de uso sustentado por el empaque: cada caja contiene 14 sobres para mezclar con agua.",
+        "evidence_level": "alta"
+      },
+      {
+        "rank": 3,
+        "claim": "Permite preparar una bebida sabor naranja sin azúcar",
+        "science_note": "El empaque y la página oficial declaran sabor naranja y cero azúcar. No implica beneficios médicos ni pérdida de peso.",
+        "evidence_level": "alta"
+      }
+    ],
+    "faqs": [
+      {
+        "question": "¿Cuánta cafeína contiene?",
+        "answer": "Cada sobre contiene 200 mg de cafeína total. También deben contarse las demás fuentes de cafeína consumidas durante el día."
+      },
+      {
+        "question": "¿Cómo se prepara?",
+        "answer": "Mezcla un sobre en 12 a 16 onzas líquidas de agua, aproximadamente 355 a 473 ml."
+      },
+      {
+        "question": "¿Cuántas porciones trae?",
+        "answer": "La caja trae 14 sobres y cada sobre corresponde a una porción."
+      },
+      {
+        "question": "¿Tiene azúcar?",
+        "answer": "El empaque declara cero azúcar."
+      },
+      {
+        "question": "¿Es una bebida con gas?",
+        "answer": "El polvo no es carbonatado cuando se prepara con agua sin gas."
+      },
+      {
+        "question": "¿Se puede preparar con agua caliente?",
+        "answer": "La instrucción verificada solo indica mezclarlo con agua y no recomienda una temperatura. No afirmamos que sea apto para agua caliente; sigue la etiqueta local del producto."
+      },
+      {
+        "question": "¿Es libre de gluten?",
+        "answer": "La página oficial del fabricante lo identifica como libre de gluten. Si existe una alergia o condición clínica, revisa también la etiqueta física del lote."
+      },
+      {
+        "question": "¿Cuántas porciones se pueden tomar al día?",
+        "answer": "La etiqueta estadounidense consultada indica no consumir más de dos porciones al día. Para venta y consumo en Colombia debe prevalecer la etiqueta local aprobada."
+      }
+    ],
+    "objections": [
+      {
+        "objection": "Me preocupa que tenga demasiada cafeína",
+        "response": "Cada sobre aporta 200 mg. La sensibilidad varía y también cuentan café, té, energizantes y otras fuentes consumidas ese día. Si eres sensible a la cafeína o tienes una condición médica o medicamentos, consulta a un profesional de salud."
+      },
+      {
+        "objection": "¿Es igual a una lata de CELSIUS?",
+        "response": "Comparte los 200 mg de cafeína de una lata estándar, pero este producto viene en polvo y se prepara sin gas con agua. No afirmamos que todas las fórmulas sean idénticas."
+      },
+      {
+        "objection": "¿Sirve para hidratarme durante el ejercicio?",
+        "response": "No debe ofrecerse como bebida hidratante ni como reemplazo de líquidos o electrolitos. Es una mezcla energizante con cafeína."
+      },
+      {
+        "objection": "No sé si me gustará el sabor",
+        "response": "Es sabor naranja y el gusto es subjetivo. Los comentarios de compradores pueden orientar, pero no garantizan que a todas las personas les guste igual."
+      }
+    ],
+    "differentiators": [
+      {
+        "claim": "14 sobres individuales para llevar",
+        "evidence": "Cantidad y formato declarados en el frente del empaque del producto exacto."
+      },
+      {
+        "claim": "200 mg de cafeína declarados por porción",
+        "evidence": "Dato coincidente entre la etiqueta, la página de datos esenciales del fabricante y comercios que venden la referencia exacta."
+      },
+      {
+        "claim": "Cero azúcar",
+        "evidence": "Declaración visible en el empaque y en la página oficial del fabricante."
+      }
+    ],
+    "priceCop": 63050,
+    "precautions": "Contiene 200 mg de cafeína por sobre. No recomendado para menores de 18 años, mujeres embarazadas o en lactancia ni personas sensibles a la cafeína, según la etiqueta consultada. No mezclar con bebidas alcohólicas. Considera todas las fuentes de cafeína del día. Si tienes una enfermedad, tomas medicamentos o presentas palpitaciones, ansiedad, temblor, insomnio, náuseas u otra reacción, suspende el consumo y consulta a un profesional de salud. No consumir más de dos porciones al día según la etiqueta estadounidense; debe prevalecer la etiqueta local aprobada en Colombia.",
+    "claimsAllowed": [
+      "Es una mezcla en polvo sabor naranja para preparar con agua.",
+      "La caja contiene 14 sobres de 5,25 g cada uno.",
+      "Cada sobre contiene 200 mg de cafeína.",
+      "El empaque declara cero azúcar.",
+      "Contiene vitaminas C, B2, B3, B6, B12, biotina y ácido pantoténico, además de calcio y cromo."
+    ],
+    "claimsCaution": [
+      "Puede describirse como una bebida energizante por su contenido de cafeína, sin prometer un efecto individual.",
+      "Los comentarios de compradores sobre energía, sabor, apetito, hidratación o rendimiento son experiencias personales y no prueban resultados.",
+      "Las cantidades de ingredientes dentro de la mezcla propietaria, salvo la cafeína total, no están declaradas individualmente.",
+      "La etiqueta y el registro sanitario aplicables en Colombia deben verificarse antes de publicar la ficha como verificada."
+    ],
+    "claimsForbidden": [
+      "Cura, trata o previene enfermedades.",
+      "Garantiza energía, rendimiento, pérdida de peso o resultados deportivos.",
+      "Quema grasa o calorías.",
+      "Acelera el metabolismo.",
+      "Controla el hambre o suprime el apetito.",
+      "Reemplaza el agua, una bebida hidratante o los electrolitos.",
+      "Compensa o previene los efectos del alcohol.",
+      "Es seguro para todas las personas o para consumo ilimitado."
+    ],
+    "complementProductIds": [],
+    "sources": [
+      {
+        "label": "CELSIUS — Orange On-The-Go (página oficial)",
+        "url": "https://www.celsius.com/products/on-the-go/orange/",
+        "note": "Fuente primaria para nombre, formato, sabor, declaraciones de cero azúcar y presencia general de ingredientes."
+      },
+      {
+        "label": "CELSIUS — etiqueta posterior oficial Orange On-The-Go",
+        "url": "https://www.celsius.com/wp-content/uploads/2023/09/orange-otg-packet-back-ornge.png",
+        "note": "Fuente primaria visual para ingredientes, cafeína y advertencias; comprobar que coincida con el lote físico vendido en Colombia."
+      },
+      {
+        "label": "CELSIUS — Essential Facts",
+        "url": "https://www.celsius.com/essential-facts/",
+        "note": "Fuente primaria que confirma 200 mg de cafeína por sobre On-The-Go."
+      },
+      {
+        "label": "iHerb Colombia — CELSIUS Live Fit Orange, UPC 889392088021",
+        "url": "https://co.iherb.com/pr/celsius-live-fit-orange-14-on-the-go-packets-0-19-oz-5-25-g-each/143305",
+        "note": "Referencia comercial exacta para UPC, contenido neto, porciones, modo de uso, tabla nutricional y advertencias. Fuente secundaria; la página advierte que empaque e ingredientes pueden cambiar."
+      },
+      {
+        "label": "The Vitamin Shoppe — CELSIUS Orange 14 Packets",
+        "url": "https://www.vitaminshoppe.com/p/celsius-celsius-orange-flavor-stick-packets-14-count-14-packs/e9-1014",
+        "note": "Fuente secundaria para instrucciones, tabla de suplemento, reseñas y preguntas de compradores. Las reseñas no son evidencia de eficacia."
+      },
+      {
+        "label": "FDA — Spilling the Beans: How Much Caffeine is Too Much?",
+        "url": "https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much",
+        "note": "Fuente oficial de seguridad para sensibilidad, consumo total de cafeína, embarazo, medicamentos y posibles reacciones."
+      },
+      {
+        "label": "INVIMA — Resolución 4150 de 2009",
+        "url": "https://normograma.invima.gov.co/normograma/compilacion/docs/resolucion_minproteccion_4150_2009.htm",
+        "note": "Norma colombiana para rotulado y publicidad de bebidas energizantes; prohíbe presentarlas como hidratantes o como productoras de bienestar o salud."
+      }
+    ],
+    "verifiedAt": null
+  },
+  "training_questions_proposed": [
+    {
+      "text": "¿Estos sobres tienen gas o quedan como una bebida normal?",
+      "intent": "informacion",
+      "difficulty": "basica",
+      "idealAnswer": "Preparados con agua sin gas, no son carbonatados.",
+      "criteria": ["aclara que no es carbonatada", "no confunde el polvo con las latas con gas"],
+      "source": "seed",
+      "provenance": "Pregunta publicada por compradores en The Vitamin Shoppe."
+    },
+    {
+      "text": "¿Cuánta cafeína trae cada sobre?",
+      "intent": "informacion",
+      "difficulty": "basica",
+      "idealAnswer": "Cada sobre contiene 200 mg de cafeína total.",
+      "criteria": ["indica 200 mg", "aclara que la cantidad es por sobre"],
+      "source": "seed",
+      "provenance": "Pregunta frecuente confirmada por la página Essential Facts del fabricante."
+    },
+    {
+      "text": "¿Puedo prepararlo con agua caliente para reemplazar el café?",
+      "intent": "uso",
+      "difficulty": "intermedia",
+      "idealAnswer": "La instrucción verificada solo indica mezclar un sobre con 355 a 473 ml de agua y no especifica agua caliente. No podemos asegurar ese uso; revisa la etiqueta local.",
+      "criteria": [
+        "explica la preparación verificada",
+        "no inventa compatibilidad con agua caliente",
+        "remite a la etiqueta local"
+      ],
+      "source": "seed",
+      "provenance": "Pregunta publicada por compradores en The Vitamin Shoppe; las respuestas de usuarios fueron contradictorias."
+    },
+    {
+      "text": "¿Es realmente libre de gluten?",
+      "intent": "seguridad",
+      "difficulty": "intermedia",
+      "idealAnswer": "El fabricante lo identifica como libre de gluten. Si hay alergia o una condición clínica, confirma también la etiqueta física del lote.",
+      "criteria": [
+        "cita la declaración del fabricante",
+        "incluye cautela para condiciones clínicas"
+      ],
+      "source": "seed",
+      "provenance": "Pregunta publicada por compradores en The Vitamin Shoppe."
+    },
+    {
+      "text": "¿Me va a quitar el hambre y ayudar a bajar de peso?",
+      "intent": "seguridad",
+      "difficulty": "dificil",
+      "idealAnswer": "No podemos prometer control del apetito ni pérdida de peso. Es una mezcla con 200 mg de cafeína por sobre y los resultados personales de reseñas no son evidencia.",
+      "criteria": [
+        "rechaza la promesa de pérdida de peso",
+        "no presenta una reseña como evidencia",
+        "menciona la cafeína sin atribuirle un resultado garantizado"
+      ],
+      "source": "seed",
+      "provenance": "Derivada de una reseña que atribuyó reducción del apetito al producto; el comercio advierte que las reseñas son opiniones no verificadas."
+    },
+    {
+      "text": "¿Sirve para hidratarme cuando hago ejercicio?",
+      "intent": "seguridad",
+      "difficulty": "dificil",
+      "idealAnswer": "No debe presentarse como bebida hidratante ni como reemplazo de líquidos o electrolitos. Es una mezcla energizante con cafeína.",
+      "criteria": [
+        "no promete hidratación",
+        "no la presenta como reemplazo de electrolitos",
+        "menciona que contiene cafeína"
+      ],
+      "source": "seed",
+      "provenance": "Derivada de comentarios de compradores sobre ciclismo e hidratación; respuesta ajustada a la Resolución 4150 de 2009."
+    },
+    {
+      "text": "¿Puedo tomar dos sobres además del café del día?",
+      "intent": "seguridad",
+      "difficulty": "dificil",
+      "idealAnswer": "Cada sobre aporta 200 mg de cafeína y también debes contar el café y cualquier otra fuente. La etiqueta consultada limita el producto a dos porciones al día, pero la tolerancia varía; si tienes dudas de salud o medicamentos, consulta a un profesional.",
+      "criteria": [
+        "suma todas las fuentes de cafeína",
+        "menciona 200 mg por sobre",
+        "incluye la ruta de cautela"
+      ],
+      "source": "seed",
+      "provenance": "Derivada de comentarios que lo comparan o sustituyen por café; respuesta sustentada por etiqueta y FDA."
+    }
+  ],
+  "customer_feedback_summary": {
+    "source": "The Vitamin Shoppe",
+    "snapshot": "La página consultada mostraba 54 calificaciones, promedio 4,6/5 y 83 % de cinco estrellas.",
+    "positive_themes": [
+      "Portabilidad de los sobres.",
+      "Facilidad de mezcla.",
+      "Sabor naranja valorado por varios compradores.",
+      "Percepción personal de energía para trabajo o ejercicio."
+    ],
+    "caution_themes": [
+      "El sabor y la intensidad percibida son subjetivos.",
+      "Las experiencias sobre energía, apetito, hidratación o rendimiento no demuestran eficacia.",
+      "La página también mostraba reseñas de una y dos estrellas, aunque el extracto público no presentó su texto completo."
+    ],
+    "direct_questions_observed": [
+      "¿Los sobres son carbonatados?",
+      "¿El producto está certificado como libre de gluten?",
+      "¿Tiene efervescencia o burbujas?",
+      "¿Puede mezclarse con agua caliente como sustituto del café?",
+      "¿Qué sabores son más ácidos que dulces?"
+    ],
+    "evidence_rule": "Los comentarios se usan para descubrir preguntas y objeciones, no para crear afirmaciones de producto."
+  },
+  "verification_gaps": [
+    {
+      "severity": "blocking",
+      "field": "verifiedAt",
+      "issue": "No se encontró en la búsqueda pública un registro sanitario colombiano que identifique de forma inequívoca este producto o UPC.",
+      "required_action": "Solicitar al proveedor o importador el número de registro sanitario y validarlo directamente en la consulta oficial de INVIMA."
+    },
+    {
+      "severity": "blocking",
+      "field": "precautions",
+      "issue": "Las fuentes consultadas corresponden principalmente al empaque estadounidense; falta revisar la etiqueta física o etiqueta complementaria del lote vendido en Colombia.",
+      "required_action": "Fotografiar todos los lados del empaque local y confirmar advertencias, importador, lote, vencimiento e instrucciones."
+    },
+    {
+      "severity": "important",
+      "field": "priceCop",
+      "issue": "COP 63.050 es el precio actualmente guardado en la base y no fue verificado contra una lista comercial vigente de Super Store.",
+      "required_action": "Confirmar el precio vigente y cualquier promoción interna antes de publicar."
+    },
+    {
+      "severity": "important",
+      "field": "activeIngredients",
+      "issue": "La etiqueta no declara las cantidades individuales de taurina, guaraná, té verde, glucuronolactona y jengibre dentro de la mezcla propietaria.",
+      "required_action": "Mantener esos ingredientes sin cantidad y no inventar dosis."
+    },
+    {
+      "severity": "resolved",
+      "field": "brand",
+      "issue": "La base decía 'Celcius'.",
+      "required_action": "Corregir a 'CELSIUS', ortografía confirmada por el empaque y el fabricante."
+    }
+  ]
+}
