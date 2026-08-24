@@ -289,10 +289,28 @@ export async function transcribeRecording(
   );
   if (!compressed.ok) return await fail(compressed.error.code, compressed.error.message);
 
-  const transcribed = await (options.transcribe ?? provider.transcribe)({
+  const payload = {
     audio: compressed.data.audio,
     contentType: compressed.data.contentType,
-  });
+  };
+  let transcribed = await (options.transcribe ?? provider.transcribe)(payload);
+
+  // El tier gratuito de Groq admite 7.200 s de audio por HORA de reloj, no por
+  // peticion. Un live de hora y media consume el 93% de esa ventana, asi que
+  // basta una transcripcion previa en la misma hora para que la siguiente
+  // rebote. Decirle a la asesora "intenta mas tarde" la deja esperando sin
+  // saber cuanto; si Deepgram esta configurado, se pasa a el y ya.
+  if (
+    !transcribed.ok &&
+    transcribed.error.code === "QUOTA_EXCEEDED" &&
+    provider.nombre === "groq" &&
+    env.DEEPGRAM_API_KEY &&
+    !options.transcribe
+  ) {
+    logFailure("transcribeRecording", "cuota de Groq agotada en esta hora, se usa Deepgram");
+    transcribed = await DEEPGRAM.transcribe(payload);
+  }
+
   if (!transcribed.ok) return await fail(transcribed.error.code, transcribed.error.message);
 
   const [updated] = await database

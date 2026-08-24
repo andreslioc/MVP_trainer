@@ -175,3 +175,40 @@ export async function convertToLightAudio(
     };
   }
 }
+
+/**
+ * Duracion del archivo, en segundos, leida por el navegador.
+ *
+ * Hace falta para elegir proveedor de transcripcion. Groq admite 7.200 segundos
+ * de audio por hora de reloj, asi que un live de dos horas y media no le cabe
+ * —y eso NO se puede deducir del tamano: comprimido a opus, dos horas y media
+ * pesan 17 MB, menos que muchos archivos cortos sin comprimir.
+ *
+ * Antes la medía ffprobe en el servidor, pero ese binario no existe en Vercel.
+ * El navegador ya tiene el archivo en la mano y lo sabe sin descargarlo dos
+ * veces.
+ */
+export function readDurationSeconds(file: File): Promise<number | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const media = document.createElement("audio");
+    const finish = (value: number | null) => {
+      URL.revokeObjectURL(url);
+      media.remove();
+      resolve(value);
+    };
+    // Un archivo que el navegador no sabe leer no debe colgar la subida: se
+    // sigue sin duracion, que es como estaba antes de esta funcion.
+    const timer = setTimeout(() => finish(null), 15_000);
+    media.preload = "metadata";
+    media.onloadedmetadata = () => {
+      clearTimeout(timer);
+      finish(Number.isFinite(media.duration) ? Math.round(media.duration) : null);
+    };
+    media.onerror = () => {
+      clearTimeout(timer);
+      finish(null);
+    };
+    media.src = url;
+  });
+}

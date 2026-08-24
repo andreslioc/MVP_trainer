@@ -1,27 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 
 import { isPromotable, notPromotableReason } from "../../../../lib/insights.ts";
 import { formatMark } from "../../../../lib/recordings.ts";
 import { ChatCoverageList, type ChatCoverageItem } from "./chat-coverage-list.tsx";
-import { TranscriptViewer } from "./transcript-viewer.tsx";
+import { RecordingCard, type Recording } from "./recording-card.tsx";
 import {
   analyzeRecordingAction,
+  deleteRecordingAction,
   promoteInsightAction,
   transcribeRecordingAction,
 } from "./actions.ts";
-
-type Recording = {
-  id: string;
-  title: string | null;
-  status: string;
-  durationS: number | null;
-  createdAt: Date;
-  hasTranscript: boolean;
-  hasChatLog: boolean;
-};
 
 type Insight = {
   id: string;
@@ -88,6 +78,28 @@ export function InsightsPanel({
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
 
+  /**
+   * Borra la grabacion y todo lo que colgaba de ella.
+   *
+   * Confirma antes porque no hay deshacer: se va el audio, la transcripcion,
+   * los hallazgos y las preguntas del chat. Lo unico que sobrevive son las
+   * preguntas de practica ya promovidas, que son material propio.
+   */
+  function remove(recordingId: string, label: string) {
+    if (!window.confirm(`¿Borrar «${label}» con su transcripción y sus hallazgos?`)) return;
+    setMessage(null);
+    startTransition(async () => {
+      const result = await deleteRecordingAction(recordingId);
+      setMessage(
+        result.ok
+          ? result.data.keptQuestions > 0
+            ? `Grabación borrada. Se conservaron ${result.data.keptQuestions} preguntas de práctica.`
+            : "Grabación borrada."
+          : result.error.message,
+      );
+    });
+  }
+
   function analyze(recordingId: string) {
     setMessage(null);
     startTransition(async () => {
@@ -129,74 +141,18 @@ export function InsightsPanel({
         ) : (
           <ul className="mt-3 space-y-3">
             {recordings.map((recording) => (
-              <li
-                className={`rounded-card border bg-surface p-4 ${
-                  recording.id === selectedId ? "border-primary" : "border-border"
-                }`}
+              <RecordingCard
+                duration={duration}
                 key={recording.id}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    {recording.title ? (
-                      <p className="font-semibold text-fg">{recording.title}</p>
-                    ) : null}
-                    <p
-                      className={
-                        recording.title ? "mt-1 text-sm text-fg-muted" : "font-semibold text-fg"
-                      }
-                    >
-                      {stamp(recording.createdAt)} · {duration(recording.durationS)}
-                    </p>
-                    <p className="mt-1 text-sm text-fg-muted">
-                      {STATUS_LABEL[recording.status] ?? recording.status}
-                    </p>
-                  </div>
-                  {recording.hasTranscript ? (
-                    <TranscriptViewer
-                      hasChatLog={recording.hasChatLog}
-                      label={recording.title ?? stamp(recording.createdAt)}
-                      recordingId={recording.id}
-                    />
-                  ) : null}
-                </div>
-                {recording.status === "uploaded" ||
-                recording.status === "transcribing" ||
-                recording.status === "failed" ? (
-                  <button
-                    className="mt-3 min-h-11 rounded-card border border-primary px-3 py-2 text-sm font-semibold text-primary disabled:opacity-60"
-                    disabled={pending}
-                    onClick={() => transcribe(recording.id)}
-                    type="button"
-                  >
-                    {pending ? "Transcribiendo…" : "Transcribir ahora"}
-                  </button>
-                ) : null}
-                {recording.status === "analyzed" && recording.id !== selectedId ? (
-                  <Link
-                    className="mt-3 inline-block min-h-11 rounded-card border border-primary px-3 py-2 text-sm font-semibold text-primary"
-                    href={`/app/intelligence?grabacion=${recording.id}`}
-                    // Sin esto Next sube al inicio al navegar. La lista de
-                    // grabaciones vive por debajo del pliegue, asi que elegir una
-                    // te sacaba del sitio donde estabas mirando.
-                    scroll={false}
-                  >
-                    Ver hallazgos
-                  </Link>
-                ) : null}
-                {recording.status === "analyzed" && recording.id === selectedId ? (
-                  <p className="mt-3 text-sm font-semibold text-primary">Viendo sus hallazgos</p>
-                ) : null}
-                {recording.status === "transcribed" ? (
-                  <button
-                    className="mt-3 rounded-card bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                    disabled={pending}
-                    onClick={() => analyze(recording.id)}
-                    type="button"
-                  >
-                    {pending ? "Analizando…" : "Analizar grabación"}
-                  </button>
-                ) : null}
-              </li>
+                onAnalyze={analyze}
+                onRemove={remove}
+                onTranscribe={transcribe}
+                pending={pending}
+                recording={recording}
+                selectedId={selectedId}
+                stamp={stamp}
+                statusLabel={STATUS_LABEL[recording.status] ?? recording.status}
+              />
             ))}
           </ul>
         )}

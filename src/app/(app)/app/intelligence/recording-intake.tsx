@@ -12,6 +12,7 @@ import {
   canConvertInBrowser,
   type ConversionProgress,
   convertToLightAudio,
+  readDurationSeconds,
 } from "../../../../lib/audio-convert.ts";
 import { ChatLogField } from "./chat-log-field.tsx";
 
@@ -124,9 +125,14 @@ export function RecordingIntake({
         return;
       }
 
+      // Se lee del archivo que se subio, no del original: si se convirtio, es
+      // el mismo audio y la misma duracion.
+      const durationS = await readDurationSeconds(file);
+
       const result = await registerRecordingAction({
         recordingId: prepared.data.recordingId,
         storagePath: prepared.data.storagePath,
+        durationS: durationS ?? undefined,
         chatLog: chatLog.trim() || undefined,
         title: title.trim() || undefined,
       });

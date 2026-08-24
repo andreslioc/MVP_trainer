@@ -25,6 +25,8 @@ const registerSchema = z
     storagePath: z.string().trim().min(1).max(400),
     chatLog: z.string().trim().min(1).max(200_000).optional(),
     title: z.string().trim().min(1).max(120).optional(),
+    /** La mide el navegador: ffprobe no existe en Vercel. */
+    durationS: z.number().int().positive().max(86_400).optional(),
   })
   .strict();
 
@@ -88,9 +90,11 @@ export async function registerRecording(input: unknown, options: UploadRecording
         storagePath: parsed.data.storagePath,
         title: parsed.data.title ?? null,
         chatLog: parsed.data.chatLog ?? null,
-        // Nula a proposito: medirla exigia ffprobe, que no existe en Vercel. La
-        // reporta el proveedor al transcribir, que es quien de verdad la sabe.
-        durationS: null,
+        // La mide el navegador antes de subir. Sin ella no se puede elegir
+        // proveedor: Groq no admite mas de dos horas por hora de reloj, y eso
+        // no se deduce del tamano —comprimido, un live de dos horas y media
+        // pesa 17 MB, menos que muchos archivos cortos—.
+        durationS: parsed.data.durationS ?? null,
         callbackToken,
         createdAt,
         expiresAt,

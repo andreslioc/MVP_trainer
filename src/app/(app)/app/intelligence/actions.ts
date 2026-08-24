@@ -7,6 +7,7 @@ import { analyzeRecording } from "../../../../server/recordings/analyze.ts";
 import { transcribeRecording } from "../../../../server/recordings/transcribe-now.ts";
 import { getRecordingTranscript } from "../../../../server/recordings/transcript-view.ts";
 import { ingestTranscript } from "../../../../server/recordings/ingest.ts";
+import { deleteRecording } from "../../../../server/recordings/delete.ts";
 import { registerRecording } from "../../../../server/recordings/register.ts";
 import { prepareRecordingUpload } from "../../../../server/recordings/upload.ts";
 
@@ -61,8 +62,15 @@ export async function registerRecordingAction(input: {
   storagePath: string;
   chatLog?: string;
   title?: string;
+  durationS?: number;
 }) {
   const result = await registerRecording(input);
+  if (result.ok) revalidatePath("/app/intelligence");
+  return result;
+}
+
+export async function deleteRecordingAction(recordingId: string) {
+  const result = await deleteRecording(recordingId);
   if (result.ok) revalidatePath("/app/intelligence");
   return result;
 }

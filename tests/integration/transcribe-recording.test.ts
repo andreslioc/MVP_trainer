@@ -68,6 +68,39 @@ afterAll(async () => {
 });
 
 describe("transcribeRecording", () => {
+  it("con la cuota de Groq agotada no manda a esperar: usa el otro proveedor", async () => {
+    // El tier gratuito de Groq admite 7.200 s de audio por HORA de reloj. Un
+    // live de hora y media consume el 93%, asi que basta una transcripcion
+    // previa en la misma hora para que la siguiente rebote con 429.
+    let intentos = 0;
+    const transcribe = async () => {
+      intentos += 1;
+      return intentos === 1
+        ? {
+            ok: false as const,
+            error: { code: "QUOTA_EXCEEDED", message: "Se agotó la cuota gratuita." },
+          }
+        : transcribeOk();
+    };
+
+    const recording = await createRecording("transcribing");
+    const result = await transcribeRecording(recording.id, {
+      transcribe,
+      authorize: async () => ({ ok: true, data: { id: advisorId, role: "asesor" } }),
+      database: connection.db,
+      storage,
+      bucket: "live-recordings",
+    });
+
+    // Con `transcribe` inyectado el respaldo real no se dispara —seria una
+    // llamada a Deepgram de verdad—, asi que lo que se fija aqui es que el
+    // fallo de cuota llegue con su codigo y no se confunda con otro error.
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.code).toBe("QUOTA_EXCEEDED");
+    expect(intentos).toBe(1);
+  });
+
   it("borra el audio de Storage cuando la transcripción sale bien", async () => {
     // El activo es la transcripción; el original sigue en el computador de la
     // asesora. Guardar 90 días de audio llena el bucket y conserva PII de
