@@ -12,7 +12,7 @@
  * asesora leeria comodamente lo que en camara pasa volando.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 import type { SimLine } from "../../../../../lib/simulator/chat-player.ts";
 
@@ -25,45 +25,25 @@ const VISIBLE_LINES = 8;
 export function LiveStage({
   lines,
   elapsedMs,
-  running,
+  stream,
 }: {
   lines: readonly SimLine[];
   elapsedMs: number;
-  running: boolean;
+  /** Capturado una sola vez arriba: en iOS una segunda captura apaga esta. */
+  stream: MediaStream | null;
 }) {
   const video = useRef<HTMLVideoElement>(null);
-  const [cameraError, setCameraError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!running) return;
-    let stream: MediaStream | null = null;
-    let cancelled = false;
-
-    async function start() {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        if (cancelled) {
-          for (const track of stream.getTracks()) track.stop();
-          return;
-        }
-        if (video.current) video.current.srcObject = stream;
-      } catch {
-        // El caso mas comun no es un permiso negado: es que la pagina no esta
-        // en HTTPS. En el celular, sobre http, el navegador ni pregunta.
-        setCameraError(
-          window.isSecureContext
-            ? "No se pudo abrir la cámara. Revisa los permisos del navegador."
-            : "La cámara solo funciona sobre HTTPS. Abre la app por el enlace seguro, no por la IP.",
-        );
-      }
-    }
-
-    start();
-    return () => {
-      cancelled = true;
-      if (stream) for (const track of stream.getTracks()) track.stop();
-    };
-  }, [running]);
+    const node = video.current;
+    if (!node || !stream) return;
+    node.srcObject = stream;
+    // `autoPlay` no basta en todos lados: Safari ignora el atributo cuando el
+    // `srcObject` se asigna despues de montar, y el elemento se queda en negro
+    // con el stream conectado y sin reproducir. Se llama a `play()` y se ignora
+    // el rechazo, que solo ocurre si el elemento ya se desmonto.
+    node.play().catch(() => undefined);
+  }, [stream]);
 
   const visible = lines.filter((line) => line.atMs <= elapsedMs).slice(-VISIBLE_LINES);
 
@@ -71,7 +51,10 @@ export function LiveStage({
     <div className="relative aspect-[9/16] w-full max-w-sm overflow-hidden rounded-card bg-fg">
       <video
         aria-label="Vista previa de tu cámara"
-        className="size-full object-cover"
+        autoPlay
+        // Espejada, como cualquier camara frontal: verse invertida al moverse
+        // desorienta y es lo que hace toda app de video.
+        className="size-full -scale-x-100 object-cover"
         muted
         playsInline
         ref={video}
@@ -79,12 +62,11 @@ export function LiveStage({
         <track kind="captions" />
       </video>
 
-      {cameraError ? (
-        <p
-          className="absolute inset-x-3 top-3 rounded-card bg-surface p-3 text-sm font-semibold text-confidence-low-fg"
-          role="alert"
-        >
-          {cameraError}
+      {stream === null ? (
+        // Un recuadro negro sin explicacion se lee como "se rompio". Esto solo
+        // aparece si la captura se solto despues de haber arrancado.
+        <p className="absolute inset-x-3 top-3 rounded-card bg-surface p-3 text-sm text-fg-muted">
+          Sin señal de cámara. Termina el simulacro y vuelve a empezar.
         </p>
       ) : null}
 

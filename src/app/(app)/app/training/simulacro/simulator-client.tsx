@@ -16,7 +16,7 @@ import { finishSimulationAction, startSimulationAction } from "./actions.ts";
 import { LiveStage } from "./live-stage.tsx";
 import { SimulationResults, type ResultRow } from "./simulation-results.tsx";
 import { DEFAULT_SPEED, SpeedChoice } from "./speed-choice.tsx";
-import { useAudioRecorder } from "./use-audio-recorder.ts";
+import { useLiveCapture } from "./use-live-capture.ts";
 
 type Phase = "preparar" | "corriendo" | "analizando" | "listo";
 
@@ -41,14 +41,14 @@ export function SimulatorClient() {
   const [elapsedMs, setElapsedMs] = useState(0);
   const [results, setResults] = useState<ResultRow[] | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const recorder = useAudioRecorder();
+  const capture = useLiveCapture();
   const startedAt = useRef(0);
   const frame = useRef(0);
 
   const finish = useCallback(async () => {
     cancelAnimationFrame(frame.current);
     setPhase("analizando");
-    const blob = await recorder.stop();
+    const blob = await capture.stop();
     if (!blob || !simulationId) {
       setMessage("No se capturó audio del simulacro.");
       setPhase("preparar");
@@ -65,7 +65,7 @@ export function SimulatorClient() {
     }
     setResults(result.data?.results ?? []);
     setPhase("listo");
-  }, [recorder, simulationId]);
+  }, [capture, simulationId]);
 
   useEffect(() => {
     if (phase !== "corriendo") return;
@@ -89,7 +89,7 @@ export function SimulatorClient() {
       setMessage(started.error.message);
       return;
     }
-    const listening = await recorder.start();
+    const listening = await capture.start();
     if (!listening) return;
     setSimulationId(started.data.id);
     setLines(started.data.timeline);
@@ -118,7 +118,7 @@ export function SimulatorClient() {
         <p className="text-2xl font-semibold tabular-nums text-fg" role="timer">
           {phase === "analizando" ? "Analizando…" : clock(restante)}
         </p>
-        <LiveStage elapsedMs={elapsedMs} lines={lines} running={phase === "corriendo"} />
+        <LiveStage elapsedMs={elapsedMs} lines={lines} stream={capture.stream} />
         {phase === "corriendo" ? (
           <button
             className="min-h-11 rounded-card border border-primary px-4 font-semibold text-primary"
@@ -185,9 +185,9 @@ export function SimulatorClient() {
         </label>
       </div>
 
-      {recorder.error ? (
+      {capture.error ? (
         <p className="mt-4 text-sm font-semibold text-destructive" role="alert">
-          {recorder.error}
+          {capture.error}
         </p>
       ) : null}
       {message ? (
