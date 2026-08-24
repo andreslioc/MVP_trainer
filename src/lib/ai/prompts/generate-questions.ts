@@ -33,6 +33,20 @@ Reglas obligatorias:
 - Cada pregunta NOMBRA el producto, como lo hace una clienta en el chat de un live: "que precio
   tiene el max calm", "para q sirve el fenogreco". Una pregunta como "¿para que sirve?" a secas
   depende de ver el producto en camara, y fuera de ese momento no se puede responder.
+- Nombra el producto CORTO, como lo diria una clienta: "el oregano", "la creatina", "el fenogreco".
+  Nunca el nombre completo del catalogo con marca, presentacion y parentesis.
+- Escribe en el registro del chat de un live, no en el de un correo a un proveedor: maximo doce
+  palabras, tono directo, sin tratamiento formal. Se valen abreviaturas y preguntas sin tilde.
+- Prohibidas las formulas de oficina: "me pueden confirmar", "podrian indicarme", "quisiera saber",
+  "agradeceria", "certificacion", "documentacion", "protocolo", "avales". Una clienta escribe
+  "eso si es organico?", no "¿me pueden confirmar la certificacion ecologica del producto?".
+- Cuando un dato de la ficha este marcado como pendiente de verificacion, la pregunta se hace en
+  palabras de clienta sobre ESE tema; el estado interno de la ficha no se menciona en la pregunta.
+- La respuesta ideal se DICE en camara: usa tambien el nombre corto, frases cortas y tono de
+  persona, no el nombre completo del catalogo repetido en cada oracion.
+- Si abajo aparece OTRAS FICHAS PARECIDAS, el nombre corto no alcanza para saber de cual habla la
+  clienta: nombra la marca en la pregunta y en la respuesta ("el magnesio de Carlyle"). Si esa
+  lista esta vacia, la marca sobra.
 - Cada respuesta ideal debe ser responsable, concreta y estar sustentada por la ficha.
 - Si falta un dato, la respuesta ideal debe decir que no esta verificado.
 - Embarazo, lactancia, medicamentos o enfermedades requieren consulta profesional y nunca una recomendacion afirmativa.
@@ -87,11 +101,26 @@ export function productKnowledgeForPrompt(
   };
 }
 
-export function buildGenerateQuestionsPrompt(product: ProductKnowledge) {
+/**
+ * Fichas del Hub que una clienta nombraria igual que esta.
+ *
+ * En el catalogo hay seis fichas con "magnesio" y nueve con "vitamina": "el
+ * magnesio" no identifica ninguna. Sin esta lista el modelo no puede saberlo,
+ * porque solo ve la ficha seleccionada.
+ */
+export type SimilarProduct = { name: string; brand: string };
+
+export function buildGenerateQuestionsPrompt(
+  product: ProductKnowledge,
+  similar: SimilarProduct[] = [],
+) {
+  const similarBlock = similar.length
+    ? `\n\nOTRAS FICHAS PARECIDAS:\n${JSON.stringify(similar)}`
+    : "";
   return {
     system: `${GENERATE_QUESTIONS_PROMPT}\n\nFICHA SELECCIONADA:\n${JSON.stringify(
       productKnowledgeForPrompt(product),
-    )}`,
+    )}${similarBlock}`,
     messages: [
       {
         role: "user" as const,

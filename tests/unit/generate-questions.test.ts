@@ -79,6 +79,11 @@ describe("question generation", () => {
     const selected = product();
     const rendered = buildGenerateQuestionsPrompt(selected);
 
+    // El registro es parte del contrato del prompt: sin esta regla el modelo
+    // escribe "¿me pueden confirmar la certificacion?", que ninguna clienta
+    // teclea en el chat de un live.
+    expect(rendered.system).toContain("me pueden confirmar");
+    expect(rendered.system).toContain("maximo doce");
     expect(rendered.system).toContain("Magnesio verificado");
     expect(rendered.system).toContain("Complementa la ingesta de magnesio");
     expect(rendered.system).not.toContain("11111111-1111-4111-8111-111111111111");

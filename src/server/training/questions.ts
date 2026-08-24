@@ -11,6 +11,7 @@ import {
 } from "../../db/schema.ts";
 import { createAiGateway } from "../../lib/ai/gateway.ts";
 import { buildGenerateQuestionsPrompt } from "../../lib/ai/prompts/generate-questions.ts";
+import { findSimilarProducts } from "../../lib/similar-products.ts";
 import { type GeneratedQuestions, generatedQuestionsSchema } from "../../lib/ai/schemas.ts";
 import {
   generateStructured,
@@ -296,7 +297,13 @@ export async function generateTrainingQuestions(
       };
     }
 
-    const rendered = buildGenerateQuestionsPrompt(product);
+    // Las fichas hermanas viajan al prompt para que la pregunta nombre la marca
+    // solo cuando el nombre corto no alcanza (ver findSimilarProducts).
+    const catalog = await database
+      .select({ id: products.id, name: products.name, brand: products.brand })
+      .from(products)
+      .where(isNotNull(products.verifiedAt));
+    const rendered = buildGenerateQuestionsPrompt(product, findSimilarProducts(product, catalog));
     const generated = await generate({
       advisorId: authorization.data.id,
       purpose: "generate_questions",
