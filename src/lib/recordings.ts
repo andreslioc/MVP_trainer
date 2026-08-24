@@ -10,7 +10,17 @@
  * gastar la subida entera para terminar en un mensaje que no explica nada.
  */
 
-export const MAX_RECORDING_BYTES = 200 * 1024 * 1024;
+/**
+ * Lo mas grande que el navegador acepta intentar convertir.
+ *
+ * Ya no es el tope de subida —eso lo decide el plan de Supabase y viaja aparte—
+ * sino el techo del ARCHIVO DE ORIGEN, que puede ser el video crudo de un live.
+ * Los de Super Store van de 5 MB a 1,3 GB, asi que dos gigas deja margen sin
+ * prometer algo que el navegador no puede sostener: la conversion va por partes
+ * y no carga el archivo entero, pero leerlo y recorrerlo si tiene un limite
+ * practico.
+ */
+export const MAX_RECORDING_BYTES = 2 * 1024 * 1024 * 1024;
 
 export const RECORDING_MIME_EXTENSIONS = {
   "audio/mpeg": "mp3",
@@ -38,21 +48,32 @@ export function megabytes(bytes: number) {
  * navegador aceptaba hasta 200 MB y el servidor rechazaba en 50, asi que la
  * asesora elegia un archivo, le decian que estaba bien, y despues que no.
  *
- * El mensaje trae el comando exacto porque comprimir no se puede hacer aqui:
- * ffmpeg no existe en el servidor donde corre la app, y decir "comprime el
- * audio" sin decir como deja a la asesora resolviendo un problema que no es
- * suyo.
+ * El mensaje esta escrito para una asesora, no para quien programa. Comprimir
+ * no se puede hacer en el servidor —ffmpeg no existe donde corre la app— pero
+ * poner el comando de ffmpeg en pantalla tampoco sirve: lo lee alguien que esta
+ * en el telefono, sin terminal, y que no tiene por que saber que es eso.
+ *
+ * Lo que si sabe es la diferencia entre el video del live y su audio, que es la
+ * causa del 90% de los casos. El mensaje apunta a eso y deja el paso tecnico
+ * para quien administra.
  */
 export function recordingFileProblem(
   file: { type: string; size: number },
   maxBytes: number = MAX_RECORDING_BYTES,
+  /** El navegador puede encoger el archivo antes de subirlo. */
+  canConvert = false,
 ) {
   if (!(file.type in RECORDING_MIME_EXTENSIONS)) {
     return "Ese formato no se admite. Sube un mp3, m4a, wav, ogg, webm o mp4.";
   }
   if (file.size === 0) return "El archivo está vacío.";
-  if (file.size > maxBytes) {
-    return `El archivo pesa ${megabytes(file.size)} MB y el máximo son ${megabytes(maxBytes)} MB. Convierte el audio antes de subirlo: ffmpeg -i "tu-archivo" -vn -ac 1 -ar 16000 -c:a libopus -b:a 24k salida.ogg`;
+  // Pesado pero convertible no es un problema: la pagina lo encoge antes de
+  // subirlo. Solo se rechaza cuando no hay forma de arreglarlo aqui.
+  if (file.size > maxBytes && !canConvert) {
+    return `Este archivo pesa ${megabytes(file.size)} MB y el máximo son ${megabytes(maxBytes)} MB. Este navegador no puede convertirlo: ábrelo en Chrome o Edge desde un computador, o sube el archivo de audio de esa misma descarga, que pesa mucho menos.`;
+  }
+  if (file.size > MAX_RECORDING_BYTES) {
+    return `Este archivo pesa ${megabytes(file.size)} MB y no se puede procesar. Sube la grabación del live, no un archivo completo de varias horas en alta calidad.`;
   }
   return null;
 }

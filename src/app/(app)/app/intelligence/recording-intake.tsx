@@ -8,6 +8,11 @@ import {
   prepareRecordingUploadAction,
   registerRecordingAction,
 } from "./actions.ts";
+import {
+  canConvertInBrowser,
+  type ConversionProgress,
+  convertToLightAudio,
+} from "../../../../lib/audio-convert.ts";
 import { ChatLogField } from "./chat-log-field.tsx";
 
 type Mode = "transcript" | "audio";
@@ -25,6 +30,7 @@ export function RecordingIntake({
   const [chatLog, setChatLog] = useState("");
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [conversion, setConversion] = useState<ConversionProgress | null>(null);
   const [failed, setFailed] = useState(false);
   const [pending, startTransition] = useTransition();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -63,18 +69,34 @@ export function RecordingIntake({
   function submitAudio(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
-    const file = fileInput.current?.files?.[0];
-    if (!file) {
+    setConversion(null);
+    const elegido = fileInput.current?.files?.[0];
+    if (!elegido) {
       report(false, "Selecciona un archivo.");
       return;
     }
-    const problem = recordingFileProblem(file, maxUploadBytes);
+    const problem = recordingFileProblem(elegido, maxUploadBytes, canConvertInBrowser());
     if (problem) {
       report(false, problem);
       return;
     }
 
     startTransition(async () => {
+      // Un video de live pesa cientos de megas y el 98% es imagen que nadie
+      // transcribe. Se convierte aqui, antes de subir: convertirlo despues
+      // exigiria que ya estuviera en Storage, que es donde pega el tope.
+      let file = elegido;
+      if (elegido.size > maxUploadBytes) {
+        setConversion({ ratio: 0, processedS: 0 });
+        const converted = await convertToLightAudio(elegido, setConversion);
+        setConversion(null);
+        if (!converted.ok) {
+          report(false, converted.message);
+          return;
+        }
+        file = converted.file;
+      }
+
       const prepared = await prepareRecordingUploadAction({
         contentType: file.type,
         sizeBytes: file.size,
@@ -115,7 +137,7 @@ export function RecordingIntake({
       report(
         result.ok,
         result.ok
-          ? "Grabación subida. Dale «Transcribir ahora» en la lista de grabaciones."
+          ? `Grabación subida${file !== elegido ? ` (${megabytes(elegido.size)} MB → ${megabytes(file.size)} MB)` : ""}. Dale «Transcribir ahora» en la lista de grabaciones.`
           : result.error.message,
       );
     });
@@ -202,8 +224,9 @@ export function RecordingIntake({
             Grabación descargada del live
           </label>
           <p className="mt-1 text-sm text-fg-muted">
-            mp3, m4a, wav, webm o mp4, hasta {megabytes(maxUploadBytes)} MB. Se guarda en un bucket
-            privado bajo tu usuario.
+            mp3, m4a, wav, webm o mp4. Si el archivo pesa más de {megabytes(maxUploadBytes)} MB, la
+            página le saca el audio antes de subirlo: puedes elegir el video del live tal cual. Se
+            guarda en un bucket privado bajo tu usuario.
           </p>
           {!callbackReady ? (
             <p
@@ -236,8 +259,25 @@ export function RecordingIntake({
             disabled={pending}
             type="submit"
           >
-            {pending ? "Subiendo…" : "Subir grabación"}
+            {conversion ? "Convirtiendo…" : pending ? "Subiendo…" : "Subir grabación"}
           </button>
+
+          {conversion ? (
+            // Sin barra, una conversion de varios minutos se lee como si la
+            // pagina se hubiera colgado, y la asesora recarga y pierde todo.
+            <div className="mt-3" role="status">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-border">
+                <div
+                  className="h-full bg-primary transition-[width] duration-200"
+                  style={{ width: `${Math.round(conversion.ratio * 100)}%` }}
+                />
+              </div>
+              <p className="mt-2 text-sm text-fg-muted">
+                Sacando el audio del archivo: {Math.round(conversion.ratio * 100)}%. Puede tardar
+                unos minutos con un live largo. No cierres esta pestaña.
+              </p>
+            </div>
+          ) : null}
         </form>
       )}
 
