@@ -11,6 +11,7 @@ import {
 } from "../db/schema.ts";
 import { containsPii, redactPii } from "../lib/ai/prompts/analyze-transcript.ts";
 import { type AdvisorRole, requireRole } from "../lib/auth.ts";
+import { groupQuestions, parseChatLog } from "../lib/chat-log.ts";
 import { INTENT_BY_PROMOTABLE_TYPE, isPromotable } from "../lib/insights.ts";
 import { logFailure } from "../lib/log.ts";
 
@@ -219,7 +220,7 @@ export async function listChatCoverage(recordingId: string, options: InsightsDep
 
   try {
     const [recording] = await database
-      .select({ id: liveRecordings.id })
+      .select({ id: liveRecordings.id, chatLog: liveRecordings.chatLog })
       .from(liveRecordings)
       .where(
         and(
@@ -256,7 +257,27 @@ export async function listChatCoverage(recordingId: string, options: InsightsDep
         asc(chatCoverage.createdAt),
       );
 
-    return { ok: true as const, data: rows };
+    // `atSeconds` marca la respuesta y por eso es nulo justo en las filas que
+    // quedaron sin contestar. El minuto de la pregunta se reconstruye desde el
+    // chat original, que conserva sus marcas y permite cubrir analisis viejos
+    // sin volver a procesarlos con IA.
+    const questionMarks = new Map(
+      groupQuestions(
+        parseChatLog(recording.chatLog ?? "").messages.map((message) => ({
+          ...message,
+          text: redactPii(message.text),
+        })),
+      ).map((question) => [question.text, question.occurrenceAtSeconds]),
+    );
+
+    return {
+      ok: true as const,
+      data: rows.map((row) => ({
+        ...row,
+        askedAtSeconds: questionMarks.get(row.question)?.[0] ?? null,
+        repeatedAtSeconds: questionMarks.get(row.question)?.slice(1) ?? [],
+      })),
+    };
   } catch (error) {
     logFailure("listChatCoverage", error);
     return {

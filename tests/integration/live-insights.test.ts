@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { openDirectDatabase } from "../../src/db/client.ts";
 import {
   advisors,
+  chatCoverage,
   insights,
   liveRecordings,
   products,
@@ -19,7 +20,7 @@ import {
 import type { TranscriptInsights } from "../../src/lib/ai/schemas.ts";
 import type { StructuredOutputResult } from "../../src/lib/ai/structured.ts";
 import { productInputSchema } from "../../src/lib/validation/product.ts";
-import { promoteInsight } from "../../src/server/insights.ts";
+import { listChatCoverage, promoteInsight } from "../../src/server/insights.ts";
 import { analyzeRecording } from "../../src/server/recordings/analyze.ts";
 import { validProductInput } from "../fixtures/product.ts";
 
@@ -221,6 +222,34 @@ describe("analyzeRecording", () => {
     if (result.ok) return;
     expect(result.error.code).toBe("NOT_FOUND");
     await connection.db.delete(liveRecordings).where(eq(liveRecordings.id, recordingId));
+  });
+});
+
+describe("listChatCoverage", () => {
+  it("incluye el minuto en que aparecio una pregunta sin respuesta", async () => {
+    const recordingId = await createRecording("[Speaker 0] contenido del live");
+    await connection.db
+      .update(liveRecordings)
+      .set({
+        chatLog: [
+          "[00:08:11] @primera: cuanto vale el max calm",
+          "[00:05:02] @segunda: cuanto vale el max calm",
+        ].join("\n"),
+      })
+      .where(eq(liveRecordings.id, recordingId));
+    await connection.db.insert(chatCoverage).values({
+      recordingId,
+      question: "cuanto vale el max calm",
+      answered: false,
+      askedCount: 2,
+    });
+
+    const result = await listChatCoverage(recordingId, { authorize });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data[0]?.askedAtSeconds).toBe(302);
+    expect(result.data[0]?.repeatedAtSeconds).toEqual([491]);
   });
 });
 

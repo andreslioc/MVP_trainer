@@ -76,7 +76,9 @@ describe("agrupacion de preguntas repetidas", () => {
       ["[00:10:00] @a: precio del omega", "[00:05:00] @b: precio del omega"].join("\n"),
     );
 
-    expect(groupQuestions(messages)[0]?.atSeconds).toBe(300);
+    const group = groupQuestions(messages)[0];
+    expect(group?.atSeconds).toBe(300);
+    expect(group?.occurrenceAtSeconds).toEqual([300, 600]);
   });
 
   it("no mezcla preguntas sobre productos distintos", () => {

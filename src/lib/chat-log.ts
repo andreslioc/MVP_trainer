@@ -23,6 +23,8 @@ export type ChatQuestionGroup = {
   text: string;
   /** Primera vez que se pregunto. Ancla la ventana de transcripcion. */
   atSeconds: number | null;
+  /** Todas las apariciones que traian marca, en orden cronologico. */
+  occurrenceAtSeconds: number[];
   askedCount: number;
 };
 
@@ -175,10 +177,16 @@ export function groupQuestions(messages: readonly ChatMessage[]): ChatQuestionGr
     const key = normalize(message.text);
     const existing = groups.get(key);
     if (!existing) {
-      groups.set(key, { text: message.text, atSeconds: message.atSeconds, askedCount: 1 });
+      groups.set(key, {
+        text: message.text,
+        atSeconds: message.atSeconds,
+        occurrenceAtSeconds: message.atSeconds === null ? [] : [message.atSeconds],
+        askedCount: 1,
+      });
       continue;
     }
     existing.askedCount += 1;
+    if (message.atSeconds !== null) existing.occurrenceAtSeconds.push(message.atSeconds);
     if (message.text.length > existing.text.length) existing.text = message.text;
     if (
       message.atSeconds !== null &&
@@ -190,7 +198,9 @@ export function groupQuestions(messages: readonly ChatMessage[]): ChatQuestionGr
 
   // Orden cronologico: es como la asesora revisa el live, y mantiene cada lote
   // dentro de una ventana de tiempo estrecha.
-  return [...groups.values()].sort((a, b) => (a.atSeconds ?? 0) - (b.atSeconds ?? 0));
+  const grouped = [...groups.values()];
+  for (const question of grouped) question.occurrenceAtSeconds.sort((a, b) => a - b);
+  return grouped.sort((a, b) => (a.atSeconds ?? 0) - (b.atSeconds ?? 0));
 }
 
 /**
