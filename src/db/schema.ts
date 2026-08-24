@@ -82,11 +82,15 @@ export const products = pgTable(
   "products",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    /** Identificador operativo: sirve para ubicar la ficha, no como conocimiento para la IA. */
+    sku: text("sku"),
     name: text("name").notNull(),
     brand: text("brand").notNull(),
     category: text("category").notNull(),
     presentation: text("presentation").notNull(),
     format: text("format").notNull(),
+    imageUrl: text("image_url"),
+    description: text("description").notNull().default(""),
     activeIngredients: jsonb("active_ingredients")
       .$type<ActiveIngredient[]>()
       .notNull()
@@ -127,6 +131,7 @@ export const products = pgTable(
   },
   (table) => [
     index("products_verified_at_idx").on(table.verifiedAt),
+    uniqueIndex("products_sku_unique").on(table.sku),
     uniqueIndex("products_natural_key_unique").on(table.brand, table.name, table.presentation),
     check("products_price_positive", sql`${table.priceCop} is null or ${table.priceCop} > 0`),
     // Verificar una ficha sin precio la deja sin poder responder la pregunta

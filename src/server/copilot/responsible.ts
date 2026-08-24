@@ -1,5 +1,6 @@
 import type { products } from "../../db/schema.ts";
 import type { CopilotComposition } from "../../lib/ai/schemas.ts";
+import { productKnowledgeForPrompt } from "../../lib/ai/prompts/generate-questions.ts";
 
 export type ResponsibleAlert = { code: string; message: string };
 
@@ -143,7 +144,9 @@ export function applyResponsibleCommunication(input: ResponsibleInput): Responsi
     });
   }
 
-  const productKnowledge = normalize(JSON.stringify(input.product));
+  // Evalua solo el conocimiento que puede recibir el modelo. SKU e imagen se
+  // quedan como metadatos administrativos y no respaldan una respuesta.
+  const productKnowledge = normalize(JSON.stringify(productKnowledgeForPrompt(input.product)));
   const unsupportedEvidence = combined.match(unsupportedEvidencePattern)?.[0];
   if (
     unsupportedEvidence &&

@@ -18,6 +18,7 @@ import {
   buildCopilotClassifyPrompt,
   buildCopilotComposePrompt,
 } from "../../lib/ai/prompts/copilot.ts";
+import { productKnowledgeForPrompt } from "../../lib/ai/prompts/generate-questions.ts";
 import {
   type CopilotComposition,
   copilotCompositionSchema,
@@ -113,7 +114,9 @@ export function asksForMissingSensitiveFact(
   product: typeof products.$inferSelect,
 ) {
   const normalizedQuestion = normalize(question);
-  const knowledge = normalize(JSON.stringify(product));
+  // SKU e imagen son metadatos internos: tampoco deben influir en los gates
+  // que deciden que conocimiento puede llegar a una respuesta.
+  const knowledge = normalize(JSON.stringify(productKnowledgeForPrompt(product)));
   // Solo se corta si NO hay precio cargado. Con precio en la ficha el modelo
   // ya no tiene que inventarlo: se lo entregamos calculado.
   if (product.priceCop === null && PRICE_QUESTION.test(normalizedQuestion)) return true;

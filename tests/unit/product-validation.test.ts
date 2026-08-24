@@ -11,6 +11,15 @@ describe("product validation", () => {
     if (!result.success) return;
     expect(result.data.benefits.map((benefit) => benefit.rank)).toEqual([1, 2, 3]);
     expect(result.data.sources[0]?.label).toBe("Etiqueta del producto");
+    expect(result.data.description).toBe("Suplemento de magnesio en cápsulas.");
+  });
+
+  it("validates an optional product image URL", () => {
+    const result = productInputSchema.safeParse(validProductInput({ imageUrl: "no-es-una-url" }));
+
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(productValidationError(result.error).field).toBe("imageUrl");
   });
 
   it.each([2, 4])("rejects %i benefits and names the benefits field", (benefitCount) => {

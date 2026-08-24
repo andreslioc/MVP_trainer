@@ -115,11 +115,14 @@ async function main(): Promise<void> {
         .insert(products)
         .values({
           id: PRODUCT_ID,
+          sku: "DEMO-CREATINA-001",
           name: "Creatina monohidratada",
           brand: "Super Store Demo",
           category: "Rendimiento deportivo",
           presentation: "Frasco de 60 porciones",
           format: "polvo",
+          description:
+            "Suplemento de creatina monohidratada en polvo para complementar una rutina deportiva.",
           activeIngredients: [{ name: "Creatina monohidratada", verified: true }],
           benefits: [
             {
@@ -187,7 +190,11 @@ async function main(): Promise<void> {
         })
         .onConflictDoUpdate({
           target: [products.brand, products.name, products.presentation],
-          set: { updatedAt: new Date() },
+          set: {
+            sku: sql`excluded.sku`,
+            description: sql`excluded.description`,
+            updatedAt: new Date(),
+          },
         })
         .returning({ id: products.id });
 

@@ -14,6 +14,8 @@ function product(
     ...productInputSchema.parse(
       validProductInput({ verifiedAt: new Date("2026-01-01T00:00:00.000Z") }),
     ),
+    sku: null,
+    imageUrl: null,
     verifiedAt: new Date("2026-01-01T00:00:00.000Z"),
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     updatedAt: new Date("2026-01-01T00:00:00.000Z"),

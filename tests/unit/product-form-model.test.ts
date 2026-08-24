@@ -53,10 +53,13 @@ describe("el formulario ya no pide JSON a mano", () => {
     const values = {
       ...base,
       name: "Creatina",
+      sku: "SAL-001",
       brand: "Super Store",
       category: "Deportivos",
       presentation: "300 g",
       format: "Polvo",
+      imageUrl: "https://example.test/creatina.webp",
+      description: "Creatina monohidratada en polvo.",
       priceCopText: "189000",
       benefits: [
         {
@@ -82,7 +85,13 @@ describe("el formulario ya no pide JSON a mano", () => {
     };
 
     expect(productFormSchema.safeParse(values).success).toBe(true);
-    expect(productInputSchema.safeParse(toProductInput(values)).success).toBe(true);
+    const input = toProductInput(values);
+    expect(productInputSchema.safeParse(input).success).toBe(true);
+    expect(input).toMatchObject({
+      sku: "SAL-001",
+      imageUrl: "https://example.test/creatina.webp",
+      description: "Creatina monohidratada en polvo.",
+    });
   });
 
   it("una fila a medio llenar la senala el campo, no un JSON entero", () => {

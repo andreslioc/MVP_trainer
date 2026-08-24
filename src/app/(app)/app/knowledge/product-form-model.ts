@@ -15,11 +15,14 @@ const required = z.string().trim().min(1, "Este campo es obligatorio.");
 const optionalText = z.string();
 
 export const productFormSchema = z.object({
+  sku: optionalText,
   name: required,
   brand: required,
   category: required,
   presentation: required,
   format: required,
+  imageUrl: optionalText,
+  description: z.string(),
   activeIngredients: z.array(
     z.object({
       name: required,
@@ -52,7 +55,11 @@ export const productFormSchema = z.object({
 });
 
 export type ProductFormValues = z.infer<typeof productFormSchema>;
-export type EditableProduct = ValidProductInput & { id: string };
+export type EditableProduct = Omit<ValidProductInput, "sku" | "imageUrl"> & {
+  id: string;
+  sku: string | null;
+  imageUrl: string | null;
+};
 
 function lines(value: string) {
   return value
@@ -63,11 +70,14 @@ function lines(value: string) {
 
 export function productFormDefaults(product?: EditableProduct): ProductFormValues {
   return {
+    sku: product?.sku ?? "",
     name: product?.name ?? "",
     brand: product?.brand ?? "",
     category: product?.category ?? "",
     presentation: product?.presentation ?? "",
     format: product?.format ?? "",
+    imageUrl: product?.imageUrl ?? "",
+    description: product?.description ?? "",
     activeIngredients:
       product?.activeIngredients.map((ingredient) => ({
         name: ingredient.name,
@@ -108,11 +118,14 @@ export function productFormDefaults(product?: EditableProduct): ProductFormValue
 
 export function toProductInput(values: ProductFormValues, product?: EditableProduct): ProductInput {
   return {
+    sku: values.sku.trim() || undefined,
     name: values.name,
     brand: values.brand,
     category: values.category,
     presentation: values.presentation,
     format: values.format,
+    imageUrl: values.imageUrl.trim() || undefined,
+    description: values.description,
     activeIngredients: values.activeIngredients.map((ingredient) => ({
       name: ingredient.name,
       verified: ingredient.verified,

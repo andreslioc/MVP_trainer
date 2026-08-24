@@ -95,6 +95,7 @@ function knowledgeTokens(product: Product) {
     product.category,
     product.presentation,
     product.format,
+    product.description,
     product.precautions,
     ...product.activeIngredients.map((item) => `${item.name} ${item.unit ?? ""}`),
     ...product.benefits.flatMap((item) => [item.claim, item.science_note]),

@@ -29,7 +29,12 @@ afterAll(async () => {
 
 describe("Knowledge Hub products", () => {
   it("persists every field, updates it and deletes it for an admin", async () => {
-    const input = validProductInput({ name: "CRUD completo" });
+    const input = validProductInput({
+      sku: "CRUD-COMPLETO-001",
+      name: "CRUD completo",
+      imageUrl: "https://example.test/crud.webp",
+      description: "Descripción persistida del producto CRUD.",
+    });
     const created = await createProduct(input, {
       authorize: authorizeAdmin,
       database: connection.db,
@@ -42,12 +47,20 @@ describe("Knowledge Hub products", () => {
 
     const updated = await updateProduct(
       created.data.id,
-      validProductInput({ name: "CRUD actualizado", verifiedAt: new Date("2026-08-18T12:00:00Z") }),
+      validProductInput({
+        sku: "CRUD-COMPLETO-002",
+        name: "CRUD actualizado",
+        imageUrl: "https://example.test/crud-actualizado.webp",
+        description: "Descripción actualizada.",
+        verifiedAt: new Date("2026-08-18T12:00:00Z"),
+      }),
       { authorize: authorizeAdmin, database: connection.db },
     );
     expect(updated.ok).toBe(true);
     if (!updated.ok) return;
     expect(updated.data.name).toBe("CRUD actualizado");
+    expect(updated.data.sku).toBe("CRUD-COMPLETO-002");
+    expect(updated.data.description).toBe("Descripción actualizada.");
     expect(updated.data.verifiedAt?.toISOString()).toBe("2026-08-18T12:00:00.000Z");
 
     const deleted = await deleteProduct(created.data.id, {

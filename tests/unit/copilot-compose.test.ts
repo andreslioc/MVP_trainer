@@ -36,6 +36,8 @@ function product() {
   return {
     id: "11111111-1111-4111-8111-111111111111",
     ...value,
+    sku: value.sku ?? null,
+    imageUrl: value.imageUrl ?? null,
     verifiedAt: new Date("2026-08-18T12:00:00Z"),
     createdAt: new Date("2026-08-18T12:00:00Z"),
     updatedAt: new Date("2026-08-18T12:00:00Z"),
@@ -74,7 +76,29 @@ describe("Copilot composition", () => {
       expect(compose.system).toContain(part);
     }
     expect(compose.system).toContain("Magnesio de prueba");
+    expect(compose.system).toContain("Suplemento de magnesio en cápsulas.");
     expect(compose.system).toContain("canal_whatsapp");
+  });
+
+  it("keeps SKU and image metadata out of every model prompt", () => {
+    const ficha = {
+      ...product(),
+      sku: "INTERNO-NO-DECIR-123",
+      imageUrl: "https://example.test/interna-no-decir.webp",
+    };
+    const compose = buildCopilotComposePrompt({
+      product: ficha,
+      activeRules: [],
+      customerQuestion: "¿Qué contiene?",
+      intent: "informacion",
+      objective: "informar",
+      tone: "cercano",
+      orchestration: { cta: null, incentive: null, ruleApplied: null },
+    });
+
+    expect(compose.system).not.toContain(ficha.sku);
+    expect(compose.system).not.toContain(ficha.imageUrl);
+    expect(compose.system).toContain(ficha.description);
   });
 
   it("uses a cautious fallback instead of completing absent facts", () => {

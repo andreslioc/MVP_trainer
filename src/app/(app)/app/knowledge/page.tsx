@@ -64,17 +64,35 @@ export default async function KnowledgePage() {
               className="flex flex-col rounded-card border border-border bg-surface p-4"
               key={product.id}
             >
+              {product.imageUrl ? (
+                <div className="mb-4 flex aspect-video w-full items-center justify-center overflow-hidden rounded-card border border-border">
+                  {/* biome-ignore lint/performance/noImgElement: las fuentes remotas tienen dimensiones variables; el elemento nativo conserva su tamaño y proporción sin ampliarlas */}
+                  <img
+                    alt=""
+                    className="h-auto max-h-full w-auto max-w-full object-contain"
+                    decoding="async"
+                    loading="lazy"
+                    src={product.imageUrl}
+                  />
+                </div>
+              ) : null}
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
                     {product.brand} · {product.category}
                   </p>
+                  {product.sku ? (
+                    <p className="mt-1 text-xs text-fg-muted">SKU {product.sku}</p>
+                  ) : null}
                   <h2 className="mt-1 text-xl font-semibold text-fg" id={`product-${product.id}`}>
                     {product.name}
                   </h2>
                   <p className="mt-1 text-sm text-fg-muted">
                     {product.presentation} · {product.format}
                   </p>
+                  {product.description ? (
+                    <p className="mt-2 line-clamp-3 text-sm text-fg-muted">{product.description}</p>
+                  ) : null}
                 </div>
                 <span
                   className={`shrink-0 rounded-full border px-2 py-1 text-xs font-semibold ${

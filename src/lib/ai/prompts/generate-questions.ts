@@ -6,6 +6,7 @@ type ProductKnowledge = {
   category: string;
   presentation: string;
   format: string;
+  description?: string;
   activeIngredients: unknown;
   benefits: unknown;
   faqs: unknown;
@@ -62,6 +63,7 @@ export function productKnowledgeForPrompt(
     category: product.category,
     presentation: product.presentation,
     format: product.format,
+    description: product.description ?? "",
     active_ingredients: product.activeIngredients,
     benefits: product.benefits,
     faqs: product.faqs,

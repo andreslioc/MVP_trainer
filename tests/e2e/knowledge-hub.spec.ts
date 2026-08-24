@@ -53,10 +53,13 @@ test("an admin creates, edits and deletes a complete product card", async ({ pag
       .first()
       .click();
     await page.getByLabel("Nombre comercial").fill(originalName);
+    await page.getByLabel("SKU", { exact: true }).fill(`E2E-${id}`);
     await page.getByLabel("Marca").fill(brand);
     await page.getByLabel("Categoría").fill("Minerales");
     await page.getByLabel("Presentación").fill("Frasco 60 cápsulas");
     await page.getByLabel("Formato").fill("Cápsula");
+    await page.getByLabel("URL de la imagen").fill("https://example.test/producto.webp");
+    await page.getByLabel("Descripción").fill("Descripción comprobable del producto E2E.");
     for (let index = 0; index < 3; index += 1) {
       await page
         .getByLabel("Beneficio", { exact: true })

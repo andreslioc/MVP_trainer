@@ -105,6 +105,33 @@ export function ProductForm({ product }: { product?: EditableProduct }) {
                 ) : null}
               </label>
             ))}
+            <label className="text-sm font-medium text-fg">
+              SKU
+              <input className={inputClass} {...register("sku")} />
+              <span className="mt-1 block text-xs font-normal text-fg-muted">
+                Identificador interno para ubicar el producto. No se usa en respuestas.
+              </span>
+              {errors.sku ? (
+                <span className="mt-1 block text-sm text-destructive">{errors.sku.message}</span>
+              ) : null}
+            </label>
+            <label className="text-sm font-medium text-fg">
+              URL de la imagen
+              <input className={inputClass} inputMode="url" {...register("imageUrl")} />
+              {errors.imageUrl ? (
+                <span className="mt-1 block text-sm text-destructive">
+                  {errors.imageUrl.message}
+                </span>
+              ) : null}
+            </label>
+            <label className="text-sm font-medium text-fg md:col-span-2">
+              Descripción
+              <textarea className={`${inputClass} min-h-24`} {...register("description")} />
+              <span className="mt-1 block text-xs font-normal text-fg-muted">
+                La descripción sí puede orientar las respuestas y debe contener solo información
+                comprobable.
+              </span>
+            </label>
           </div>
         </section>
 

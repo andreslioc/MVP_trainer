@@ -49,11 +49,14 @@ const sourceSchema = z.object({
 
 export const productInputSchema = z
   .object({
+    sku: optionalText,
     name: requiredText,
     brand: requiredText,
     category: requiredText,
     presentation: requiredText,
     format: requiredText,
+    imageUrl: optionalUrl,
+    description: z.string().trim(),
     activeIngredients: z.array(activeIngredientSchema),
     benefits: z
       .array(productBenefitSchema)

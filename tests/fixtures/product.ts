@@ -2,11 +2,14 @@ import type { ProductInput } from "../../src/lib/validation/product.ts";
 
 export function validProductInput(overrides: Partial<ProductInput> = {}): ProductInput {
   return {
+    sku: undefined,
     name: "Magnesio de prueba",
     brand: "Super Store Test",
     category: "Minerales",
     presentation: "Frasco 60 cápsulas",
     format: "Cápsula",
+    imageUrl: undefined,
+    description: "Suplemento de magnesio en cápsulas.",
     activeIngredients: [
       {
         name: "Magnesio",
