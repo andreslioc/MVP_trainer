@@ -112,6 +112,35 @@ function knowledgeTokens(product: Product) {
   );
 }
 
+/**
+ * Una negacion en la oracion: la asesora TIENE que poder decir "no cura
+ * enfermedades", y esa frase contiene la prohibida.
+ */
+const negation = /\b(no|ni|nunca|jamas|ningun|ninguna|ninguno|tampoco|sin)\b/;
+
+/**
+ * Afirma el reclamo prohibido, en vez de negarlo.
+ *
+ * Se mira oracion por oracion y solo cuenta la negacion que llega ANTES de la
+ * frase: "no reemplaza una dieta. Cura la diabetes." son dos oraciones y la
+ * segunda se marca igual. Queda un hueco conocido — "no tiene efectos, cura la
+ * diabetes", negacion y afirmacion en la misma oracion — que ninguna heuristica
+ * de subcadena cierra; para eso esta la revision humana de la ficha.
+ */
+function assertsForbiddenClaim(answer: string, forbidden: string[]) {
+  return answer
+    .split(/[.;!?\n]+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean)
+    .some((sentence) =>
+      forbidden.some((claim) => {
+        const at = sentence.indexOf(claim);
+        if (at === -1) return false;
+        return !negation.test(sentence.slice(0, at));
+      }),
+    );
+}
+
 function isCautiousAnswer(answer: string) {
   const normalized = normalize(answer);
   return [
@@ -155,23 +184,36 @@ export function validateGeneratedQuestionBatch(value: unknown, product: Product)
 
   const allowedTokens = knowledgeTokens(product);
   const forbidden = product.claimsForbidden.map(normalize).filter(Boolean);
-  const unsupported = parsed.data.questions.some((question) => {
+  for (const [index, question] of parsed.data.questions.entries()) {
     const answer = normalize(question.ideal_answer);
-    if (forbidden.some((claim) => answer.includes(claim))) return true;
-    if (/^(este producto )?(cura|trata|previene|elimina|garantiza)\b/.test(answer)) return true;
-    if (isCautiousAnswer(answer)) return false;
-    return !answer
+    // El numero de la pregunta va en el mensaje: sin el, rechazar la tanda
+    // obliga a instrumentar el pipeline para saber cual de las seis fallo.
+    const position = index + 1;
+    if (
+      assertsForbiddenClaim(answer, forbidden) ||
+      /^(este producto )?(cura|trata|previene|elimina|garantiza)\b/.test(answer)
+    ) {
+      return {
+        ok: false as const,
+        error: {
+          code: "INVALID_GENERATED_QUESTIONS",
+          message: `La respuesta ideal de la pregunta ${position} afirma un reclamo prohibido: "${question.text}".`,
+        },
+      };
+    }
+    if (isCautiousAnswer(answer)) continue;
+    const supported = answer
       .split(" ")
       .some((word) => word.length >= 5 && !ignoredWords.has(word) && allowedTokens.has(word));
-  });
-  if (unsupported) {
-    return {
-      ok: false as const,
-      error: {
-        code: "INVALID_GENERATED_QUESTIONS",
-        message: "La tanda contiene una afirmacion ausente del Knowledge Hub.",
-      },
-    };
+    if (!supported) {
+      return {
+        ok: false as const,
+        error: {
+          code: "INVALID_GENERATED_QUESTIONS",
+          message: `La respuesta ideal de la pregunta ${position} no se apoya en la ficha: "${question.text}".`,
+        },
+      };
+    }
   }
 
   return { ok: true as const, data: parsed.data };

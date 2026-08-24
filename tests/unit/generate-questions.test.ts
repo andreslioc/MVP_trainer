@@ -98,12 +98,40 @@ describe("question generation", () => {
       ideal_answer: "Este producto cura la diabetes.",
     };
 
-    expect(validateGeneratedQuestionBatch(batch, product())).toEqual({
+    const result = validateGeneratedQuestionBatch(batch, product());
+
+    expect(result).toMatchObject({
       ok: false,
-      error: {
-        code: "INVALID_GENERATED_QUESTIONS",
-        message: "La tanda contiene una afirmacion ausente del Knowledge Hub.",
-      },
+      error: { code: "INVALID_GENERATED_QUESTIONS" },
+    });
+    // El mensaje nombra cual de las seis fallo: sin eso, diagnosticar una tanda
+    // rechazada obliga a reproducir la generacion entera.
+    if (result.ok) return;
+    expect(result.error.message).toContain("pregunta 1");
+    expect(result.error.message).toContain(batch.questions[0]?.text ?? "");
+  });
+
+  it("accepts an answer that denies a forbidden claim", () => {
+    const batch = validBatch();
+    batch.questions[4] = {
+      ...batch.questions[4],
+      ideal_answer:
+        "No, es un suplemento dietario y bajo ninguna circunstancia debe considerarse que cura, trata o previene enfermedades.",
+    };
+
+    expect(validateGeneratedQuestionBatch(batch, product()).ok).toBe(true);
+  });
+
+  it("still rejects the forbidden claim when the denial is a separate sentence", () => {
+    const batch = validBatch();
+    batch.questions[4] = {
+      ...batch.questions[4],
+      ideal_answer: "No reemplaza una dieta equilibrada. Cura enfermedades del higado.",
+    };
+
+    expect(validateGeneratedQuestionBatch(batch, product())).toMatchObject({
+      ok: false,
+      error: { code: "INVALID_GENERATED_QUESTIONS" },
     });
   });
 
