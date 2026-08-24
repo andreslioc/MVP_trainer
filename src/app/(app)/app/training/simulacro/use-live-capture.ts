@@ -13,6 +13,12 @@
  * navegador muestre un solo aviso de permisos en lugar de dos.
  *
  * La camara se muestra y NO se graba: al grabar se toma solo la pista de audio.
+ *
+ * Abrir la camara y empezar a grabar son dos pasos separados a proposito. Entre
+ * ellos va la cuenta regresiva: la asesora se ve y se acomoda mientras la
+ * camara ya esta encendida, y la grabacion arranca EXACTAMENTE cuando arranca el
+ * reloj del chat. De eso depende que los dos relojes esten alineados, que es lo
+ * que el analisis da por cierto al medir la reaccion.
  */
 
 import { useCallback, useRef, useState } from "react";
@@ -38,7 +44,8 @@ export function useLiveCapture() {
   const chunks = useRef<Blob[]>([]);
   const active = useRef<MediaStream | null>(null);
 
-  const start = useCallback(async () => {
+  /** Enciende camara y microfono. Todavia no graba. */
+  const open = useCallback(async () => {
     setError(null);
     chunks.current = [];
 
@@ -59,12 +66,25 @@ export function useLiveCapture() {
       return false;
     }
 
-    const mimeType = pickMimeType();
-    if (mimeType === null) {
+    // Se revisa aqui y no al grabar: descubrir que el navegador no puede
+    // grabar despues de la cuenta regresiva desperdicia el tiempo de la asesora
+    // y la deja creyendo que el simulacro arranco.
+    if (pickMimeType() === null) {
       for (const track of captured.getTracks()) track.stop();
       setError("Este navegador no puede grabar audio. Prueba con Chrome o Safari actualizado.");
       return false;
     }
+
+    active.current = captured;
+    setStream(captured);
+    return true;
+  }, []);
+
+  /** Arranca la grabacion. Se llama en el mismo instante que el reloj del chat. */
+  const record = useCallback(() => {
+    const captured = active.current;
+    const mimeType = pickMimeType();
+    if (!captured || mimeType === null) return false;
 
     // Solo la pista de audio entra a la grabacion: lo que se evalua es lo que
     // dijo, y grabar video multiplicaria el peso sin que nadie lo mire.
@@ -76,10 +96,7 @@ export function useLiveCapture() {
       if (event.data.size > 0) chunks.current.push(event.data);
     };
     instance.start(1_000);
-
     recorder.current = instance;
-    active.current = captured;
-    setStream(captured);
     return true;
   }, []);
 
@@ -100,5 +117,5 @@ export function useLiveCapture() {
     return blob;
   }, []);
 
-  return { stream, start, stop, error };
+  return { stream, open, record, stop, error };
 }

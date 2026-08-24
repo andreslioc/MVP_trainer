@@ -19,7 +19,18 @@ import { SimulationResults, type ResultRow } from "./simulation-results.tsx";
 import { DEFAULT_SPEED, SpeedChoice } from "./speed-choice.tsx";
 import { useLiveCapture } from "./use-live-capture.ts";
 
-type Phase = "preparar" | "corriendo" | "analizando" | "listo";
+type Phase = "preparar" | "cuenta" | "corriendo" | "analizando" | "listo";
+
+/**
+ * Segundos de cuenta regresiva antes de arrancar.
+ *
+ * No es cortesia: sin ellos el chat empieza a correr mientras la asesora
+ * todavia esta buscando donde mirar, y las primeras preguntas se pierden por
+ * eso y no por falta de atencion. Ademas es el hueco donde la grabacion y el
+ * reloj del chat se sincronizan: la camara ya esta encendida y ambos arrancan
+ * juntos al llegar a cero.
+ */
+const CUENTA_REGRESIVA_S = 5;
 
 const DURATIONS = [
   { value: 60, label: "1 minuto" },
@@ -42,6 +53,7 @@ export function SimulatorClient() {
   const [elapsedMs, setElapsedMs] = useState(0);
   const [results, setResults] = useState<ResultRow[] | null>(null);
   const [transcript, setTranscript] = useState<string | null>(null);
+  const [cuenta, setCuenta] = useState(CUENTA_REGRESIVA_S);
   const [message, setMessage] = useState<string | null>(null);
   const capture = useLiveCapture();
   const startedAt = useRef(0);
@@ -71,6 +83,20 @@ export function SimulatorClient() {
   }, [capture, simulationId]);
 
   useEffect(() => {
+    if (phase !== "cuenta") return;
+    if (cuenta <= 0) {
+      // La grabacion y el reloj del chat arrancan en la MISMA linea: es lo que
+      // permite exigir que ninguna respuesta preceda a su pregunta.
+      capture.record();
+      startedAt.current = performance.now();
+      setPhase("corriendo");
+      return;
+    }
+    const timer = setTimeout(() => setCuenta((valor) => valor - 1), 1_000);
+    return () => clearTimeout(timer);
+  }, [phase, cuenta, capture]);
+
+  useEffect(() => {
     if (phase !== "corriendo") return;
     function tick() {
       const elapsed = performance.now() - startedAt.current;
@@ -92,15 +118,18 @@ export function SimulatorClient() {
       setMessage(started.error.message);
       return;
     }
-    const listening = await capture.start();
-    if (!listening) return;
+    // Se abre la camara ANTES de la cuenta: la asesora se acomoda viendose, y
+    // si el permiso falla se entera ahora y no despues de esperar cinco
+    // segundos en blanco.
+    const abierta = await capture.open();
+    if (!abierta) return;
     setSimulationId(started.data.id);
     setLines(started.data.timeline);
     setResults(null);
     setTranscript(null);
-    startedAt.current = performance.now();
     setElapsedMs(0);
-    setPhase("corriendo");
+    setCuenta(CUENTA_REGRESIVA_S);
+    setPhase("cuenta");
   }
 
   if (phase === "listo" && results) {
@@ -114,6 +143,29 @@ export function SimulatorClient() {
         results={results}
         transcript={transcript}
       />
+    );
+  }
+
+  if (phase === "cuenta") {
+    return (
+      <div className="mt-8 flex flex-col items-center gap-4">
+        <p className="text-6xl font-semibold tabular-nums text-primary" role="timer">
+          {cuenta}
+        </p>
+        <p className="text-fg-muted">Acomódate. El chat arranca en {cuenta}…</p>
+        <LiveStage elapsedMs={0} lines={[]} stream={capture.stream} />
+        <MicMeter stream={capture.stream} />
+        <button
+          className="min-h-11 rounded-card border border-border px-4 font-semibold text-fg-muted"
+          onClick={() => {
+            void capture.stop();
+            setPhase("preparar");
+          }}
+          type="button"
+        >
+          Cancelar
+        </button>
+      </div>
     );
   }
 

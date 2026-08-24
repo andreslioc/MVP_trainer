@@ -304,3 +304,33 @@ describe("preguntas partidas en dos mensajes", () => {
     expect(enMedio.length).toBeGreaterThan(0);
   });
 });
+
+describe("la cuenta regresiva y el arranque", () => {
+  it("ninguna pregunta cae en los primeros segundos", () => {
+    // La cuenta regresiva son 5 s y el calentamiento del guion otros 8: entre
+    // los dos, la asesora tiene margen para acomodarse antes de la primera.
+    const lines = buildTimeline({
+      questions,
+      durationMs: 60_000,
+      speed: "rapido",
+      random: seeded(),
+    });
+
+    const primera = lines.find((line) => line.completesQuestion);
+    expect(primera?.atMs ?? 0).toBeGreaterThanOrEqual(8_000);
+  });
+
+  it("el reloj del chat empieza en cero, no en la cuenta regresiva", () => {
+    // El chat se pinta contra el tiempo transcurrido desde que arranca, que es
+    // el mismo instante en que arranca la grabacion. Si la linea de tiempo
+    // arrancara en 5, las marcas quedarian corridas contra la transcripcion.
+    const lines = buildTimeline({
+      questions: [],
+      durationMs: 30_000,
+      speed: "normal",
+      random: seeded(),
+    });
+
+    expect(lines[0]?.atMs).toBeLessThanOrEqual(2_000);
+  });
+});
