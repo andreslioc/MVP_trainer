@@ -11,6 +11,10 @@ import { formatMark, humanizeMark } from "../../../../../lib/recordings.ts";
 
 export type ResultRow = {
   question_id: string;
+  /** La pregunta tal como se vio en el chat. */
+  question?: string;
+  /** Llegó partida en dos mensajes seguidos. */
+  split?: boolean;
   appeared_at_s: number;
   answered: boolean;
   answered_at_s: number | null;
@@ -114,7 +118,17 @@ export function SimulationResults({
               }`}
               key={row.question_id}
             >
-              <p className="text-sm font-semibold tabular-nums">
+              {row.question ? (
+                <p className="text-base font-semibold">
+                  «{row.question}»
+                  {row.split ? (
+                    <span className="ml-2 rounded-card bg-surface px-2 py-0.5 text-xs font-normal">
+                      llegó en 2 mensajes
+                    </span>
+                  ) : null}
+                </p>
+              ) : null}
+              <p className="mt-1 text-sm font-semibold tabular-nums">
                 Apareció en {formatMark(row.appeared_at_s)}
                 {row.answered && (row.reaction_s ?? 0) >= 0 ? (
                   <> · contestaste {row.reaction_s} s después</>

@@ -30,14 +30,30 @@ export function megabytes(bytes: number) {
 }
 
 /** Devuelve el motivo por el que el archivo no sirve, o null si sirve. */
-export function recordingFileProblem(file: { type: string; size: number }) {
+/**
+ * Que le pasa a este archivo, si algo.
+ *
+ * `maxBytes` viene del servidor y no de la constante: el tope real lo pone el
+ * plan de Supabase —50 MB en el gratuito— y no este proyecto. Antes el
+ * navegador aceptaba hasta 200 MB y el servidor rechazaba en 50, asi que la
+ * asesora elegia un archivo, le decian que estaba bien, y despues que no.
+ *
+ * El mensaje trae el comando exacto porque comprimir no se puede hacer aqui:
+ * ffmpeg no existe en el servidor donde corre la app, y decir "comprime el
+ * audio" sin decir como deja a la asesora resolviendo un problema que no es
+ * suyo.
+ */
+export function recordingFileProblem(
+  file: { type: string; size: number },
+  maxBytes: number = MAX_RECORDING_BYTES,
+) {
   if (!(file.type in RECORDING_MIME_EXTENSIONS)) {
     return "Ese formato no se admite. Sube un mp3, m4a, wav, ogg, webm o mp4.";
   }
-  if (file.size > MAX_RECORDING_BYTES) {
-    return `El archivo pesa ${megabytes(file.size)} MB y el máximo son ${megabytes(MAX_RECORDING_BYTES)} MB. Comprime el audio o corta el live en partes.`;
-  }
   if (file.size === 0) return "El archivo está vacío.";
+  if (file.size > maxBytes) {
+    return `El archivo pesa ${megabytes(file.size)} MB y el máximo son ${megabytes(maxBytes)} MB. Convierte el audio antes de subirlo: ffmpeg -i "tu-archivo" -vn -ac 1 -ar 16000 -c:a libopus -b:a 24k salida.ogg`;
+  }
   return null;
 }
 

@@ -182,6 +182,31 @@ describe("startSimulation", () => {
     }
   });
 
+  it("el guion guarda la pregunta y si llegó partida", async () => {
+    // El resultado tiene que poder decir QUÉ se preguntó y CÓMO llegó: una
+    // pregunta partida en dos mensajes es más difícil de cazar, y no haberla
+    // visto significa otra cosa que no ver una que llegó entera.
+    const result = await startSimulation(
+      { speed: "normal", durationS: 300, questionCount: 6 },
+      { authorize, database: connection.db, random: seeded(31) },
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    const [row] = await connection.db
+      .select({ script: liveSimulations.script })
+      .from(liveSimulations)
+      .where(eq(liveSimulations.id, result.data.id));
+
+    for (const entry of row?.script ?? []) {
+      expect(entry.text.length).toBeGreaterThan(0);
+      expect(typeof entry.split).toBe("boolean");
+    }
+    // Que ALGUNA salga partida depende del azar, y eso no es comportamiento
+    // sino loteria: el partido se prueba de forma determinista en
+    // `chat-player.test.ts`. Aqui solo importa que el dato viaje.
+  });
+
   it("rechaza una duracion fuera de rango", async () => {
     const result = await startSimulation(
       { speed: "normal", durationS: 5, questionCount: 2 },

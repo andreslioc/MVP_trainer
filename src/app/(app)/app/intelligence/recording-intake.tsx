@@ -2,12 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 
-import {
-  megabytes,
-  MAX_RECORDING_BYTES,
-  RECORDING_ACCEPT,
-  recordingFileProblem,
-} from "../../../../lib/recordings.ts";
+import { megabytes, RECORDING_ACCEPT, recordingFileProblem } from "../../../../lib/recordings.ts";
 import {
   ingestTranscriptAction,
   prepareRecordingUploadAction,
@@ -17,7 +12,14 @@ import { ChatLogField } from "./chat-log-field.tsx";
 
 type Mode = "transcript" | "audio";
 
-export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
+export function RecordingIntake({
+  callbackReady,
+  maxUploadBytes,
+}: {
+  callbackReady: boolean;
+  /** Tope real del bucket, decidido por el plan de Supabase. */
+  maxUploadBytes: number;
+}) {
   const [mode, setMode] = useState<Mode>("transcript");
   const [transcript, setTranscript] = useState("");
   const [chatLog, setChatLog] = useState("");
@@ -66,7 +68,7 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
       report(false, "Selecciona un archivo.");
       return;
     }
-    const problem = recordingFileProblem(file);
+    const problem = recordingFileProblem(file, maxUploadBytes);
     if (problem) {
       report(false, problem);
       return;
@@ -200,8 +202,8 @@ export function RecordingIntake({ callbackReady }: { callbackReady: boolean }) {
             Grabación descargada del live
           </label>
           <p className="mt-1 text-sm text-fg-muted">
-            mp3, m4a, wav, webm o mp4, hasta {megabytes(MAX_RECORDING_BYTES)} MB. Se guarda en un
-            bucket privado bajo tu usuario.
+            mp3, m4a, wav, webm o mp4, hasta {megabytes(maxUploadBytes)} MB. Se guarda en un bucket
+            privado bajo tu usuario.
           </p>
           {!callbackReady ? (
             <p

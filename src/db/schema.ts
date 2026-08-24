@@ -404,7 +404,16 @@ export const liveSimulations = pgTable(
      * que el cliente puede cambiar, y con el se cae la metrica de atencion.
      */
     script: jsonb("script")
-      .$type<Array<{ question_id: string; product_id: string; at_ms: number; text: string }>>()
+      .$type<
+        Array<{
+          question_id: string;
+          product_id: string;
+          at_ms: number;
+          text: string;
+          /** Llego partida en dos mensajes, como escribe media clienta en un live. */
+          split?: boolean;
+        }>
+      >()
       .notNull()
       .default([]),
     /** El chat completo tal como salio, para poder revisarlo despues. */
@@ -416,6 +425,10 @@ export const liveSimulations = pgTable(
       .$type<
         Array<{
           question_id: string;
+          /** La pregunta tal como se vio en el chat. */
+          question?: string;
+          /** Llego partida en dos mensajes. */
+          split?: boolean;
           appeared_at_s: number;
           answered: boolean;
           answered_at_s: number | null;

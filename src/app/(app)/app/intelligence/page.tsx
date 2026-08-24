@@ -58,7 +58,10 @@ export default async function IntelligencePage({
       ) : (
         <>
           <div className="mt-8">
-            <RecordingIntake callbackReady={callbackReady} />
+            <RecordingIntake
+              callbackReady={callbackReady}
+              maxUploadBytes={env.SUPABASE_MAX_UPLOAD_BYTES}
+            />
           </div>
           <InsightsPanel
             chatCoverage={chatCoverageResult?.ok ? chatCoverageResult.data : []}

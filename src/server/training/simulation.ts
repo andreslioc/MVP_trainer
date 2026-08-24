@@ -134,6 +134,10 @@ export async function startSimulation(input: unknown, options: SimulationDepende
           product_id: question?.productId ?? "",
           at_ms: line.atMs,
           text: questionForChat(question?.text ?? line.text, question?.productName ?? ""),
+          // Dos lineas con el mismo id significa que se partio en dos mensajes.
+          // Se guarda porque cambia como leer el resultado: una pregunta
+          // partida es mas dificil de cazar, y no haberla visto dice otra cosa.
+          split: timeline.filter((other) => other.questionId === line.questionId).length > 1,
         };
       });
 

@@ -215,6 +215,8 @@ export async function finishSimulation(
 
         return {
           question_id: entry.question_id,
+          question: entry.text,
+          split: entry.split === true,
           appeared_at_s: appearedAtS,
           answered,
           answered_at_s: answeredAtS,
