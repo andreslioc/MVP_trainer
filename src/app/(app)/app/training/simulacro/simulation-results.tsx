@@ -55,9 +55,11 @@ export function SimulationResults({
     .map((linea, index) => ({ id: index, texto: humanizeMark(linea.trim()) }))
     .filter((linea) => linea.texto);
   const answered = results.filter((row) => row.answered);
+  // Solo las reacciones sensatas entran al promedio. Una negativa significa que
+  // el emparejamiento fallo, y promediarla ensucia el numero en vez de avisar.
   const reactions = answered
     .map((row) => row.reaction_s)
-    .filter((value): value is number => value !== null);
+    .filter((value): value is number => value !== null && value >= 0);
   const media = average(results);
 
   return (
@@ -114,8 +116,10 @@ export function SimulationResults({
             >
               <p className="text-sm font-semibold tabular-nums">
                 Apareció en {formatMark(row.appeared_at_s)}
-                {row.answered ? (
+                {row.answered && (row.reaction_s ?? 0) >= 0 ? (
                   <> · contestaste {row.reaction_s} s después</>
+                ) : row.answered ? (
+                  <> · no se pudo ubicar cuándo la contestaste</>
                 ) : (
                   <> · no la contestaste</>
                 )}

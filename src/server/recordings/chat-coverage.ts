@@ -82,7 +82,27 @@ export type ChatCoverageInput = {
   chatLog: string;
   transcript: string;
   durationS: number | null;
+  /**
+   * Los dos relojes arrancan juntos y no hay desfase que medir.
+   *
+   * Lo declara el simulacro, donde el chat y la grabacion nacen en la misma
+   * pagina y en el mismo instante. Con eso se salta el lote de calibracion —no
+   * hay nada que calibrar— y la regla de causalidad se aplica desde el primer
+   * lote, que es justo donde hacia falta.
+   */
+  clocksAligned?: boolean;
 };
+
+/**
+ * Cuanto puede adelantarse una respuesta a su pregunta sin ser imposible.
+ *
+ * Cero seria lo correcto en teoria, pero las marcas de una transcripcion no son
+ * exactas: un segmento suele empezar un instante antes de la primera palabra, y
+ * la asesora puede arrancar a hablar mientras la pregunta termina de aparecer.
+ * Mas alla de esto no hay margen que valga: es una respuesta que ocurrio antes
+ * de que existiera la pregunta.
+ */
+const MAX_ADELANTO_S = 3;
 
 /**
  * Cuantos tokens de salida necesita un lote. Cada entrada son cuatro campos
@@ -247,18 +267,51 @@ export async function collectChatCoverage(
         notQuestions += 1;
         continue;
       }
-      const quote = item.answered ? sanitizeQuote(item.evidence_quote) : null;
+      // Una respuesta no puede ocurrir ANTES de que la pregunta aparezca. El
+      // modelo empareja por contenido y a veces atribuye una frase a una
+      // pregunta posterior; el reloj lo desmiente. Medido en un simulacro real:
+      // una frase del segundo 10 asignada a una pregunta del segundo 21.
+      // Se compara contra la pregunta DESPLAZADA por el desfase medido: en un
+      // live cuya grabacion arranco tarde, una respuesta legitima cae antes en
+      // segundos crudos. Mientras el desfase no se conozca no se puede juzgar,
+      // y por eso durante la calibracion no se descarta nada.
+      const acausal =
+        item.answered &&
+        lagS !== null &&
+        item.at_seconds !== null &&
+        question.atSeconds !== null &&
+        item.at_seconds < question.atSeconds + lagS - MAX_ADELANTO_S;
+      const answered = item.answered && !acausal;
+      const quote = answered ? sanitizeQuote(item.evidence_quote) : null;
       rows.push({
         question: question.text,
-        answered: item.answered,
+        answered,
         evidenceQuote: quote,
         // Un segundo sin respuesta no significa nada: si no la respondio, no
         // hay punto del video al que mandar a la asesora.
-        atSeconds: item.answered ? item.at_seconds : null,
+        atSeconds: answered ? item.at_seconds : null,
         askedCount: question.askedCount,
       });
     }
     return { rows, failed: false, notQuestions };
+  }
+
+  // Con los relojes alineados no hay desfase que medir: todos los lotes salen
+  // a la vez con desplazamiento cero y la causalidad se aplica desde el primero.
+  if (input.clocksAligned) {
+    const outcomes = await mapWithConcurrency(batches, AI_PROVIDER.maxConcurrency, (batch) =>
+      runBatch(batch, 0),
+    );
+    return {
+      rows: outcomes.flatMap((outcome) => outcome.rows),
+      droppedNoise: parsed.droppedNoise,
+      questionCount: questions.length,
+      notQuestions: outcomes.reduce((total, outcome) => total + outcome.notQuestions, 0),
+      batches: batches.length,
+      failedBatches: outcomes.filter((outcome) => outcome.failed).length,
+      lagS: 0,
+      chatBeyondAudioS,
+    };
   }
 
   // El primer lote corre solo y con ventana ancha: es el que MIDE el desfase

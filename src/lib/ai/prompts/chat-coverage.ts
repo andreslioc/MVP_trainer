@@ -64,6 +64,10 @@ CUANDO ESTA RESPONDIDA (answered=true):
   Si answered=false, va en null.
 - at_seconds es el segundo de la marca [Xs] de la linea que contiene esa frase. Si la linea no
   trae marca, null. No lo estimes ni lo deduzcas del orden.
+- La respuesta va SIEMPRE DESPUES de la pregunta. Cada mensaje de la lista trae el segundo en que
+  se escribio: una frase de la transcripcion anterior a ese segundo NO puede responderlo, por
+  parecido que suene el tema. Si la unica frase que encaja por contenido ocurrio antes, la pregunta
+  quedo sin responder.
 - Usa exclusivamente la transcripcion entregada. No inventes respuestas ni supongas que algo
   se contesto fuera del tramo.
 - No reescribas el texto del mensaje: solo devuelves su numero. Si ves [telefono], [correo] o

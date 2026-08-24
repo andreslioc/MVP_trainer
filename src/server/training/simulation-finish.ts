@@ -128,6 +128,10 @@ export async function finishSimulation(
         chatLog: questionsAsChatLog(simulation.script),
         transcript: transcribed.data.transcript,
         durationS: simulation.durationS,
+        // El chat y la grabacion arrancan en la misma pagina y en el mismo
+        // instante: no hay desfase que medir, y la causalidad se puede exigir
+        // desde el primer lote.
+        clocksAligned: true,
       },
       (payload) => generateStructured(payload, aiGateway),
     );
@@ -214,7 +218,12 @@ export async function finishSimulation(
           appeared_at_s: appearedAtS,
           answered,
           answered_at_s: answeredAtS,
-          reaction_s: answeredAtS === null ? null : Math.max(0, answeredAtS - appearedAtS),
+          // Sin clamp a cero. Una reaccion negativa significa que el
+          // emparejamiento esta mal, y aplastarla a 0 la disfrazaba de
+          // respuesta instantanea: en un simulacro real se leyo "contestaste
+          // 0 s despues" cuando la frase era once segundos ANTERIOR a la
+          // pregunta.
+          reaction_s: answeredAtS === null ? null : answeredAtS - appearedAtS,
           advisor_answer: row?.evidenceQuote ?? null,
           scores,
           feedback,

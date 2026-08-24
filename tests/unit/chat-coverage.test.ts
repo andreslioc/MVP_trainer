@@ -445,3 +445,146 @@ describe("mensajes reales de un live", () => {
     expect(parsed.messages.length).toBeGreaterThan(NO_SON_PREGUNTAS.length / 2);
   });
 });
+
+describe("una respuesta no puede preceder a su pregunta", () => {
+  it("descarta la frase que ocurrió antes de que la pregunta apareciera", async () => {
+    // Caso real de un simulacro: la pregunta salió en el segundo 21 y el modelo
+    // le atribuyó una frase del segundo 10. El reloj lo desmiente, sin importar
+    // cuánto se parezca el tema.
+    async function generate() {
+      return {
+        ok: true as const,
+        data: {
+          value: {
+            items: [
+              {
+                i: 0,
+                es_pregunta: true,
+                answered: true,
+                evidence_quote: "Sí, con tal vez que se lo tomen con regulación.",
+                at_seconds: 10,
+              },
+            ],
+          },
+          repaired: false,
+        },
+      };
+    }
+
+    const outcome = await collectChatCoverage(
+      {
+        ...base,
+        clocksAligned: true,
+        chatLog: "[00:00:21] @viewer: una embarazada lo puede tomar",
+        transcript: transcriptOf(5),
+      },
+      generate,
+    );
+
+    expect(outcome.rows[0]?.answered).toBe(false);
+    expect(outcome.rows[0]?.atSeconds).toBeNull();
+    expect(outcome.rows[0]?.evidenceQuote).toBeNull();
+  });
+
+  it("acepta la respuesta que llega justo cuando aparece la pregunta", async () => {
+    // Las marcas de una transcripción no son exactas y la asesora puede
+    // arrancar mientras la pregunta termina de salir. Tres segundos de margen.
+    async function generate() {
+      return {
+        ok: true as const,
+        data: {
+          value: {
+            items: [
+              {
+                i: 0,
+                es_pregunta: true,
+                answered: true,
+                evidence_quote: "Vale 189 mil.",
+                at_seconds: 19,
+              },
+            ],
+          },
+          repaired: false,
+        },
+      };
+    }
+
+    const outcome = await collectChatCoverage(
+      {
+        ...base,
+        clocksAligned: true,
+        chatLog: "[00:00:21] @viewer: a como",
+        transcript: transcriptOf(5),
+      },
+      generate,
+    );
+
+    expect(outcome.rows[0]?.answered).toBe(true);
+    expect(outcome.rows[0]?.atSeconds).toBe(19);
+  });
+
+  it("acepta cualquier respuesta posterior, por tarde que llegue", async () => {
+    async function generate() {
+      return {
+        ok: true as const,
+        data: {
+          value: {
+            items: [
+              {
+                i: 0,
+                es_pregunta: true,
+                answered: true,
+                evidence_quote: "Vale 189 mil.",
+                at_seconds: 200,
+              },
+            ],
+          },
+          repaired: false,
+        },
+      };
+    }
+
+    const outcome = await collectChatCoverage(
+      {
+        ...base,
+        clocksAligned: true,
+        chatLog: "[00:00:21] @viewer: a como",
+        transcript: transcriptOf(20),
+      },
+      generate,
+    );
+
+    expect(outcome.rows[0]?.answered).toBe(true);
+  });
+
+  it("durante la calibración no descarta nada: el desfase todavía no se conoce", async () => {
+    // Sin saber cuánto se corrieron los relojes, una respuesta "anterior" puede
+    // ser perfectamente legítima. Juzgarla ahí impediría medir el desfase.
+    async function generate() {
+      return {
+        ok: true as const,
+        data: {
+          value: {
+            items: [
+              {
+                i: 0,
+                es_pregunta: true,
+                answered: true,
+                evidence_quote: "Vale 189 mil.",
+                at_seconds: 10,
+              },
+            ],
+          },
+          repaired: false,
+        },
+      };
+    }
+
+    const outcome = await collectChatCoverage(
+      { ...base, chatLog: "[00:00:21] @viewer: a como", transcript: transcriptOf(5) },
+      generate,
+    );
+
+    expect(outcome.rows[0]?.answered).toBe(true);
+  });
+});
