@@ -7,7 +7,7 @@
  * nueve dimensiones del Simulator.
  */
 
-import { formatMark } from "../../../../../lib/recordings.ts";
+import { formatMark, humanizeMark } from "../../../../../lib/recordings.ts";
 
 export type ResultRow = {
   question_id: string;
@@ -42,11 +42,18 @@ function average(rows: readonly ResultRow[]) {
 
 export function SimulationResults({
   results,
+  transcript,
   onRestart,
 }: {
   results: readonly ResultRow[];
+  /** Lo que se transcribio de tu voz. Vacio significa que no se capturo audio. */
+  transcript: string | null;
   onRestart: () => void;
 }) {
+  const lineas = (transcript ?? "")
+    .split("\n")
+    .map((linea, index) => ({ id: index, texto: humanizeMark(linea.trim()) }))
+    .filter((linea) => linea.texto);
   const answered = results.filter((row) => row.answered);
   const reactions = answered
     .map((row) => row.reaction_s)
@@ -135,6 +142,31 @@ export function SimulationResults({
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="rounded-card border border-border bg-surface p-5">
+        <h2 className="text-xl font-semibold text-fg">Lo que se te escuchó</h2>
+        {lineas.length === 0 ? (
+          <p className="mt-2 rounded-card border border-confidence-low-border bg-confidence-low-bg p-3 text-sm text-confidence-low-fg">
+            No se transcribió nada. O el micrófono no capturó audio, o no se alcanzó a oír lo que
+            dijiste. Revisa el medidor de micrófono al empezar el próximo simulacro: si no se mueve
+            al hablar, el problema está ahí.
+          </p>
+        ) : (
+          <>
+            <p className="mt-1 text-sm text-fg-muted">
+              La transcripción completa, con el minuto de cada frase. Es la misma contra la que se
+              midió si respondiste.
+            </p>
+            <ol className="mt-3 max-h-80 space-y-1 overflow-y-auto text-sm tabular-nums">
+              {lineas.map((linea) => (
+                <li className="border-b border-border pb-1 last:border-0" key={linea.id}>
+                  {linea.texto}
+                </li>
+              ))}
+            </ol>
+          </>
+        )}
       </section>
 
       <button

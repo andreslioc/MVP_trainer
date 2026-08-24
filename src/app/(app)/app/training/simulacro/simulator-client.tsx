@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { SimLine, SimSpeed } from "../../../../../lib/simulator/chat-player.ts";
 import { finishSimulationAction, startSimulationAction } from "./actions.ts";
 import { LiveStage } from "./live-stage.tsx";
+import { MicMeter } from "./mic-meter.tsx";
 import { SimulationResults, type ResultRow } from "./simulation-results.tsx";
 import { DEFAULT_SPEED, SpeedChoice } from "./speed-choice.tsx";
 import { useLiveCapture } from "./use-live-capture.ts";
@@ -40,6 +41,7 @@ export function SimulatorClient() {
   const [simulationId, setSimulationId] = useState<string | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
   const [results, setResults] = useState<ResultRow[] | null>(null);
+  const [transcript, setTranscript] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const capture = useLiveCapture();
   const startedAt = useRef(0);
@@ -64,6 +66,7 @@ export function SimulatorClient() {
       return;
     }
     setResults(result.data?.results ?? []);
+    setTranscript(result.data?.transcript ?? null);
     setPhase("listo");
   }, [capture, simulationId]);
 
@@ -94,6 +97,7 @@ export function SimulatorClient() {
     setSimulationId(started.data.id);
     setLines(started.data.timeline);
     setResults(null);
+    setTranscript(null);
     startedAt.current = performance.now();
     setElapsedMs(0);
     setPhase("corriendo");
@@ -105,8 +109,10 @@ export function SimulatorClient() {
         onRestart={() => {
           setPhase("preparar");
           setResults(null);
+          setTranscript(null);
         }}
         results={results}
+        transcript={transcript}
       />
     );
   }
@@ -119,6 +125,7 @@ export function SimulatorClient() {
           {phase === "analizando" ? "Analizando…" : clock(restante)}
         </p>
         <LiveStage elapsedMs={elapsedMs} lines={lines} stream={capture.stream} />
+        <MicMeter stream={capture.stream} />
         {phase === "corriendo" ? (
           <button
             className="min-h-11 rounded-card border border-primary px-4 font-semibold text-primary"

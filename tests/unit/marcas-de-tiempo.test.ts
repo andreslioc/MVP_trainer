@@ -61,3 +61,18 @@ describe("marca de una linea", () => {
     expect(humanizeMark(`[${segundo}s] la respuesta`)).toContain(`[${formatMark(segundo)}]`);
   });
 });
+
+describe("la transcripción del simulacro", () => {
+  it("se lee con el mismo formato de tiempo que el resto", () => {
+    // La transcripción sale de Groq con marcas [Xs]; la vista del simulacro la
+    // muestra con el mismo minuto:segundo que las preguntas y los hallazgos.
+    expect(humanizeMark("[42s] una porción al día con agua")).toBe(
+      "[0:42] una porción al día con agua",
+    );
+    expect(humanizeMark("[3805s] eso vale 189 mil")).toBe("[01:03:25] eso vale 189 mil");
+  });
+
+  it("una línea sin marca se muestra tal cual", () => {
+    expect(humanizeMark("hola a todas")).toBe("hola a todas");
+  });
+});
