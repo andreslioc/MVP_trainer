@@ -120,6 +120,34 @@
       "when": 1787610129044,
       "tag": "0016_glossy_junta",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1787682743040,
+      "tag": "0017_sharp_celestials",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1787682757856,
+      "tag": "0018_chemical_fallen_one",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1787684054926,
+      "tag": "0019_loving_silvermane",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1787684074682,
+      "tag": "0020_white_yellowjacket",
+      "breakpoints": true
     }
   ]
 }

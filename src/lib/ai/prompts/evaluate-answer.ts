@@ -1,3 +1,4 @@
+import { ANSWER_FRAMEWORK } from "./answer-framework.ts";
 import { productKnowledgeForPrompt } from "./generate-questions.ts";
 
 type ProductKnowledge = Parameters<typeof productKnowledgeForPrompt>[0];
@@ -24,7 +25,16 @@ Reglas obligatorias:
 - Penaliza afirmaciones prohibidas o garantias de resultados.
 - Embarazo, lactancia, medicamentos o enfermedades requieren cautela y consulta profesional.
 - Escribe feedback global util y una respuesta mejorada no vacia, natural y lista para decir en vivo.
-- La respuesta mejorada tampoco puede incluir afirmaciones ausentes de la ficha.
+- La respuesta mejorada tampoco puede incluir afirmaciones ausentes de la ficha, y se escribe con la
+  FORMA DE LA RESPUESTA de abajo: es la misma con la que el Copilot responde en camara y la misma con
+  la que se escribio la respuesta ideal.
+- Una respuesta que se escapa por "revisa la etiqueta" o "consulta a un profesional" teniendo el dato
+  en la ficha NO es prudente: es incompleta. Baja conocimiento del producto y claridad, y dilo en el
+  feedback.
+- Una respuesta correcta pero de una sola linea, sin beneficio ni CTA, no puede sacar cinco en
+  persuasion ni en CTA.
+
+${ANSWER_FRAMEWORK}
 `.trim();
 
 export function buildEvaluateAnswerPrompt(input: EvaluationPromptInput) {

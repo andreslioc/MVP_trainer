@@ -1,4 +1,5 @@
 import { coversIncentiveThreshold, resolvePricing } from "../../pricing.ts";
+import { ANSWER_FRAMEWORK } from "./answer-framework.ts";
 import { productKnowledgeForPrompt } from "./generate-questions.ts";
 
 type ProductKnowledge = Parameters<typeof productKnowledgeForPrompt>[0];
@@ -23,17 +24,13 @@ en camara: express, estandar y profunda.
 El proposito es VENDER. Una respuesta que informa y no acerca a la compra hizo la mitad del trabajo.
 La unica excepcion es la ruta de cautela, y ahi la venta cede sin discusion.
 
-PIEZAS DISPONIBLES, en este orden cuando se usen:
-1. Respuesta directa a lo que pregunto la clienta.
-2. Dos o tres beneficios principales, tomados de benefits.
-3. Razon cientifica breve, tomada del science_note del beneficio que usaste.
-4. Diferencial verificable, tomado de differentiators.
-5. Urgencia, solo si la orquestacion entrega un incentivo real y activo.
-6. Un solo llamado a la accion.
+${ANSWER_FRAMEWORK}
 
-NO son una lista de verificacion. Elige las que aporten a ESTA pregunta y deja fuera las demas:
-meterlas todas siempre hace que cada respuesta suene identica a la anterior, y la asesora esta
-hablando con personas, no leyendo una plantilla.
+En camara se suma una pieza mas: la urgencia —una promocion o incentivo— y solo si la orquestacion
+entrega uno real y activo. Va antes del CTA.
+
+Meter las piezas todas y siempre hace que cada respuesta suene identica a la anterior, y la asesora
+esta hablando con personas, no leyendo una plantilla.
 
 QUE PRIORIZAR SEGUN LA INTENCION CLASIFICADA:
 - informacion / uso: explica y vende. Si faqs trae una pregunta que es la misma que hizo la

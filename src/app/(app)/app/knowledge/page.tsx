@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { getSession } from "../../../../lib/auth.ts";
 import { formatCop } from "../../../../lib/pricing.ts";
+import { ResearchButton } from "./research-button.tsx";
 import { listProducts } from "../../../../server/products.ts";
 
 export default async function KnowledgePage() {
@@ -114,6 +115,27 @@ export default async function KnowledgePage() {
                   {product.verifiedAt ? "Verificada" : "Por verificar"}
                 </span>
               </div>
+              {product.usageMode ? (
+                <p className="mt-3 text-sm text-fg">
+                  <span className="font-semibold">Modo de uso:</span> {product.usageMode}
+                </p>
+              ) : null}
+              {/* Los casos, no el parrafo. `precautions` dice lo mismo en las 89
+                  fichas y se salta con la vista; una lista de cuatro palabras se
+                  lee mientras se habla. El parrafo completo vive en la ficha. */}
+              {product.contraindications.length > 0 ? (
+                <div className="mt-2 text-sm text-confidence-mid-fg">
+                  <span className="font-semibold">Casos de no uso:</span>
+                  <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                    {product.contraindications.map((item) => (
+                      <li className="flex gap-1" key={item}>
+                        <span aria-hidden="true">·</span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
               <ol className="mt-4 space-y-2 text-sm text-fg">
                 {product.benefits.map((benefit) => (
                   <li className="flex gap-2" key={benefit.rank}>
@@ -122,14 +144,17 @@ export default async function KnowledgePage() {
                   </li>
                 ))}
               </ol>
-              <div className="mt-auto pt-5">
+              <div className="mt-auto flex flex-wrap items-start gap-4 pt-5">
                 {session.data.role === "admin" ? (
-                  <Link
-                    className="inline-flex min-h-11 items-center font-semibold text-primary underline-offset-4 hover:underline"
-                    href={`/app/knowledge/${product.id}`}
-                  >
-                    Editar ficha
-                  </Link>
+                  <>
+                    <Link
+                      className="inline-flex min-h-11 items-center font-semibold text-primary underline-offset-4 hover:underline"
+                      href={`/app/knowledge/${product.id}`}
+                    >
+                      Editar ficha
+                    </Link>
+                    <ResearchButton productId={product.id} verified={product.verifiedAt !== null} />
+                  </>
                 ) : (
                   <p className="text-sm text-fg-muted">Disponible para consulta del equipo.</p>
                 )}

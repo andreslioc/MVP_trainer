@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "research_date": "2026-08-25",
+  "sku": "SalPip-323",
+  "review_status": "pending_human_verification",
+  "product_patch": {
+    "id": "c84ef33c-3689-4cc6-b612-99a1805dfc92",
+    "sku": "SalPip-323",
+    "name": "Aceite de Orégano Orgánico, 59 mL",
+    "brand": "Piping Rock",
+    "category": "Salud y equipamento medico",
+    "presentation": "Frasco con gotero de 59 mL (2 fl oz) · 393 porciones",
+    "format": "Líquido en frasco con gotero",
+    "imageUrl": "https://pub-74be3f08e8ab44c490fe4d652d79a419.r2.dev/productos/SalPip-323/a3cb16b7-f855-4c5a-85ea-ec32eed32551.jpg",
+    "description": "Suplemento herbal líquido de aceite orgánico de orégano (Origanum minutiflorum) de Piping Rock. Cada porción de 4 gotas (0,15 mL) aporta 14 mg de aceite de hoja de orégano y contiene carvacrol de forma natural. La fórmula usa aceite de oliva virgen extra orgánico y la etiqueta contempla uso interno y externo. Sus compuestos han mostrado actividad antioxidante y antimicrobiana en estudios de laboratorio, pero no hay evidencia clínica suficiente para ofrecer este producto como tratamiento o prevención de enfermedades.",
+    "activeIngredients": [
+      {
+        "name": "Aceite orgánico de hoja de orégano (Origanum minutiflorum)",
+        "amount_per_serving": 14,
+        "unit": "mg",
+        "verified": true
+      },
+      {
+        "name": "Aceite de oliva virgen extra orgánico (otro ingrediente)",
+        "verified": true
+      }
+    ],
+    "benefits": [
+      {
+        "rank": 1,
+        "claim": "Aporta carvacrol de origen natural",
+        "science_note": "La etiqueta confirma la presencia natural de carvacrol en el aceite de orégano. Este compuesto fenólico es objeto de investigación, pero la etiqueta no declara su cantidad ni un porcentaje estandarizado.",
+        "evidence_level": "baja"
+      },
+      {
+        "rank": 2,
+        "claim": "Potencial actividad antioxidante",
+        "science_note": "Estudios de laboratorio con aceite de Origanum minutiflorum han observado actividad antioxidante. Son resultados preclínicos y no demuestran un beneficio clínico en personas ni la eficacia de este producto específico.",
+        "evidence_level": "baja"
+      },
+      {
+        "rank": 3,
+        "claim": "Potencial actividad antimicrobiana estudiada en laboratorio",
+        "science_note": "El aceite de Origanum minutiflorum ha mostrado actividad frente a microorganismos en ensayos de laboratorio. Esto no demuestra que consumido o aplicado trate infecciones en humanos y no reemplaza antimicrobianos recetados.",
+        "evidence_level": "baja"
+      }
+    ],
+    "faqs": [
+      {
+        "question": "¿Cuánto trae y cuántas porciones rinde?",
+        "answer": "El frasco contiene 59 mL (2 fl oz). La etiqueta declara 393 porciones de 4 gotas (0,15 mL) cada una."
+      },
+      {
+        "question": "¿Qué ingredientes contiene?",
+        "answer": "Declara 14 mg de aceite orgánico de hoja de orégano (Origanum minutiflorum) por porción, con carvacrol de origen natural. El otro ingrediente es aceite de oliva virgen extra orgánico."
+      },
+      {
+        "question": "¿Cómo se toma?",
+        "answer": "La etiqueta consultada indica agregar 4 gotas (0,15 mL) a una pequeña cantidad de agua, tres veces al día. Agite bien antes de usar y confirme que la etiqueta física del producto vendido en Colombia coincida."
+      },
+      {
+        "question": "¿También se puede aplicar en la piel?",
+        "answer": "Sí. La etiqueta consultada indica aplicarlo generosamente tres veces al día, únicamente sobre piel intacta. No lo aplique en piel dañada, irritada ni en zonas con erupciones."
+      },
+      {
+        "question": "¿Es normal sentir calor al aplicarlo?",
+        "answer": "El fabricante informa que puede sentirse calor después del uso. Si aparece una reacción adversa, ardor intenso o irritación, suspenda el uso y consulte a un profesional de salud."
+      },
+      {
+        "question": "¿Contiene 70 % de carvacrol?",
+        "answer": "No. La etiqueta de esta presentación solo declara carvacrol de origen natural, sin indicar porcentaje. No debe anunciarse como una fórmula estandarizada al 70 %."
+      },
+      {
+        "question": "¿Sirve para infecciones, hongos o defensas?",
+        "answer": "No se ofrece para curar, tratar o prevenir infecciones, hongos ni otras enfermedades. La ficha solo respalda la composición, presentación y modo de uso declarados por el fabricante."
+      }
+    ],
+    "objections": [
+      {
+        "objection": "Me preocupa que sea muy concentrado",
+        "response": "La etiqueta declara 14 mg por cada 4 gotas y recomienda diluirlas en una pequeña cantidad de agua. No exceda el modo de uso. Si toma medicamentos o tiene una condición médica, consulte antes con un profesional de salud."
+      },
+      {
+        "objection": "Me produjo ardor o irritación",
+        "response": "Suspenda el uso. Aunque la etiqueta menciona una posible sensación de calor, no debe aplicarse sobre piel dañada o irritada y cualquier reacción adversa requiere dejar de usarlo y consultar a un profesional de salud."
+      },
+      {
+        "objection": "Quiero usarlo para reemplazar un medicamento",
+        "response": "No reemplaza medicamentos ni atención médica y no se presenta como tratamiento. Si existe una enfermedad o un tratamiento en curso, consulte al profesional que lleva el caso antes de usarlo."
+      }
+    ],
+    "differentiators": [
+      {
+        "claim": "14 mg de aceite de orégano por porción",
+        "evidence": "Cantidad declarada por el fabricante para cada porción de 4 gotas (0,15 mL)."
+      },
+      {
+        "claim": "Aceite de orégano y aceite portador orgánicos",
+        "evidence": "La tabla oficial declara aceite orgánico de orégano y aceite de oliva virgen extra orgánico. El frente del envase muestra el sello USDA Organic."
+      },
+      {
+        "claim": "393 porciones declaradas por frasco",
+        "evidence": "La tabla Supplement Facts indica 393 porciones por envase y una porción de 4 gotas (0,15 mL)."
+      }
+    ],
+    "priceCop": 61500,
+    "usageMode": "Agite bien antes de usar. Para uso interno, la etiqueta consultada indica agregar 4 gotas (0,15 mL) a una pequeña cantidad de agua, tres veces al día. Para uso externo, aplicar generosamente tres veces al día solo sobre piel intacta. Debe prevalecer la etiqueta física del producto vendido en Colombia si presenta una indicación distinta.",
+    "precautions": "Mantener fuera del alcance de los niños. Si toma medicamentos, tiene una enfermedad diagnosticada o desea administrarlo a un menor, consulte primero con un profesional de salud. Para uso interno, siga la dilución indicada en agua. No lo use para reemplazar medicamentos ni atención médica. Conservar en un lugar fresco y seco.",
+    "contraindications": [
+      "Embarazo: la etiqueta indica no usar.",
+      "Lactancia: la etiqueta indica no usar.",
+      "No aplicar sobre piel dañada, irritada ni en zonas con erupciones.",
+      "No usar si el sello exterior está roto o ausente.",
+      "Suspender y no continuar si aparece una reacción adversa."
+    ],
+    "claimsAllowed": [
+      "Es un suplemento herbal líquido Piping Rock en frasco con gotero de 59 mL.",
+      "Cada porción de 4 gotas (0,15 mL) declara 14 mg de aceite orgánico de orégano.",
+      "El aceite proviene de hoja de Origanum minutiflorum cosechado de forma silvestre en el Mediterráneo.",
+      "La etiqueta declara carvacrol de origen natural.",
+      "El otro ingrediente declarado es aceite de oliva virgen extra orgánico.",
+      "La etiqueta contempla uso interno y externo con instrucciones distintas."
+    ],
+    "claimsCaution": [
+      "No atribuir beneficios inmunológicos, antimicrobianos, antifúngicos, digestivos ni respiratorios sin evidencia clínica específica y autorización regulatoria aplicable.",
+      "La expresión comercial 'grado terapéutico' no demuestra eficacia terapéutica y no debe usarse como promesa de salud.",
+      "No afirmar que contiene 70 % de carvacrol: la etiqueta de esta presentación no declara ningún porcentaje.",
+      "La etiqueta consultada corresponde a la presentación internacional del fabricante; falta confirmar que el lote y el rotulado físico para Colombia sean idénticos.",
+      "La certificación orgánica debe confirmarse contra el sello y la etiqueta física del lote vendido."
+    ],
+    "claimsForbidden": [
+      "Cura enfermedades.",
+      "Trata enfermedades.",
+      "Previene enfermedades.",
+      "Garantiza resultados.",
+      "Cura o elimina infecciones, bacterias, virus, hongos o parásitos.",
+      "Reemplaza antibióticos, antifúngicos u otros medicamentos.",
+      "Fortalece las defensas o el sistema inmune como resultado garantizado.",
+      "Es seguro para todas las personas o para cualquier forma de uso."
+    ],
+    "complementProductIds": [],
+    "sources": [
+      {
+        "label": "Piping Rock — Aceite de orégano orgánico, 59 mL",
+        "url": "https://www.pipingrock.com/es-tw/products/oil-of-oregano-organic-2-fl-oz-59-ml-dropper-bottle-3600",
+        "note": "Fuente primaria para identidad, presentación, tabla Supplement Facts, ingredientes, instrucciones y advertencias. Es una versión internacional; comparar con la etiqueta física del lote vendido en Colombia."
+      },
+      {
+        "label": "Journal of Herbal Medicine — estudio de Origanum minutiflorum",
+        "url": "https://www.sciencedirect.com/science/article/pii/S2210803323000295",
+        "note": "Estudio primario en células y microorganismos que sustenta únicamente el lenguaje de actividad antioxidante y antimicrobiana potencial. No es un ensayo clínico ni estudió este producto comercial."
+      },
+      {
+        "label": "NIH ODS — información para consumidores sobre suplementos botánicos",
+        "url": "https://ods.od.nih.gov/factsheets/BotanicalBackground-Consumer/",
+        "note": "Fuente oficial de contexto: natural no equivale necesariamente a seguro; la dosis y la forma importan y los suplementos botánicos no reciben aprobación previa como los medicamentos."
+      },
+      {
+        "label": "FDA — FDA 101: Dietary Supplements",
+        "url": "https://www.fda.gov/consumers/consumer-updates/fda-101-dietary-supplements",
+        "note": "Fuente oficial para no presentar el suplemento como aprobado por la FDA ni como sustituto de medicamentos."
+      }
+    ],
+    "verifiedAt": null
+  }
+}

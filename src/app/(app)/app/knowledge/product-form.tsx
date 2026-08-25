@@ -9,6 +9,7 @@ import { deleteProductAction, saveProductAction } from "./actions.ts";
 import { BenefitsFields } from "./benefits-fields.tsx";
 import { IngredientFields, SourceFields } from "./ingredient-fields.tsx";
 import { PairListFields } from "./pair-list-fields.tsx";
+import { FormSection } from "./form-section.tsx";
 import { PriceFields } from "./price-fields.tsx";
 import {
   type EditableProduct,
@@ -83,9 +84,14 @@ export function ProductForm({ product }: { product?: EditableProduct }) {
   return (
     <form className="mt-8 space-y-6" onSubmit={submit}>
       <fieldset className="space-y-6" disabled={isSubmitting}>
-        <section className="rounded-card border border-border bg-surface p-4">
-          <h2 className="text-xl font-semibold text-fg">Identidad del producto</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <FormSection
+          invalid={Boolean(
+            errors.name ?? errors.brand ?? errors.category ?? errors.presentation ?? errors.format,
+          )}
+          open
+          title="Identidad del producto"
+        >
+          <div className="grid gap-4 md:grid-cols-2">
             {(
               [
                 ["name", "Nombre comercial"],
@@ -133,19 +139,17 @@ export function ProductForm({ product }: { product?: EditableProduct }) {
               </span>
             </label>
           </div>
-        </section>
+        </FormSection>
 
         <BenefitsFields errors={errors} register={register} />
 
         <PriceFields errors={errors} register={register} watch={watch} />
 
-        <section className="rounded-card border border-border bg-surface p-4">
-          <h2 className="text-xl font-semibold text-fg">Conocimiento estructurado</h2>
-          <p className="mt-1 text-sm text-fg-muted">
-            Es lo que el Copilot puede decir en cámara. Todo lo que escribas aquí se dice tal cual,
-            así que va en palabras de la clienta.
-          </p>
-          <div className="mt-4 space-y-4">
+        <FormSection
+          hint="Es lo que el Copilot puede decir en cámara. Todo lo que escribas aquí se dice tal cual, así que va en palabras de la clienta."
+          title="Conocimiento estructurado"
+        >
+          <div className="space-y-4">
             <IngredientFields control={control} errors={errors} register={register} />
             <PairListFields
               control={control}
@@ -182,17 +186,35 @@ export function ProductForm({ product }: { product?: EditableProduct }) {
             />
             <SourceFields control={control} errors={errors} register={register} />
           </div>
-        </section>
+        </FormSection>
 
-        <section className="rounded-card border border-border bg-surface p-4">
-          <h2 className="text-xl font-semibold text-fg">Comunicación responsable</h2>
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <FormSection
+          invalid={Boolean(errors.usageMode ?? errors.precautions)}
+          title="Comunicación responsable"
+        >
+          <div className="grid gap-4 lg:grid-cols-2">
             <label className="text-sm font-medium text-fg lg:col-span-2">
-              Precauciones
+              Modo de uso
+              <textarea
+                className={`${inputClass} min-h-16`}
+                placeholder="1 cápsula al día con comida."
+                {...register("usageMode")}
+              />
+              <span className="mt-1 block text-xs font-normal text-fg-muted">
+                Porción, momento y con qué. Es lo que más se pregunta en un live.
+              </span>
+            </label>
+            <label className="text-sm font-medium text-fg lg:col-span-2">
+              Precauciones — notas adicionales
               <textarea className={`${inputClass} min-h-24`} {...register("precautions")} />
+              <span className="mt-1 block text-xs font-normal text-fg-muted">
+                El párrafo largo de la etiqueta. No sale en la tarjeta: es lo que se lee cuando una
+                clienta pregunta por qué, después de los casos de no uso.
+              </span>
             </label>
             {(
               [
+                ["contraindicationsText", "Casos de no uso"],
                 ["claimsAllowedText", "Afirmaciones permitidas"],
                 ["claimsCautionText", "Afirmaciones con cautela"],
                 ["claimsForbiddenText", "Afirmaciones prohibidas"],
@@ -209,11 +231,20 @@ export function ProductForm({ product }: { product?: EditableProduct }) {
               </label>
             ))}
           </div>
-          <label className="mt-4 flex min-h-11 items-center gap-3 text-sm font-medium text-fg">
-            <input className="size-5 rounded border" type="checkbox" {...register("verified")} />
+        </FormSection>
+
+        {/* Fuera de las secciones y al final: marcar la ficha como revisada es el
+            ultimo acto, despues de haber mirado todo lo de arriba. Dentro de un
+            desplegable cerrado se marcaba sin leer. */}
+        <label className="flex min-h-11 items-center gap-3 rounded-card border border-border-control bg-surface p-4 text-sm font-medium text-fg">
+          <input className="size-5 rounded border" type="checkbox" {...register("verified")} />
+          <span>
             Ficha revisada por una persona
-          </label>
-        </section>
+            <span className="block text-xs font-normal text-fg-muted">
+              Solo las fichas revisadas entran al Training y al Copilot.
+            </span>
+          </span>
+        </label>
       </fieldset>
 
       {serverError ? (

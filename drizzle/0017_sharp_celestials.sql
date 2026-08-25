@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "usage_mode" text DEFAULT '' NOT NULL;

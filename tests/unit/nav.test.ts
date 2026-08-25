@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import { visibleNavItems } from "../../src/components/layout/nav-items.ts";
 
-const sharedLabels = ["Inicio", "Training", "Copilot", "Intelligence", "Knowledge"];
+// Pre-training va antes de Training a proposito: se estudia la ficha y despues
+// se practica, y el orden del menu es el orden del dia de la asesora.
+const sharedLabels = ["Inicio", "Pre-training", "Training", "Copilot", "Intelligence", "Knowledge"];
 
 describe("visibleNavItems", () => {
   it("shows the working modules and hides Settings for an advisor", () => {

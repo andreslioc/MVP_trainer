@@ -1,4 +1,5 @@
 import { formatCop, resolvePricing } from "../../pricing.ts";
+import { ANSWER_FRAMEWORK } from "./answer-framework.ts";
 
 type ProductKnowledge = {
   name: string;
@@ -7,11 +8,13 @@ type ProductKnowledge = {
   presentation: string;
   format: string;
   description?: string;
+  usageMode?: string;
   activeIngredients: unknown;
   benefits: unknown;
   faqs: unknown;
   objections: unknown;
   differentiators: unknown;
+  contraindications?: string[];
   precautions: string;
   claimsAllowed: string[];
   claimsCaution: string[];
@@ -47,10 +50,15 @@ Reglas obligatorias:
 - Si abajo aparece OTRAS FICHAS PARECIDAS, el nombre corto no alcanza para saber de cual habla la
   clienta: nombra la marca en la pregunta y en la respuesta ("el magnesio de Carlyle"). Si esa
   lista esta vacia, la marca sobra.
-- Cada respuesta ideal debe ser responsable, concreta y estar sustentada por la ficha.
-- Si falta un dato, la respuesta ideal debe decir que no esta verificado.
+- Cada respuesta ideal debe ser responsable, concreta y estar sustentada por la ficha, y sigue la
+  FORMA DE LA RESPUESTA que aparece abajo: es la misma que usa el Copilot en camara. Una respuesta
+  ideal de una linea que no usa la ficha no es ideal, es una salida.
+- Si falta un dato EN LA FICHA, la respuesta ideal lo dice y ademas aporta lo que si esta.
 - Embarazo, lactancia, medicamentos o enfermedades requieren consulta profesional y nunca una recomendacion afirmativa.
-- Los criterios deben ser observables en una buena respuesta.
+- Los criterios deben ser observables en una buena respuesta y nombran las piezas de la FORMA DE LA
+  RESPUESTA que esa pregunta exige.
+
+${ANSWER_FRAMEWORK}
 `.trim();
 
 /**
@@ -78,11 +86,13 @@ export function productKnowledgeForPrompt(
     presentation: product.presentation,
     format: product.format,
     description: product.description ?? "",
+    usage_mode: product.usageMode ?? "",
     active_ingredients: product.activeIngredients,
     benefits: product.benefits,
     faqs: product.faqs,
     objections: product.objections,
     differentiators: product.differentiators,
+    contraindications: product.contraindications ?? [],
     precautions: product.precautions,
     claims_allowed: product.claimsAllowed,
     claims_caution: product.claimsCaution,

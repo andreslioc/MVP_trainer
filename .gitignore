@@ -36,5 +36,8 @@ supabase/.branches/
 /playwright/.cache/
 /coverage/
 
+# respaldos locales de datos
+/backups/
+
 # vercel
 .vercel

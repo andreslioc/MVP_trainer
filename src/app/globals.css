@@ -7,6 +7,14 @@
   --support-blue: #1e3a8a;
   --background: #f8fafc;
   --surface: #ffffff;
+  /*
+   * Tinte del morado de marca: violeta-50 y violeta-200 sobre la misma familia
+   * de #5b21b6. Existe para dar aire sin sombras — la elevacion del sistema es
+   * plana y solo usa bordes — y por eso es un token y no un hex suelto en una
+   * pagina.
+   */
+  --primary-tint: #f5f3ff;
+  --primary-tint-border: #ddd6fe;
   --border: #e2e8f0;
   --border-control: #64748b;
   --fg: #0f172a;
@@ -32,6 +40,8 @@
   --color-support-blue: var(--support-blue);
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-primary-tint: var(--primary-tint);
+  --color-primary-tint-border: var(--primary-tint-border);
   --color-border: var(--border);
   --color-border-control: var(--border-control);
   --color-fg: var(--fg);

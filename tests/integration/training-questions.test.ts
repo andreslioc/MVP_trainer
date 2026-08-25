@@ -45,13 +45,13 @@ function generatedBatch(): GeneratedQuestions {
         "¿Y con medicamentos?",
         "seguridad",
         "dificil",
-        "Consulta a un profesional si usas medicamentos.",
+        "El magnesio aporta el mineral declarado en la etiqueta; si tomas medicamentos, consulta a un profesional.",
       ],
       [
         "¿Garantiza resultados?",
         "objecion",
         "dificil",
-        "No está verificado que garantice resultados.",
+        "El magnesio no garantiza resultados; la etiqueta declara su porción y su aporte por cápsula.",
       ],
     ].map(([text, intent, difficulty, idealAnswer]) => ({
       text,
@@ -148,8 +148,43 @@ describe("training questions and sessions", () => {
     expect(after).toEqual(before);
   });
 
+  it("guarda el tamano elegido y acota la practica de una sola ficha", async () => {
+    const started = await startTrainingSession(productId, 3, {
+      authorize: authorizeAdvisor,
+      database: connection.db,
+    });
+
+    expect(started.ok).toBe(true);
+    if (!started.ok) return;
+    expect(started.data.practiceSize).toBe(3);
+    expect(started.data.category).toBeNull();
+
+    const loaded = await getTrainingSession(started.data.id, {
+      authorize: authorizeAdvisor,
+      database: connection.db,
+    });
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    // La ficha tiene seis preguntas de la tanda generada arriba: el tope lo pone
+    // la asesora, no el alcance.
+    expect(loaded.data.questions).toHaveLength(3);
+    expect(loaded.data.title).toBe(loaded.data.productName);
+  });
+
+  it("rechaza un tamano fuera de la lista", async () => {
+    const result = await startTrainingSession(productId, 7, {
+      authorize: authorizeAdvisor,
+      database: connection.db,
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "VALIDATION", field: "practiceSize" },
+    });
+  });
+
   it("opens a private session for the verified server identity", async () => {
-    const result = await startTrainingSession(productId, {
+    const result = await startTrainingSession(productId, 6, {
       authorize: authorizeAdvisor,
       database: connection.db,
     });

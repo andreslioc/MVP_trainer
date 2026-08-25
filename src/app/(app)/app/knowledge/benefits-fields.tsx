@@ -1,5 +1,6 @@
 import type { FieldErrors, UseFormRegister } from "react-hook-form";
 
+import { FormSection } from "./form-section.tsx";
 import type { ProductFormValues } from "./product-form-model.ts";
 
 export function BenefitsFields({
@@ -10,14 +11,12 @@ export function BenefitsFields({
   errors: FieldErrors<ProductFormValues>;
 }) {
   return (
-    <section aria-labelledby="benefits-title" className="rounded-card border border-border p-4">
-      <div className="flex items-baseline justify-between gap-4">
-        <h2 className="text-xl font-semibold text-fg" id="benefits-title">
-          Tres beneficios priorizados
-        </h2>
-        <span className="text-xs font-medium text-fg-muted">Obligatorios</span>
-      </div>
-      <div className="mt-4 space-y-4">
+    <FormSection
+      badge="Obligatorios"
+      invalid={Boolean(errors.benefits)}
+      title="Tres beneficios priorizados"
+    >
+      <div className="space-y-4">
         {[0, 1, 2].map((index) => (
           <fieldset className="rounded-card bg-background p-4" key={index}>
             <legend className="px-1 text-sm font-semibold text-primary-deep">
@@ -63,6 +62,6 @@ export function BenefitsFields({
           </fieldset>
         ))}
       </div>
-    </section>
+    </FormSection>
   );
 }

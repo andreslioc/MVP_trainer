@@ -96,6 +96,8 @@ describe("AI gateway", () => {
           cacheWriteTokens: 400,
         },
         costUsd: 0.01265,
+        // Vacio: esta llamada no pidio busqueda web.
+        citations: [],
       },
     });
     expect(ledger.calls).toEqual([

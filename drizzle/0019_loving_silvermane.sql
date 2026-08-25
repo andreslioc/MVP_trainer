@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "contraindications" jsonb DEFAULT '[]'::jsonb NOT NULL;

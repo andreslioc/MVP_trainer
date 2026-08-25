@@ -133,6 +133,84 @@ export const chatCoverageBatchSchema = z
   })
   .strict();
 
+/**
+ * Ficha investigada con busqueda web.
+ *
+ * No trae precio ni categoria a proposito: el precio es una decision comercial
+ * de la tienda y la categoria organiza el Training. Que el modelo los proponga
+ * seria darle voz sobre cosas que no estan en ninguna etiqueta.
+ *
+ * Tampoco trae fuentes: esas se toman de la metadata de busqueda del proveedor,
+ * no del texto del modelo, que puede escribir una URL que no existe.
+ */
+export const researchedProductSchema = z
+  .object({
+    name: z.string().trim().min(1).max(200),
+    brand: z.string().trim().min(1).max(120),
+    presentation: z.string().trim().min(1).max(200),
+    format: z.string().trim().min(1).max(80),
+    description: z.string().trim().min(1).max(700),
+    active_ingredients: z
+      .array(
+        z
+          .object({
+            name: z.string().trim().min(1).max(160),
+            /** Texto y no numero: "200 mg" y "no declarado" caben en el mismo campo. */
+            declared_amount: z.string().trim().max(80).nullable(),
+          })
+          .strict(),
+      )
+      .max(40),
+    benefits: z
+      .array(
+        z
+          .object({
+            claim: z.string().trim().min(1).max(200),
+            science_note: z.string().trim().min(1).max(400),
+          })
+          .strict(),
+      )
+      .length(3),
+    faqs: z
+      .array(
+        z
+          .object({
+            question: z.string().trim().min(1).max(200),
+            answer: z.string().trim().min(1).max(600),
+          })
+          .strict(),
+      )
+      .max(12),
+    objections: z
+      .array(
+        z
+          .object({
+            objection: z.string().trim().min(1).max(200),
+            response: z.string().trim().min(1).max(600),
+          })
+          .strict(),
+      )
+      .max(8),
+    differentiators: z
+      .array(
+        z
+          .object({
+            claim: z.string().trim().min(1).max(200),
+            evidence: z.string().trim().min(1).max(400),
+          })
+          .strict(),
+      )
+      .max(6),
+    usage_mode: z.string().trim().max(400),
+    contraindications: z.array(z.string().trim().min(1).max(160)).max(12),
+    precautions: z.string().trim().min(1).max(1_500),
+    claims_allowed: z.array(z.string().trim().min(1).max(300)).max(12),
+    claims_caution: z.array(z.string().trim().min(1).max(300)).max(20),
+    unconfirmed: z.array(z.string().trim().min(1).max(300)).max(20),
+  })
+  .strict();
+
+export type ResearchedProduct = z.infer<typeof researchedProductSchema>;
 export type GeneratedQuestions = z.infer<typeof generatedQuestionsSchema>;
 export type Evaluation = z.infer<typeof evaluationSchema>;
 export type CopilotComposition = z.infer<typeof copilotCompositionSchema>;

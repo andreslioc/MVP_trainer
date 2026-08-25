@@ -20,6 +20,7 @@
     "db:migrate:test": "DRIZZLE_TARGET=test drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx scripts/seed.ts",
+    "products:research-all": "tsx scripts/research-all-products.ts",
     "env:local": "tsx scripts/write-env-local.ts",
     "env:local:supabase": "supabase status -o env > .supabase-status.env && tsx scripts/write-env-local.ts --from-supabase",
     "supabase:check": "bash scripts/check-supabase-cli.sh",

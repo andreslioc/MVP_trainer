@@ -2,12 +2,16 @@ import Link from "next/link";
 
 import { getSession } from "../../../../lib/auth.ts";
 import { listTrainingCategories } from "../../../../server/training/categories.ts";
+import { listTrainingProducts } from "../../../../server/training/questions.ts";
 import { TrainingLauncher } from "./training-launcher.tsx";
 
 export default async function TrainingPage() {
   const session = await getSession();
   if (!session.ok) return null;
-  const result = await listTrainingCategories({ authorize: async () => session });
+  const [result, fichas] = await Promise.all([
+    listTrainingCategories({ authorize: async () => session }),
+    listTrainingProducts({ authorize: async () => session }),
+  ]);
 
   return (
     <section aria-labelledby="page-title" className="max-w-5xl">
@@ -42,7 +46,7 @@ export default async function TrainingPage() {
         </div>
       ) : (
         <>
-          <TrainingLauncher categories={result.data} />
+          <TrainingLauncher categories={result.data} products={fichas.ok ? fichas.data : []} />
           <div className="mt-6 max-w-xl rounded-card border border-border bg-surface p-5">
             <h2 className="text-xl font-semibold text-fg">O practica con el chat corriendo</h2>
             <p className="mt-1 text-sm text-fg-muted">

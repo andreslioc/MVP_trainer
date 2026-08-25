@@ -20,6 +20,7 @@ import {
   type UseFormRegister,
 } from "react-hook-form";
 
+import { FormSection } from "./form-section.tsx";
 import type { ProductFormValues } from "./product-form-model.ts";
 
 type PairName = "faqs" | "objections" | "differentiators";
@@ -57,18 +58,14 @@ export function PairListFields({
   const rows = errors[name] as Array<Record<string, { message?: string }>> | undefined;
 
   return (
-    <section aria-labelledby={`${name}-title`} className="rounded-card border border-border p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-lg font-semibold text-fg" id={`${name}-title`}>
-          {title}
-        </h3>
-        <span className="text-xs text-fg-muted">
-          {fields.length === 0 ? "Ninguna todavía" : `${fields.length} en la ficha`}
-        </span>
-      </div>
-      <p className="mt-1 text-sm text-fg-muted">{hint}</p>
-
-      <ul className="mt-3 space-y-3">
+    <FormSection
+      badge={fields.length === 0 ? "Ninguna todavía" : `${fields.length} en la ficha`}
+      hint={hint}
+      invalid={Boolean(rows)}
+      level={3}
+      title={title}
+    >
+      <ul className="space-y-3">
         {fields.map((field, index) => (
           <li className="rounded-card bg-background p-3" key={field.id}>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -119,6 +116,6 @@ export function PairListFields({
       >
         Agregar
       </button>
-    </section>
+    </FormSection>
   );
 }

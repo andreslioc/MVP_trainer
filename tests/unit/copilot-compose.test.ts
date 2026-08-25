@@ -67,11 +67,14 @@ describe("Copilot composition", () => {
     expect(classify.system).toContain("informacion, comparacion, precio");
     for (const part of [
       "1. Respuesta directa",
-      "2. Dos o tres beneficios",
-      "3. Razon cientifica",
-      "4. Diferencial verificable",
-      "5. Urgencia",
-      "6. Un solo llamado",
+      "2. Beneficio",
+      "3. Uso practico",
+      "4. Evidencia responsable",
+      "5. Confianza",
+      "6. Un solo CTA",
+      // La urgencia es la pieza que solo existe en camara: no se le ensena a la
+      // asesora en el simulador porque ahi no hay promocion activa.
+      "la urgencia",
     ]) {
       expect(compose.system).toContain(part);
     }

@@ -67,7 +67,8 @@ function validBatch(): GeneratedQuestions {
         text: "¿Me garantiza resultados?",
         intent: "objecion",
         difficulty: "dificil",
-        ideal_answer: "No está verificado que garantice resultados individuales.",
+        ideal_answer:
+          "El magnesio no garantiza resultados individuales; la etiqueta declara la porción y el aporte.",
         criteria: ["Declara el límite"],
       },
     ],
@@ -138,6 +139,33 @@ describe("question generation", () => {
       ok: false,
       error: { code: "INVALID_GENERATED_QUESTIONS" },
     });
+  });
+
+  it("rechaza la respuesta ideal que se escapa por la cautela", () => {
+    const batch = validBatch();
+    batch.questions[0] = {
+      ...(batch.questions[0] as GeneratedQuestions["questions"][number]),
+      ideal_answer: "Revisa la etiqueta.",
+    };
+
+    const result = validateGeneratedQuestionBatch(batch, product());
+
+    // La ficha SI trae el ingrediente y la porcion: mandar a la etiqueta es una
+    // salida, y practicarla ensena a decirla en camara.
+    expect(result).toMatchObject({ ok: false, error: { code: "INVALID_GENERATED_QUESTIONS" } });
+    if (result.ok) return;
+    expect(result.error.message).toContain("se escapa por la cautela");
+  });
+
+  it("acepta la cautela cuando viene con lo que si dice la ficha", () => {
+    const batch = validBatch();
+    batch.questions[0] = {
+      ...(batch.questions[0] as GeneratedQuestions["questions"][number]),
+      ideal_answer:
+        "El magnesio aporta el mineral que declara la etiqueta; si tomas medicamentos, consulta a un profesional.",
+    };
+
+    expect(validateGeneratedQuestionBatch(batch, product()).ok).toBe(true);
   });
 
   it("rejects a batch without two questions per difficulty", () => {

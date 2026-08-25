@@ -16,6 +16,8 @@ type CatalogProduct = {
   presentacion: string;
   ingredientes: string[];
   advertencias: string;
+  /** Los topicos y las bebidas traen el uso aqui y no en `dosis`. */
+  modoUso?: string;
   precioBase: number;
 };
 
@@ -157,6 +159,9 @@ function adaptProduct(product: CatalogProduct) {
     objections: [],
     differentiators: [],
     priceCop: product.precioBase > 0 ? product.precioBase : null,
+    // El catalogo llama a esto `dosis` en las capsulas y `modoUso` en los
+    // topicos y las bebidas: son el mismo dato con dos nombres.
+    usageMode: (product.dosis || product.modoUso || "").trim(),
     precautions: product.advertencias,
     claimsAllowed: [neutralIdentity(product)],
     claimsCaution: [
@@ -164,9 +169,6 @@ function adaptProduct(product: CatalogProduct) {
       ...product.beneficios.map(
         (benefit) => `Beneficio informado por el catálogo pendiente de verificación: ${benefit}`,
       ),
-      ...(product.dosis
-        ? [`Uso informado por el catálogo pendiente de verificación: ${product.dosis}`]
-        : []),
     ],
     claimsForbidden: [
       "Cura enfermedades",

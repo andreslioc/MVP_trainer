@@ -16,6 +16,7 @@ import {
   type UseFormRegister,
 } from "react-hook-form";
 
+import { FormSection } from "./form-section.tsx";
 import type { ProductFormValues } from "./product-form-model.ts";
 
 const inputClass = "mt-1 w-full rounded-card border border-control bg-surface px-3 py-2";
@@ -25,28 +26,25 @@ function RowShell({
   count,
   hint,
   children,
+  invalid,
   onAdd,
-  id,
 }: {
   title: string;
   count: number;
   hint: string;
   children: React.ReactNode;
   onAdd: () => void;
-  id: string;
+  invalid?: boolean;
 }) {
   return (
-    <section aria-labelledby={`${id}-title`} className="rounded-card border border-border p-4">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-lg font-semibold text-fg" id={`${id}-title`}>
-          {title}
-        </h3>
-        <span className="text-xs text-fg-muted">
-          {count === 0 ? "Ninguno todavía" : `${count} en la ficha`}
-        </span>
-      </div>
-      <p className="mt-1 text-sm text-fg-muted">{hint}</p>
-      <ul className="mt-3 space-y-3">{children}</ul>
+    <FormSection
+      badge={count === 0 ? "Ninguno todavía" : `${count} en la ficha`}
+      hint={hint}
+      invalid={invalid}
+      level={3}
+      title={title}
+    >
+      <ul className="space-y-3">{children}</ul>
       <button
         className="mt-3 min-h-11 rounded-card border border-primary px-3 text-sm font-semibold text-primary"
         onClick={onAdd}
@@ -54,7 +52,7 @@ function RowShell({
       >
         Agregar
       </button>
-    </section>
+    </FormSection>
   );
 }
 
@@ -85,7 +83,7 @@ export function IngredientFields({
     <RowShell
       count={fields.length}
       hint="Lo que trae el producto. La cantidad solo se registra si el ingrediente está verificado, y siempre con su unidad."
-      id="ingredientes"
+      invalid={Boolean(errors.activeIngredients)}
       onAdd={() => append({ name: "", amountText: "", unit: "", verified: false })}
       title="Ingredientes activos"
     >
@@ -153,7 +151,7 @@ export function SourceFields({
     <RowShell
       count={fields.length}
       hint="De dónde sale la información. Hace falta al menos una para poder marcar un beneficio con evidencia alta."
-      id="fuentes"
+      invalid={Boolean(errors.sources)}
       onAdd={() => append({ label: "", url: "", note: "" })}
       title="Fuentes"
     >

@@ -35,6 +35,14 @@ export type AiProviderRequest = {
   maxTokens: number;
   effort: AiEffort;
   jsonSchema?: unknown;
+  /**
+   * Enciende la busqueda web del proveedor.
+   *
+   * Excluyente con `jsonSchema`: Gemini no acepta una herramienta y un esquema
+   * de respuesta en la misma llamada. Por eso investigar es dos pasos — buscar
+   * en texto y despues estructurar — y no uno.
+   */
+  searchGrounding?: boolean;
 };
 
 export type AiProviderResponse = {
@@ -46,6 +54,14 @@ export type AiProviderResponse = {
   finishReason: string;
   refusalCategory?: string | null;
   usage: AiUsage;
+  /**
+   * Fuentes que el proveedor dice haber leido, tal como las reporta.
+   *
+   * No las escribe el modelo en su texto: salen de la metadata de grounding. La
+   * diferencia importa — una URL redactada por el modelo puede no existir, y una
+   * ficha del Hub con una fuente inventada es peor que una sin fuente.
+   */
+  citations?: Array<{ url: string; title: string }>;
 };
 
 export type AiProviderStreamEvent = { partialJson?: string };
@@ -90,6 +106,8 @@ export type GenerateTextInput = {
   messages: Array<{ role: "user" | "assistant"; content: string }>;
   maxTokens: number;
   effort?: AiEffort;
+  /** Solo para `generateText`: una llamada estructurada no puede buscar. */
+  searchGrounding?: boolean;
 };
 
 export type GenerateStructuredInput<T> = GenerateTextInput & { schema: ZodType<T> };
@@ -121,6 +139,8 @@ export type GenerateTextResult =
         finishReason: string;
         usage: AiUsage;
         costUsd: number;
+        /** Vacio cuando la llamada no uso busqueda. */
+        citations: Array<{ url: string; title: string }>;
       };
     }
   | { ok: false; error: AiGatewayError };
@@ -188,6 +208,23 @@ const geminiResponseSchema = z.object({
       z.object({
         content: z.object({ parts: z.array(z.object({ text: z.string() }).loose()) }).optional(),
         finishReason: z.string().optional(),
+        groundingMetadata: z
+          .object({
+            groundingChunks: z
+              .array(
+                z
+                  .object({
+                    web: z
+                      .object({ uri: z.string().optional(), title: z.string().optional() })
+                      .loose()
+                      .optional(),
+                  })
+                  .loose(),
+              )
+              .optional(),
+          })
+          .loose()
+          .optional(),
       }),
     )
     .optional(),
@@ -237,7 +274,25 @@ function toProviderResponse(payload: GeminiPayload, model: string): AiProviderRe
     refusalCategory:
       finishReason === "refusal" ? (blocked ?? candidate?.finishReason ?? null) : null,
     usage: usageFromPayload(payload),
+    citations: citationsFromPayload(candidate?.groundingMetadata),
   };
+}
+
+type GroundingMetadata = NonNullable<
+  NonNullable<GeminiPayload["candidates"]>[number]["groundingMetadata"]
+>;
+
+function citationsFromPayload(metadata: GroundingMetadata | undefined) {
+  const chunks = metadata?.groundingChunks ?? [];
+  const seen = new Set<string>();
+  const citations: Array<{ url: string; title: string }> = [];
+  for (const chunk of chunks) {
+    const url = chunk.web?.uri;
+    if (!url || seen.has(url)) continue;
+    seen.add(url);
+    citations.push({ url, title: chunk.web?.title ?? url });
+  }
+  return citations;
 }
 
 function requestBody(request: AiProviderRequest) {
@@ -254,6 +309,7 @@ function requestBody(request: AiProviderRequest) {
         ? { responseMimeType: "application/json", responseJsonSchema: request.jsonSchema }
         : {}),
     },
+    ...(request.searchGrounding ? { tools: [{ google_search: {} }] } : {}),
   };
 }
 
@@ -492,6 +548,7 @@ function requestParameters(input: GenerateTextInput): AiProviderRequest {
     messages: input.messages,
     maxTokens: input.maxTokens,
     effort: input.effort ?? "high",
+    ...(input.searchGrounding ? { searchGrounding: true } : {}),
   };
 }
 
@@ -579,7 +636,15 @@ export function createAiGateway(dependencies: AiGatewayDependencies) {
 
       return {
         ok: true,
-        data: { id: response.id, text, model: response.model, finishReason, usage, costUsd },
+        data: {
+          id: response.id,
+          text,
+          model: response.model,
+          finishReason,
+          usage,
+          costUsd,
+          citations: response.citations ?? [],
+        },
       };
     },
 

@@ -1,0 +1,142 @@
+{
+  "schema_version": 1,
+  "research_date": "2026-08-25",
+  "sku": "BelOrd-194",
+  "review_status": "pending_human_verification",
+  "product_patch": {
+    "id": "fe30a81d-78b1-493b-b24e-fd0c47fb3505",
+    "sku": "BelOrd-194",
+    "name": "Azelaic Acid Suspension 10%, 30 mL",
+    "brand": "The Ordinary",
+    "category": "Belleza y cuidado personal",
+    "presentation": "Tubo de 30 mL (1 fl oz)",
+    "format": "Suspensión cremosa para el rostro",
+    "imageUrl": "https://pub-74be3f08e8ab44c490fe4d652d79a419.r2.dev/uploads/c4685297-24b4-4223-a81f-222109a3967f",
+    "description": "Suspensión facial con ácido azelaico al 10 %. The Ordinary la presenta para piel con tono desigual, opacidad, textura irregular, rojeces visibles y tendencia a imperfecciones. Su fórmula cremosa puede aplicarse por la mañana y por la noche sobre piel intacta. Es un cosmético: no se ofrece para curar, tratar ni prevenir enfermedades de la piel.",
+    "activeIngredients": [
+      {
+        "name": "Ácido azelaico al 10 %",
+        "verified": false
+      }
+    ],
+    "benefits": [
+      {
+        "rank": 1,
+        "claim": "Ayuda a que el tono se vea más uniforme y luminoso",
+        "science_note": "Beneficio cosmético declarado por The Ordinary para esta fórmula. El resultado varía entre personas y no equivale a tratar una alteración médica de pigmentación.",
+        "evidence_level": "baja"
+      },
+      {
+        "rank": 2,
+        "claim": "Mejora visiblemente la textura irregular",
+        "science_note": "El fabricante presenta la suspensión como exfoliante y orientada a mejorar la apariencia de la textura. La ficha permanece pendiente de revisión humana.",
+        "evidence_level": "baja"
+      },
+      {
+        "rank": 3,
+        "claim": "Ayuda a mejorar la apariencia de rojeces e imperfecciones",
+        "science_note": "Son objetivos cosméticos publicados por la marca para esta presentación; no se afirma que trate acné, rosácea ni otra enfermedad de la piel.",
+        "evidence_level": "baja"
+      }
+    ],
+    "faqs": [
+      {
+        "question": "¿Cómo se usa?",
+        "answer": "Aplica una cantidad pequeña en el rostro por la mañana y por la noche, después de las fórmulas acuosas y antes o en lugar de una crema más pesada. Usa protección solar durante el día."
+      },
+      {
+        "question": "¿Se aplica cerca de los ojos?",
+        "answer": "No. La marca indica evitar el contorno de ojos y el contacto con ojos y boca."
+      },
+      {
+        "question": "¿Debo hacer una prueba antes?",
+        "answer": "Sí. The Ordinary recomienda una prueba de parche antes de incorporarlo a la rutina. Si aparecen enrojecimiento, ardor, picazón, ampollas o irritación, no lo uses."
+      },
+      {
+        "question": "¿Sirve para curar el acné o la rosácea?",
+        "answer": "Esta presentación se vende como cosmético para mejorar la apariencia del tono, la textura, las rojeces visibles y las imperfecciones. No debe ofrecerse como tratamiento de acné, rosácea ni otra enfermedad."
+      },
+      {
+        "question": "¿La fórmula puede cambiar?",
+        "answer": "Sí. La marca advierte que actualiza sus fórmulas y que la lista publicada puede variar según la fecha y la región. Revisa siempre el envase físico."
+      }
+    ],
+    "objections": [
+      {
+        "objection": "Me irritó la piel",
+        "response": "Enjuaga el producto, suspende el uso y consulta a un médico si la irritación continúa. No lo vuelvas a aplicar hasta recibir orientación."
+      },
+      {
+        "objection": "No veo resultados inmediatos",
+        "response": "Los resultados cosméticos varían y no están garantizados. Úsalo únicamente según las instrucciones y acompáñalo de protección solar durante el día."
+      },
+      {
+        "objection": "Tengo una enfermedad de la piel",
+        "response": "No uses la ficha como indicación médica. Consulta con dermatología antes de incorporarlo si tienes una enfermedad diagnosticada o sigues un tratamiento."
+      }
+    ],
+    "differentiators": [
+      {
+        "claim": "Concentración declarada de ácido azelaico al 10 %",
+        "evidence": "La concentración figura en el nombre oficial y en la página del fabricante."
+      },
+      {
+        "claim": "Uso por la mañana o por la noche",
+        "evidence": "La guía oficial permite aplicarlo en ambos momentos, con protección solar durante el día."
+      },
+      {
+        "claim": "Fórmula en suspensión cremosa",
+        "evidence": "Formato declarado por The Ordinary para esta referencia de 30 mL."
+      }
+    ],
+    "priceCop": 70858,
+    "usageMode": "Aplicar una cantidad pequeña en el rostro por la mañana y por la noche. Evitar el contorno de ojos y el contacto con ojos y boca. Usar protección solar durante el día.",
+    "precautions": "Realice una prueba de parche antes del primer uso. Mantener fuera del alcance de los niños. La marca actualiza sus fórmulas; confirme los ingredientes en el envase físico. Si tiene una enfermedad de la piel o utiliza medicamentos tópicos, consulte con un profesional antes de incorporarlo.",
+    "contraindications": [
+      "No usar sobre piel lesionada o abierta.",
+      "No aplicar en el contorno de ojos ni permitir contacto con ojos o boca.",
+      "Si aparece irritación, enjuagar y suspender el uso.",
+      "No usar si la prueba de parche produce enrojecimiento, ardor, picazón, ampollas o irritación."
+    ],
+    "claimsAllowed": [
+      "Contiene ácido azelaico al 10 %.",
+      "Es una suspensión cremosa para uso facial.",
+      "La marca la presenta para mejorar visiblemente el tono desigual, la opacidad y la textura irregular.",
+      "Puede aplicarse por la mañana y por la noche según las instrucciones oficiales.",
+      "La marca recomienda protección solar durante el día."
+    ],
+    "claimsCaution": [
+      "Los beneficios son cosméticos y los resultados varían entre personas.",
+      "No convertir las referencias de la marca a rojeces o imperfecciones en afirmaciones de tratamiento de acné o rosácea.",
+      "La lista de ingredientes puede variar según la fecha y la región; confirmar el envase físico vendido en Colombia.",
+      "Ficha investigada en internet y pendiente de revisión humana antes de publicarse como verificada."
+    ],
+    "claimsForbidden": [
+      "Cura enfermedades.",
+      "Trata enfermedades.",
+      "Previene enfermedades.",
+      "Garantiza resultados.",
+      "Cura o trata el acné, la rosácea, el melasma o la hiperpigmentación.",
+      "Es apto para todas las pieles y no causa irritación."
+    ],
+    "complementProductIds": [],
+    "sources": [
+      {
+        "label": "The Ordinary — Azelaic Acid Suspension 10%",
+        "url": "https://theordinary.com/it-it/azelaic-acid-suspension-10-exfoliator-100407.html",
+        "note": "Fuente primaria para identidad, presentación, beneficios cosméticos, ingredientes, modo de uso y advertencias. La versión consultada es europea; verificar el envase colombiano."
+      },
+      {
+        "label": "The Ordinary — instrucciones oficiales del producto",
+        "url": "https://theordinary.com/on/demandware.store/Sites-deciem-us-Site/en_US/Product-GetProductDirections?pid=rdn-azelaic-acid-suspension-10pct-30ml",
+        "note": "Fuente primaria para frecuencia, zonas que deben evitarse, prueba de parche, protección solar y suspensión por irritación."
+      },
+      {
+        "label": "DECIEM — guía oficial de prueba de parche",
+        "url": "https://deciem.com/en-my/patch-test.html",
+        "note": "Fuente primaria para el procedimiento y los signos ante los cuales no debe usarse el producto."
+      }
+    ],
+    "verifiedAt": null
+  }
+}

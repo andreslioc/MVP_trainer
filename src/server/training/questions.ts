@@ -11,6 +11,7 @@ import {
 } from "../../db/schema.ts";
 import { createAiGateway } from "../../lib/ai/gateway.ts";
 import { buildGenerateQuestionsPrompt } from "../../lib/ai/prompts/generate-questions.ts";
+import { practiceSizeSchema } from "../../lib/practice-sizes.ts";
 import { findSimilarProducts } from "../../lib/similar-products.ts";
 import { type GeneratedQuestions, generatedQuestionsSchema } from "../../lib/ai/schemas.ts";
 import {
@@ -142,15 +143,31 @@ function assertsForbiddenClaim(answer: string, forbidden: string[]) {
     );
 }
 
+const cautionPhrases = [
+  "no esta verificado",
+  "no se encuentra verificado",
+  "consulta a un profesional",
+  "consulta con un profesional",
+  "revisa la etiqueta",
+];
+
 function isCautiousAnswer(answer: string) {
   const normalized = normalize(answer);
-  return [
-    "no esta verificado",
-    "no se encuentra verificado",
-    "consulta a un profesional",
-    "consulta con un profesional",
-    "revisa la etiqueta",
-  ].some((phrase) => normalized.includes(phrase));
+  return cautionPhrases.some((phrase) => normalized.includes(phrase));
+}
+
+/**
+ * Palabras minimas de una respuesta que se apoya en la cautela.
+ *
+ * "Revisa la etiqueta" con el dato guardado en la ficha no es prudencia: es una
+ * salida. Y ensena mal — la asesora practica esa frase y la dice en camara ante
+ * una clienta que si podia recibir el dato.
+ */
+const MIN_CAUTIOUS_WORDS = 8;
+
+function isCautionEscape(answer: string) {
+  if (!isCautiousAnswer(answer)) return false;
+  return answer.split(" ").filter(Boolean).length < MIN_CAUTIOUS_WORDS;
 }
 
 export function validateGeneratedQuestionBatch(value: unknown, product: Product) {
@@ -202,7 +219,17 @@ export function validateGeneratedQuestionBatch(value: unknown, product: Product)
         },
       };
     }
-    if (isCautiousAnswer(answer)) continue;
+    if (isCautionEscape(answer)) {
+      return {
+        ok: false as const,
+        error: {
+          code: "INVALID_GENERATED_QUESTIONS",
+          message: `La respuesta ideal de la pregunta ${position} se escapa por la cautela sin decir nada de la ficha: "${question.text}".`,
+        },
+      };
+    }
+    // La exigencia de apoyo en la ficha ya no se salta por ser prudente: una
+    // respuesta cautelosa tambien nombra el producto y lo que si se sabe de el.
     const supported = answer
       .split(" ")
       .some((word) => word.length >= 5 && !ignoredWords.has(word) && allowedTokens.has(word));
@@ -344,12 +371,27 @@ export async function generateTrainingQuestions(
   }
 }
 
-export async function startTrainingSession(productId: string, options: TrainingDependencies = {}) {
+export async function startTrainingSession(
+  productId: string,
+  practiceSize: number,
+  options: TrainingDependencies = {},
+) {
   const { authorize, database } = trainingDependencies(options);
   const authorization = await authorize("asesor");
   if (!authorization.ok) return authorization;
   const parsedId = parseUuid(productId, "productId");
   if (!parsedId.ok) return parsedId;
+  const parsedSize = practiceSizeSchema.safeParse(practiceSize);
+  if (!parsedSize.success) {
+    return {
+      ok: false as const,
+      error: {
+        code: "VALIDATION",
+        message: "Elige un tamano de practica de la lista.",
+        field: "practiceSize",
+      },
+    };
+  }
 
   try {
     return await database.transaction(async (tx) => {
@@ -377,7 +419,11 @@ export async function startTrainingSession(productId: string, options: TrainingD
       }
       const [session] = await tx
         .insert(trainingSessions)
-        .values({ advisorId: authorization.data.id, productId: product.id })
+        .values({
+          advisorId: authorization.data.id,
+          productId: product.id,
+          practiceSize: parsedSize.data,
+        })
         .returning();
       if (!session) throw new Error("No se creo la sesion.");
       return { ok: true as const, data: session };
@@ -441,9 +487,11 @@ export async function getTrainingSession(sessionId: string, options: TrainingDep
       .innerJoin(products, eq(products.id, trainingQuestions.productId))
       .where(scope)
       .orderBy(order);
-    const questions = session.category
-      ? await query.limit(session.practiceSize ?? PRACTICE_QUESTION_LIMIT)
-      : await query;
+    // El tope lo pone la asesora, no el alcance: una practica de una sola ficha
+    // con veinte preguntas es igual de valida que una de categoria.
+    const questions = session.practiceSize
+      ? await query.limit(session.practiceSize)
+      : await query.limit(PRACTICE_QUESTION_LIMIT);
     const answers = await database
       .select({
         id: trainingAnswers.id,

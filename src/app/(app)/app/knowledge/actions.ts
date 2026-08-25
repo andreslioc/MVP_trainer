@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import type { ProductInput } from "../../../../lib/validation/product.ts";
+import { researchProduct } from "../../../../server/product-research.ts";
 import { createProduct, deleteProduct, updateProduct } from "../../../../server/products.ts";
 
 export async function saveProductAction(id: string | null, input: ProductInput) {
@@ -17,5 +18,14 @@ export async function saveProductAction(id: string | null, input: ProductInput) 
 export async function deleteProductAction(id: string) {
   const result = await deleteProduct(id);
   if (result.ok) revalidatePath("/app/knowledge");
+  return result;
+}
+
+export async function researchProductAction(id: string) {
+  const result = await researchProduct(id);
+  if (result.ok) {
+    revalidatePath("/app/knowledge");
+    revalidatePath(`/app/knowledge/${id}`);
+  }
   return result;
 }

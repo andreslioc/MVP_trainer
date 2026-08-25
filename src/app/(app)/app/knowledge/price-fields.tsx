@@ -1,6 +1,7 @@
 import type { FieldErrors, UseFormRegister, UseFormWatch } from "react-hook-form";
 
 import { formatCop } from "../../../../lib/pricing.ts";
+import { FormSection } from "./form-section.tsx";
 import type { ProductFormValues } from "./product-form-model.ts";
 
 const inputClass = "mt-1 w-full rounded-card border border-control bg-surface px-3 py-2";
@@ -24,15 +25,12 @@ export function PriceFields({
   const priceCop = Number(watch("priceCopText")) || null;
 
   return (
-    <section aria-labelledby="price-title" className="rounded-card border border-border p-4">
-      <div className="flex items-baseline justify-between gap-4">
-        <h2 className="text-xl font-semibold text-fg" id="price-title">
-          Precio de lista
-        </h2>
-        <span className="text-xs font-medium text-fg-muted">Obligatorio para verificar</span>
-      </div>
-
-      <label className="mt-4 block max-w-xs text-sm font-medium text-fg">
+    <FormSection
+      badge="Obligatorio para verificar"
+      invalid={Boolean(errors.priceCopText)}
+      title="Precio de lista"
+    >
+      <label className="block max-w-xs text-sm font-medium text-fg">
         Precio en pesos
         <input
           className={`${inputClass} tabular-nums`}
@@ -55,6 +53,6 @@ export function PriceFields({
           </>
         )}
       </p>
-    </section>
+    </FormSection>
   );
 }

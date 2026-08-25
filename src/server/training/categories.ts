@@ -2,7 +2,7 @@ import { and, asc, count, countDistinct, eq, inArray, isNotNull, isNull, sql } f
 import { z } from "zod";
 
 import { products, trainingAnswers, trainingQuestions, trainingSessions } from "../../db/schema.ts";
-import { PRACTICE_SIZES } from "../../lib/practice-sizes.ts";
+import { practiceSizeSchema } from "../../lib/practice-sizes.ts";
 import {
   generateTrainingQuestions,
   type TrainingDependencies,
@@ -10,11 +10,6 @@ import {
 } from "./questions.ts";
 
 const categorySchema = z.string().trim().min(1).max(120);
-
-// Lista cerrada y no un numero libre: el tamano se guarda en la sesion y entra
-// en un check de la base, asi que un 500 escrito a mano en la peticion tiene que
-// morir aqui, en el borde, y no en Postgres.
-const practiceSizeSchema = z.union(PRACTICE_SIZES.map((size) => z.literal(size)));
 
 function parseCategory(value: string) {
   const parsed = categorySchema.safeParse(value);

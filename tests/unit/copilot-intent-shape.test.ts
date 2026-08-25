@@ -49,7 +49,7 @@ describe("el prompt de composicion usa la intencion", () => {
     // El doc del proyecto dice "puede combinar, segun el caso" y que el sistema
     // "no debe colocar todas las promociones, beneficios y CTAs en todas las
     // respuestas". Un prompt que las pide siempre hace que todas suenen igual.
-    expect(COPILOT_COMPOSE_PROMPT).toContain("NO son una lista de verificacion");
+    expect(COPILOT_COMPOSE_PROMPT).toContain("rubrica DINAMICA, no una lista de verificacion");
   });
 
   it("da el presupuesto en palabras, no solo en segundos", () => {

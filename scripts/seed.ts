@@ -5,6 +5,10 @@ import { GENERATE_QUESTIONS_PROMPT } from "../src/lib/ai/prompts/generate-questi
 import { EVALUATE_ANSWER_PROMPT } from "../src/lib/ai/prompts/evaluate-answer.ts";
 import { ANALYZE_TRANSCRIPT_PROMPT } from "../src/lib/ai/prompts/analyze-transcript.ts";
 import { CHAT_COVERAGE_PROMPT } from "../src/lib/ai/prompts/chat-coverage.ts";
+import {
+  RESEARCH_PRODUCT_PROMPT,
+  STRUCTURE_PRODUCT_PROMPT,
+} from "../src/lib/ai/prompts/research-product.ts";
 import { loadEnv } from "../src/lib/load-env.ts";
 
 loadEnv();
@@ -58,6 +62,8 @@ const promptNames = [
   "analyze_transcript",
   "chat_coverage",
   "promote_insight",
+  "research_product",
+  "structure_product",
 ] as const;
 
 async function main(): Promise<void> {
@@ -102,7 +108,11 @@ async function main(): Promise<void> {
                         ? ANALYZE_TRANSCRIPT_PROMPT
                         : name === "chat_coverage"
                           ? CHAT_COVERAGE_PROMPT
-                          : `Plantilla inicial versionada para ${name}.`,
+                          : name === "research_product"
+                            ? RESEARCH_PRODUCT_PROMPT
+                            : name === "structure_product"
+                              ? STRUCTURE_PRODUCT_PROMPT
+                              : `Plantilla inicial versionada para ${name}.`,
             active: true,
           })),
         )
@@ -117,6 +127,7 @@ async function main(): Promise<void> {
           id: PRODUCT_ID,
           sku: "DEMO-CREATINA-001",
           name: "Creatina monohidratada",
+          usageMode: "Una porción de 5 g al día, disuelta en agua o en tu bebida.",
           brand: "Super Store Demo",
           category: "Rendimiento deportivo",
           presentation: "Frasco de 60 porciones",
@@ -193,6 +204,10 @@ async function main(): Promise<void> {
           set: {
             sku: sql`excluded.sku`,
             description: sql`excluded.description`,
+            // El modo de uso viaja en el upsert: sin el, `pnpm db:seed` sobre una
+            // base que ya tenia la ficha semilla la dejaba sin lo que la columna
+            // vino a resolver.
+            usageMode: sql`excluded.usage_mode`,
             updatedAt: new Date(),
           },
         })

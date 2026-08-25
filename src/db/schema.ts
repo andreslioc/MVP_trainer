@@ -113,7 +113,29 @@ export const products = pgTable(
      * verificada para lo que importa.
      */
     priceCop: integer("price_cop"),
+    /**
+     * Como se toma: porcion, momento y con que.
+     *
+     * Columna propia y no una linea perdida en `claims_caution` porque es lo que
+     * mas se pregunta en un live y lo que la asesora dice mas veces al dia. En
+     * la importacion del catalogo llegaba como texto con prefijo de "pendiente
+     * de verificacion", y desde ahi ni el Copilot ni la tarjeta podian leerlo.
+     */
+    usageMode: text("usage_mode").notNull().default(""),
     precautions: text("precautions").notNull().default(""),
+    /**
+     * Casos de NO uso: en quien y con que no se usa este producto.
+     *
+     * Lista y no parrafo, y aparte de `precautions`, porque son las frases que
+     * la asesora tiene que poder leer de un vistazo mientras habla. Un parrafo
+     * generico —"consulta a tu medico"— se salta con la vista; "menores de 18
+     * anios" en una linea, no.
+     *
+     * Salen de la etiqueta. Cuando la etiqueta no lo dice, el arreglo va vacio:
+     * inventar una contraindicacion asusta a quien si podia tomarlo, y omitir
+     * una real es peor.
+     */
+    contraindications: jsonb("contraindications").$type<string[]>().notNull().default([]),
     claimsAllowed: jsonb("claims_allowed").$type<string[]>().notNull().default([]),
     claimsCaution: jsonb("claims_caution").$type<string[]>().notNull().default([]),
     claimsForbidden: jsonb("claims_forbidden").$type<string[]>().notNull().default([]),

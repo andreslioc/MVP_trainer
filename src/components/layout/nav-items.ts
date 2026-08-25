@@ -11,6 +11,12 @@ export type NavItem = {
 const navItems = [
   { href: "/app", label: "Inicio", description: "Resumen del equipo", glyph: "IN" },
   {
+    href: "/app/pre-training",
+    label: "Pre-training",
+    description: "Estudia las fichas",
+    glyph: "PT",
+  },
+  {
     href: "/app/training",
     label: "Training",
     description: "Practica antes del live",

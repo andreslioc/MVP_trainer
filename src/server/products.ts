@@ -9,6 +9,15 @@ import {
   productValidationError,
 } from "../lib/validation/product.ts";
 
+/**
+ * La ficha como sale de la base.
+ *
+ * Se exporta desde aqui —y no se importa `db/schema` en una pagina— porque
+ * `src/app` no cruza a `src/db`, ni para un tipo: el dia que la tabla cambie de
+ * forma, quien lo absorbe es esta capa.
+ */
+export type ProductRecord = typeof products.$inferSelect;
+
 type ProductDatabase = Pick<typeof db, "delete" | "insert" | "select" | "update">;
 type AuthorizationResult =
   | { ok: true; data: { role: AdvisorRole } }
