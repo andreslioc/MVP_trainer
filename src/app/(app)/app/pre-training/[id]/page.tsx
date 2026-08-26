@@ -88,14 +88,18 @@ export default async function PreTrainingProductPage({
               <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
                 En cámara
               </p>
-              <dl className="mt-3 text-sm">
-                <div className="flex justify-between gap-3">
+              {/* Etiqueta arriba y valor debajo, ambos alineados a la izquierda.
+                  En una columna de 17rem, un par etiqueta/valor justificado deja
+                  el valor en dos o tres lineas alineadas a la derecha: se lee
+                  como un parrafo estrecho, no como un dato que se memoriza. */}
+              <dl className="mt-3 space-y-3 text-sm">
+                <div>
                   <dt className="text-fg-muted">Modo de uso</dt>
-                  <dd className="text-right font-medium text-fg">{product.usageMode}</dd>
+                  <dd className="mt-1 font-medium text-fg">{product.usageMode}</dd>
                 </div>
-                <div className="mt-3 flex justify-between gap-3 border-t border-border pt-3">
+                <div className="border-t border-border pt-3">
                   <dt className="text-fg-muted">Presentación</dt>
-                  <dd className="text-right font-medium text-fg">{product.presentation}</dd>
+                  <dd className="mt-1 font-medium text-fg">{product.presentation}</dd>
                 </div>
               </dl>
             </div>
