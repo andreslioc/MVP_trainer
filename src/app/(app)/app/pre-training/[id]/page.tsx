@@ -28,21 +28,34 @@ export default async function PreTrainingProductPage({
         ← Volver a Pre-training
       </Link>
 
-      {/* Banda de portada: la foto sostiene la identidad del producto, que es
-          como la asesora lo reconoce. El tinte del morado de marca da aire sin
-          sombras, que el sistema no usa. */}
-      <div className="mt-4 overflow-hidden rounded-card border border-border bg-surface">
-        <div className="flex flex-wrap items-end gap-6 border-b border-primary-tint-border bg-primary-tint px-6 pt-6">
+      {/* Banda de portada en dos columnas: la foto ocupa toda la altura a la
+          izquierda y TODO el texto vive a la derecha —identidad arriba, precio y
+          descripcion abajo—. Antes el bloque de precio cruzaba el ancho completo
+          y partia la banda en dos pisos que no se leian como uno. */}
+      <div className="mt-4 flex flex-wrap items-stretch overflow-hidden rounded-card border border-border bg-surface">
+        <div className="flex w-full flex-none items-center justify-center border-primary-tint-border bg-primary-tint p-6 sm:w-60 sm:border-r">
           {product.imageUrl ? (
             // biome-ignore lint/performance/noImgElement: las fuentes remotas tienen dimensiones variables; el elemento nativo conserva su proporcion sin ampliarlas
-            <img alt="" className="max-h-52 w-auto" decoding="async" src={product.imageUrl} />
-          ) : null}
-          <div className="pb-6">
+            <img
+              alt=""
+              className="max-h-56 w-auto max-w-full"
+              decoding="async"
+              src={product.imageUrl}
+            />
+          ) : (
+            <span className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
+              Sin foto
+            </span>
+          )}
+        </div>
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="border-b border-primary-tint-border bg-primary-tint px-6 py-6">
             <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
               {product.brand} · {product.category}
             </p>
             <h1
-              className="mt-1 max-w-xl text-3xl font-semibold leading-tight tracking-tight text-fg"
+              className="mt-1 text-3xl font-semibold leading-tight tracking-tight text-fg"
               id="page-title"
             >
               {product.name}
@@ -51,17 +64,17 @@ export default async function PreTrainingProductPage({
               {product.presentation} · {product.format}
             </p>
           </div>
-        </div>
-        <div className="flex flex-wrap items-baseline gap-4 px-6 py-4">
-          <p className="text-2xl font-semibold tabular-nums tracking-tight text-primary-deep">
-            {formatCop(product.priceCop) ?? "Sin precio"}
-          </p>
-          <span className="rounded-full border border-success bg-confidence-high-bg px-3 py-1 text-xs font-semibold text-confidence-high-fg">
-            Verificada
-          </span>
-          {product.description ? (
-            <p className="max-w-prose text-sm text-fg-muted">{product.description}</p>
-          ) : null}
+          <div className="flex flex-1 flex-wrap items-baseline gap-x-4 gap-y-2 px-6 py-4">
+            <p className="text-2xl font-semibold tabular-nums tracking-tight text-primary-deep">
+              {formatCop(product.priceCop) ?? "Sin precio"}
+            </p>
+            <span className="rounded-full border border-success bg-confidence-high-bg px-3 py-1 text-xs font-semibold text-confidence-high-fg">
+              Verificada
+            </span>
+            {product.description ? (
+              <p className="w-full text-sm text-fg-muted">{product.description}</p>
+            ) : null}
+          </div>
         </div>
       </div>
 
