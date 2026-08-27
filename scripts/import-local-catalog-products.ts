@@ -163,6 +163,10 @@ function adaptProduct(product: CatalogProduct) {
     // topicos y las bebidas: son el mismo dato con dos nombres.
     usageMode: (product.dosis || product.modoUso || "").trim(),
     precautions: product.advertencias,
+    // El catalogo no trae casos de NO uso como campo propio. Inventar una
+    // contraindicacion asusta a quien si podia tomarlo: el arreglo va vacio y
+    // lo llena la revision humana desde la etiqueta.
+    contraindications: [],
     claimsAllowed: [neutralIdentity(product)],
     claimsCaution: [
       `Descripción del catálogo pendiente de verificación: ${product.descripcion}`,
