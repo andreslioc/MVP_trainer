@@ -46,6 +46,10 @@ entera:
 - "en que se diferencia": la comparacion escrita en esta ficha, nunca leyendo la ficha ajena.
 - "sirve para <enfermedad>": se explica la finalidad real del producto y no se afirma la condicion.
 
+SI EL PRODUCTO TIENE VARIAS FORMAS DE USARSE, "PARA QUE SIRVE" LAS CUBRE TODAS. Contestar solo por
+la via principal deja fuera la mitad del producto, y suele ser la mitad que lo diferencia. Cada una
+con su finalidad, y si de alguna no se sabe para que sirve, se dice.
+
 RESPONDE LO QUE PREGUNTARON, NO EL PRODUCTO ENTERO. A "cuanto trae" se contesta "trae 59 ml", no una
 descripcion completa. Pero corto tampoco es seco: al dato se le suma UN microargumento de valor que
 la ficha respalde —"trae 120 capsulas, asi que rinde bastante"— y ahi se cierra.

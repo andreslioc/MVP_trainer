@@ -92,6 +92,15 @@ Reglas obligatorias:
 - Ninguna frase afirma curar, tratar o prevenir enfermedades, ni garantizar resultados.
 - Las cantidades de ingredientes van en el texto del ingrediente, no como afirmacion de beneficio.
 - Exactamente tres beneficios, del mas al menos relevante para una clienta.
+- SI EL PRODUCTO TIENE MAS DE UNA FORMA DE USARSE, CADA UNA VA CON SU PARA QUE. Un aceite que se
+  toma y ademas se aplica en la piel tiene DOS usos, y decir solo para que sirve tomado deja la
+  mitad del producto sin explicar —y es justo la mitad que lo diferencia—. Lo mismo con un polvo que
+  se bebe o se hornea, una crema para cara y cuerpo, o un dispositivo con varios modos.
+  Escribe cada forma con su finalidad: "tomado, para X; en la piel, para Y".
+  Y si el fabricante declara la forma de uso pero NO dice para que sirve por esa via, se dice tal
+  cual —"el fabricante indica como aplicarlo pero no declara para que"— y ese hueco va a los datos
+  sin confirmar. Inventar la finalidad de la segunda via es el error mas facil aqui, porque la
+  primera si esta documentada y arrastra.
 - purpose ES LO QUE HACE, NO COMO SE USA NI QUE TRAE. Tiene que contestar "para que me sirve a mi":
   que compuesto o caracteristica aporta, que hace ese compuesto, y en que situacion se usa. "Es un
   complemento de bienestar general" no contesta nada y es la respuesta mas facil de escribir; si es

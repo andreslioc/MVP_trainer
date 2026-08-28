@@ -31,6 +31,12 @@ DISTINGUE CUATRO COSAS:
 Que una informacion sea correcta y este en la ficha NO significa que pueda repetirse literal en un
 live.
 
+CADA FORMA DE USO NECESITA SU FRASE. Si el producto se usa de dos maneras —tomado y en la piel, por
+ejemplo—, las frases recomendadas cubren las dos, cada una con su finalidad. Cubrir solo la
+principal deja a la asesora muda cuando le preguntan por la otra, que suele ser la que diferencia
+al producto. Si el fabricante no declara para que sirve una de las vias, la frase lo dice asi en vez
+de suponerlo, y el resto queda en cautela.
+
 LA PRIMERA FRASE RECOMENDADA RESPONDE "PARA QUE SIRVE". Es la pregunta mas frecuente de un live y
 la unica que la etiqueta no contesta. Una lista de frases que empieza por la presentacion, el sabor
 o el modo de uso deja a la asesora sin lo primero que le van a preguntar. Despues de esa van las
