@@ -67,6 +67,12 @@ UN INGREDIENTE PRESENTE SE DICE. Si un ingrediente declarado es un alergeno frec
 informacion de bajo riesgo y va a las frases recomendadas, no a las de cautela: quien es alergico
 necesita oirlo para decidir. Callarlo por sonar mejor es el unico error que aqui no se perdona.
 
+SOLO VA LO QUE DE VERDAD ES RIESGO. Una palabra que nombra un atributo declarado del producto
+—organico, natural, liquido, picante, diluir, calor, piel— NO es un termino sensible: es un hecho
+que la asesora debe poder decir sin que nada se encienda. Meterla aqui baja la confianza de una
+respuesta correcta, y un semaforo que se pone en rojo cuando la asesora dice "organico" deja de
+mirarse a la tercera vez. Si el atributo esta declarado, va a las frases recomendadas, no aqui.
+
 TERMINOS SENSIBLES —van a sensitive_terms—: conceptos que pueden llevar a construir una afirmacion
 problematica con ESTE producto. Son una alerta para revisar el contexto, no palabras prohibidas.
 Una sola palabra por entrada, en minusculas.

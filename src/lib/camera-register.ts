@@ -55,6 +55,46 @@ export const CAMERA_JARGON = [
  * que el formulario señala; dieciseis es el limite que impide que este campo se
  * convierta en un parrafo, que es como se degrada en la practica.
  */
+/**
+ * Trazabilidad: de donde salio el dato.
+ *
+ * Es informacion valiosa —el equipo necesita saber si algo viene del panel de
+ * la etiqueta o del material comercial— y no se dice en camara. El prompt toma
+ * la ficha como texto literal, asi que una frase de trazabilidad escrita en un
+ * campo que se dice sale por la boca de la asesora: "el fabricante lo presenta
+ * como apoyo para una apariencia saludable" suena a que ella no se la juega.
+ *
+ * Su sitio es `technical_note`, el `reason` de la guia de cautela y los datos
+ * sin confirmar. Nunca la descripcion, el para que sirve, la frase de un
+ * beneficio, las frases del live ni la forma segura.
+ *
+ * NO se aplica a precauciones, casos de no uso, preguntas ni objeciones: ahi la
+ * atribucion SUMA autoridad —"la etiqueta dice expresamente que no es para
+ * embarazadas" es mas fuerte que decirlo sin fuente.
+ */
+export const PROVENANCE_MARKERS = [
+  "el fabricante declara",
+  "el fabricante indica",
+  "el fabricante lo presenta",
+  "el fabricante no",
+  "segun el fabricante",
+  "declarado por el fabricante",
+  "segun la etiqueta",
+  "la etiqueta declara",
+  "panel de la etiqueta",
+  "material comercial",
+  "la ficha registra",
+  "la ficha contiene",
+  "no se pudo confirmar",
+  "pendiente de verificacion",
+  "sin confirmar",
+] as const;
+
+export function findProvenance(value: string): string | null {
+  const text = normalize(value);
+  return PROVENANCE_MARKERS.find((marker) => text.includes(normalize(marker))) ?? null;
+}
+
 export const CLAIM_MAX_WORDS = 16;
 export const CLAIM_TARGET_WORDS = 12;
 

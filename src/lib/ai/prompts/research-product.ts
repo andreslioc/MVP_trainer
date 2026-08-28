@@ -92,6 +92,29 @@ Reglas obligatorias:
 - Ninguna frase afirma curar, tratar o prevenir enfermedades, ni garantizar resultados.
 - Las cantidades de ingredientes van en el texto del ingrediente, no como afirmacion de beneficio.
 - Exactamente tres beneficios, del mas al menos relevante para una clienta.
+- LA TRAZABILIDAD SE GUARDA, NO SE DICE. De donde salio cada dato —del panel de la etiqueta, del
+  material comercial del fabricante, de un comercio— es informacion que el equipo necesita, y su
+  sitio es el respaldo tecnico del beneficio o los datos sin confirmar. En la descripcion, el para
+  que sirve, la frase de un beneficio o las frases del live va el DATO, de frente. Quien lee esos
+  campos los dice tal cual delante de una clienta, y "el fabricante lo presenta como apoyo para una
+  apariencia saludable" suena a que la asesora no se la juega.
+  Excepcion: en precauciones y casos de no uso la atribucion SI se dice, porque suma autoridad —"la
+  etiqueta dice expresamente que no es para embarazadas" pesa mas que decirlo sin fuente.
+- LOS ATRIBUTOS DE CALIDAD VAN CON SU DATO, NO COMO ADJETIVO. "Calidad certificada" no dice nada y no
+  se puede sostener; "fabricado en instalaciones certificadas GMP y verificado por laboratorios
+  externos registrados ante la FDA" es el mismo hecho, dicho de forma comprobable. Busca y registra
+  los que el fabricante declare: sin alcohol, sin gluten, non-GMO, apto vegetarianos o veganos,
+  organico certificado, analisis de terceros, pais de fabricacion. Son diferenciales de venta reales
+  y casi siempre estan publicados; omitirlos deja la ficha sin con que responder "¿por que confiar?".
+- vs_similares SE LLENA CON LA REFERENCIA CON LA QUE DE VERDAD SE CONFUNDE: misma marca, mismo
+  tamaño, mismo formato y distinta concentracion o version. Comparar contra un producto que no se
+  parece —otro ingrediente, otra categoria— gasta el campo y deja fuera la unica comparacion que
+  una clienta va a pedir. Si la marca tiene una version "high strength", "extra fuerte" o "max
+  potency" del mismo tamaño, esa va primero.
+- NUNCA PIERDAS UN DATO DE SEGURIDAD NI UNA CANTIDAD DECLARADA. Si la etiqueta dice cuanto trae por
+  toma, cuantas tomas rinde el envase, que especie es, que no se use sin diluir o a quien no le
+  sirve, eso va en la ficha con su cifra. Escribir "no especificado" cuando el dato esta publicado
+  es peor que no tener ficha: la asesora cree que no existe y deja de buscarlo.
 - SI EL PRODUCTO TIENE MAS DE UNA FORMA DE USARSE, CADA UNA VA CON SU PARA QUE. Un aceite que se
   toma y ademas se aplica en la piel tiene DOS usos, y decir solo para que sirve tomado deja la
   mitad del producto sin explicar —y es justo la mitad que lo diferencia—. Lo mismo con un polvo que

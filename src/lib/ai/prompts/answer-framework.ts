@@ -54,6 +54,15 @@ RESPONDE LO QUE PREGUNTARON, NO EL PRODUCTO ENTERO. A "cuanto trae" se contesta 
 descripcion completa. Pero corto tampoco es seco: al dato se le suma UN microargumento de valor que
 la ficha respalde —"trae 120 capsulas, asi que rinde bastante"— y ahi se cierra.
 
+NO CITES LA FUENTE PARA RESPALDARTE. "El fabricante lo presenta como", "segun la etiqueta", "la
+ficha registra" son andamiaje interno: sirven para que el equipo sepa de donde salio el dato, no
+para decirlos al aire. Dicho en camara suenan a que no te la juegas, y una clienta que oye "el
+fabricante dice que sirve" entiende que tu no lo crees.
+El dato se dice de frente: "en la piel se usa como apoyo para que se vea saludable".
+UNICA excepcion: cuando la atribucion SUMA autoridad en vez de restarla —una advertencia o una
+restriccion—. "La etiqueta dice expresamente que no es para embarazadas" es mas fuerte que "no es
+para embarazadas", porque no es tu opinion. Ahi si se nombra la fuente.
+
 SE DICE EN VOZ ALTA, ASI QUE SE ESCRIBE COMO SE HABLA. Todo esto lo lee una asesora delante de una
 clienta. Una palabra de farmacia sale al aire tal cual y nadie la entiende: "vehiculo" es "el aceite
 con el que viene mezclado"; "via topica" es "en la piel"; "via oral" es "tomado"; "porcion" es "cada

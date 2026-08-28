@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-import { CLAIM_MAX_WORDS, CLAIM_TARGET_WORDS, countWords, findJargon } from "../camera-register.ts";
+import {
+  CLAIM_MAX_WORDS,
+  CLAIM_TARGET_WORDS,
+  countWords,
+  findJargon,
+  findProvenance,
+} from "../camera-register.ts";
 import { findEmptyPhrase, isAllGeneric, isOnlyPackaging } from "../vague-claims.ts";
 
 const requiredText = z.string().trim().min(1, "Este campo es obligatorio.");
@@ -231,6 +237,31 @@ export const productInputSchema = z
         (item, index) => [`activeIngredients.${index}.name`, item.name] as [string, string],
       ),
     ];
+    // La trazabilidad se guarda, no se dice: solo en los campos que describen y
+    // venden. Las precauciones y los casos de no uso quedan fuera a proposito,
+    // porque ahi nombrar la etiqueta suma autoridad.
+    const spokenFields: Array<[string, string]> = [
+      ["description", product.description],
+      ["purpose", product.purpose],
+      ...product.benefits.map(
+        (item, index) => [`benefits.${index}.claim`, item.claim] as [string, string],
+      ),
+      ...product.liveReady.map((item, index) => [`liveReady.${index}`, item] as [string, string]),
+      ...product.cautionGuidance.map(
+        (item, index) => [`cautionGuidance.${index}.safe_form`, item.safe_form] as [string, string],
+      ),
+    ];
+    for (const [path, value] of spokenFields) {
+      const provenance = findProvenance(value);
+      if (provenance) {
+        context.addIssue({
+          code: "custom",
+          message: `"${provenance}" es trazabilidad, no algo que se diga en camara. Va en el respaldo tecnico o en los datos sin confirmar; aqui va el dato de frente.`,
+          path: path.split("."),
+        });
+      }
+    }
+
     for (const [path, value] of cameraFields) {
       const jargon = findJargon(value);
       if (jargon) {
