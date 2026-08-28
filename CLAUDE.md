@@ -134,7 +134,7 @@ Convenciones diferidas — lee el archivo que corresponda antes de editar esa ar
 | `.claude/rules/ai-gateway.md` | `src/lib/ai/**`, `src/server/copilot/**`, `src/server/training/**` |
 | `.claude/rules/responsible-communication.md` | `src/lib/ai/prompts/**`, `src/server/copilot/**` |
 | `.claude/rules/ui.md` | `src/app/**`, `src/components/**`, `src/app/globals.css` |
-| `.claude/rules/testing.md` | `tests/**`, `vitest.config.ts`, `playwright.config.ts` |
+| `.claude/rules/testing.md` | `tests/**`, `vitest.config.mts`, `playwright.config.ts` |
 
 ## No negociable
 

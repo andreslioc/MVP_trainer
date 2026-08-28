@@ -23,5 +23,9 @@ Object.assign(process.env, {
   SUPABASE_LOCAL_DATABASE_URL: process.env.DIRECT_DATABASE_URL,
   DATABASE_URL: process.env.TEST_DATABASE_URL,
   DIRECT_DATABASE_URL: process.env.TEST_DATABASE_URL,
+  // El cliente HTTP real se prueba con `fetch` falso, pero `env` se valida una
+  // sola vez al importar. Una llave deliberadamente falsa evita depender de un
+  // secreto local y garantiza que un test nunca pueda llamar al proveedor real.
+  GEMINI_API_KEY: "gemini-test-key-do-not-use",
   NODE_ENV: "test",
 });

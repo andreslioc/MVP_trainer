@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { env } from "../../src/lib/env.ts";
 import { GROQ_MAX_AUDIO_SECONDS } from "../../src/server/recordings/groq.ts";
@@ -63,7 +63,23 @@ describe("resolveProvider", () => {
 });
 
 describe("un archivo pequeño pero largo", () => {
+  let restaurar: () => void;
+
+  beforeEach(() => {
+    restaurar = conEntorno({
+      TRANSCRIPTION_PROVIDER: "groq",
+      DEEPGRAM_API_KEY: "llave-de-prueba",
+      TRANSCRIPTION_MAX_BYTES: 25 * 1024 * 1024,
+    });
+  });
+
+  afterEach(() => {
+    restaurar();
+    vi.restoreAllMocks();
+  });
+
   it("va a Deepgram: el tamaño no dice cuánto dura", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     // Caso real: un live de 2 h 22 min convertido a opus pesa 17 MB, menos que
     // muchos archivos cortos sin comprimir. Groq lo rechaza porque supera sus
     // 7.200 s por hora de reloj, y sin la duración no había forma de saberlo.
@@ -76,6 +92,7 @@ describe("un archivo pequeño pero largo", () => {
   });
 
   it("sin duración conocida sigue decidiendo por tamaño", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     expect(resolveProvider(null, 60 * 1024 * 1024).nombre).toBe("deepgram");
     expect(resolveProvider(null, 2 * 1024 * 1024).nombre).toBe("groq");
   });

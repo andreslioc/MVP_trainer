@@ -2,7 +2,7 @@
 description: Convenciones de pruebas unitarias, de integracion y E2E
 paths:
   - "tests/**"
-  - "vitest.config.ts"
+  - "vitest.config.mts"
   - "playwright.config.ts"
 ---
 

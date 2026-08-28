@@ -59,7 +59,7 @@ describe("database seed", () => {
         (select (value->>'threshold_cop')::int from commercial_rules where key = 'envio_gratis') as threshold_cop
     `);
 
-    expect(counts).toEqual({ rules: 6, prompts: 9, products: 1, questions: 4 });
+    expect(counts).toEqual({ rules: 6, prompts: 15, products: 1, questions: 4 });
     expect(promotion).toEqual({ active: false, threshold_cop: 120000 });
   });
 });
