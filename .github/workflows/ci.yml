@@ -47,7 +47,16 @@ jobs:
       # fijadas invalida todo lo que venga despues.
       - run: pnpm install --frozen-lockfile
 
+      # Las pruebas de compresion de audio invocan ffmpeg de verdad: sin el
+      # binario fallan con ENOENT y el fallo no dice nada del codigo.
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - run: pnpm db:migrate:test
+
+      # La semilla corre en CI porque hay una prueba que verifica que sea
+      # idempotente: sin este paso cuenta cero filas y falla por vacia, no por
+      # rota.
+      - run: pnpm db:seed
 
       - run: pnpm typecheck
 

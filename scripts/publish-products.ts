@@ -60,7 +60,9 @@ async function main() {
     const skipped = local.length - publishable.length;
     const toInsert = publishable.filter((row) => !remoteBySku.has(row.sku as string));
     const toUpdate = publishable.filter((row) => remoteBySku.has(row.sku as string));
-    const untouched = remote.filter((row) => !row.sku || !publishable.some((l) => l.sku === row.sku));
+    const untouched = remote.filter(
+      (row) => !row.sku || !publishable.some((l) => l.sku === row.sku),
+    );
 
     console.info(
       `local ${local.length} · destino ${remote.length} · a insertar ${toInsert.length} · a actualizar ${toUpdate.length} · omitidas ${skipped} · intactas en destino ${untouched.length}`,
