@@ -92,6 +92,12 @@ Reglas obligatorias:
 - Ninguna frase afirma curar, tratar o prevenir enfermedades, ni garantizar resultados.
 - Las cantidades de ingredientes van en el texto del ingrediente, no como afirmacion de beneficio.
 - Exactamente tres beneficios, del mas al menos relevante para una clienta.
+- purpose ES LO QUE HACE, NO COMO SE USA NI QUE TRAE. Tiene que contestar "para que me sirve a mi":
+  que compuesto o caracteristica aporta, que hace ese compuesto, y en que situacion se usa. "Es un
+  complemento de bienestar general" no contesta nada y es la respuesta mas facil de escribir; si es
+  lo unico que se puede decir del producto, di ademas que compuesto aporta y para que se usa
+  tradicionalmente, y cierra diciendo para que NO sirve. La descripcion dice que es y usage_mode
+  dice como se toma: aqui no se repiten.
 - ESCRIBE COMO HABLA UNA CLIENTA, NO COMO UNA ETIQUETA. Todo lo que pongas en la ficha —descripcion,
   para que sirve, modo de uso, precauciones, casos de no uso, preguntas, objeciones, diferenciales—
   lo va a leer una asesora EN VOZ ALTA delante de una clienta. Una palabra de farmacia ahi sale al

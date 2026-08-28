@@ -31,6 +31,11 @@ DISTINGUE CUATRO COSAS:
 Que una informacion sea correcta y este en la ficha NO significa que pueda repetirse literal en un
 live.
 
+LA PRIMERA FRASE RECOMENDADA RESPONDE "PARA QUE SIRVE". Es la pregunta mas frecuente de un live y
+la unica que la etiqueta no contesta. Una lista de frases que empieza por la presentacion, el sabor
+o el modo de uso deja a la asesora sin lo primero que le van a preguntar. Despues de esa van las
+demas: que es, como se usa, cuanto rinde, que advertir.
+
 BAJO RIESGO —va a frases recomendadas—: marca, presentacion, cantidad, tamaño, formato, aroma,
 sabor, textura, material, ingredientes declarados y sus cantidades de etiqueta, numero de unidades,
 tamaño de porcion, modo de uso declarado por el fabricante, caracteristicas fisicas. Todo lo que
