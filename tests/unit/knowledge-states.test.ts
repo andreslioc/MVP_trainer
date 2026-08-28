@@ -17,6 +17,16 @@ describe("Knowledge Hub states", () => {
     expect(error).toContain("Reintentar");
   });
 
+  it("declares a no-match state and a labelled search control", () => {
+    const page = source("../../src/app/(app)/app/knowledge/page.tsx");
+
+    // Buscar agrega un cuarto estado a la lista: hay fichas, pero ninguna
+    // coincide. Sin el, la cuadricula vacia se lee como "no hay fichas".
+    expect(page).toContain("Ninguna ficha coincide");
+    expect(page).toContain('htmlFor="knowledge-q"');
+    expect(page).toContain("Buscar ficha");
+  });
+
   it("keeps field errors next to controls and exposes a textual server error", () => {
     const form = source("../../src/app/(app)/app/knowledge/product-form.tsx");
     const benefits = source("../../src/app/(app)/app/knowledge/benefits-fields.tsx");

@@ -37,6 +37,126 @@ function composition(overrides: Partial<CopilotComposition> = {}): CopilotCompos
 }
 
 describe("comunicación responsable", () => {
+  // Las tres primeras frases salieron literales del Copilot corriendo contra la
+  // ficha del Thermogenic Fat Burner del catalogo: antes de este gate pasaban
+  // sin una sola alerta.
+  it.each([
+    "Este suplemento apoya tu metabolismo y control de apetito, ayudándote en tu déficit calórico.",
+    "Te ayuda a controlar el apetito para mantener tu déficit calórico, que es lo que permite la pérdida de peso.",
+    "Facilita el mantenimiento de un déficit calórico, el factor determinante para la pérdida de peso.",
+    "Te ayuda a quemar grasa abdominal.",
+    "Con esto bajas de peso más rápido.",
+    "Ideal para ganar músculo en poco tiempo.",
+  ])("bloquea una afirmación de peso o composición corporal: %s", (express) => {
+    const result = applyResponsibleCommunication({
+      question: "¿sirve para bajar de peso?",
+      composition: composition({ express }),
+      product: product(),
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.alerts[0]?.code).toBe("BODY_TRANSFORMATION_CLAIM");
+  });
+
+  it.each([
+    "Te garantizamos calidad en cada gota.",
+    "Es el mejor del mercado.",
+    "Es 100% original.",
+    "Es más efectivo que las cápsulas.",
+  ])("bloquea calidad o superioridad que nadie puede demostrar: %s", (express) => {
+    const result = applyResponsibleCommunication({
+      question: "¿es bueno?",
+      composition: composition({ express }),
+      product: product(),
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.alerts[0]?.code).toBe("UNVERIFIABLE_QUALITY_CLAIM");
+  });
+
+  it("en modo enseñanza no sustituye la respuesta por la frase de cautela", () => {
+    // La version mejorada del Simulator tiene que ENSENAR a responder una
+    // pregunta de riesgo, no recitar la frase enlatada.
+    const buena =
+      "La etiqueta dice expresamente que no es para embarazadas ni en lactancia, así que no. Consúltalo con tu médico.";
+    const result = applyResponsibleCommunication({
+      question: "¿puedo tomarlo si estoy embarazada?",
+      composition: composition({ express: buena }),
+      product: product(),
+      mode: "teaching",
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.composition.express).toBe(buena);
+  });
+
+  it("en modo enseñanza sigue bloqueando una afirmación prohibida", () => {
+    const result = applyResponsibleCommunication({
+      question: "¿puedo tomarlo si estoy embarazada?",
+      composition: composition({ express: "Sí, cura la infección sin problema." }),
+      product: product(),
+      mode: "teaching",
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("alerta —sin bloquear— cuando la respuesta habla como etiqueta", () => {
+    const result = applyResponsibleCommunication({
+      question: "¿qué tiene?",
+      composition: composition({
+        express: "Contiene aceite de oliva como vehículo para diluirlo.",
+      }),
+      product: product(),
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const alert = result.data.alerts.find((item) => item.code === "JARGON_IN_ANSWER");
+    expect(alert).toBeDefined();
+    // Dice en cual de las tres vistas esta, o la asesora regenera una respuesta
+    // que se ve bien porque la palabra vivia en otra.
+    expect(alert?.message).toContain("vista express");
+  });
+
+  it("alerta —sin bloquear— cuando la respuesta promete variedad sin nombrarla", () => {
+    const result = applyResponsibleCommunication({
+      question: "¿para qué sirve?",
+      composition: composition({ express: "Sirve para diversos objetivos de salud." }),
+      product: product(),
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.alerts.some((alert) => alert.code === "VAGUE_ANSWER")).toBe(true);
+  });
+
+  it.each([
+    "Resultados garantizados en dos semanas.",
+    "Es 100% efectivo.",
+    "Te va a funcionar.",
+    "Tiene un efecto milagroso.",
+  ])("bloquea una promesa de resultado: %s", (express) => {
+    const result = applyResponsibleCommunication({
+      question: "¿en cuánto tiempo funciona?",
+      composition: composition({ express }),
+      product: product(),
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error.alerts[0]?.code).toBe("GUARANTEED_RESULT_CLAIM");
+  });
+
+  it.each([
+    "Es un quemador de grasa termogénico en cápsulas.",
+    "Se toma una cápsula con el desayuno y abundante agua.",
+    "Los resultados pueden variar según cada persona y el uso del producto.",
+  ])("deja pasar el hecho de la etiqueta y la respuesta prudente: %s", (express) => {
+    const result = applyResponsibleCommunication({
+      question: "¿qué es este producto?",
+      composition: composition({ express }),
+      product: product(),
+    });
+    expect(result.ok).toBe(true);
+  });
+
   it.each([
     "¿Puedo usarlo durante el embarazo?",
     "¿Es adecuado durante la lactancia?",

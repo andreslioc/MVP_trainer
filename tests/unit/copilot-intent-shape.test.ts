@@ -155,8 +155,9 @@ describe("como se dice un precio especial", () => {
     expect(plano).toContain("por este live");
   });
 
-  it("pide usar el presupuesto de la express, no quedarse corto", () => {
-    expect(plano).toContain("una express de 20 palabras dejo fuera algo que si cabia");
+  it("pide dato mas valor: ni parrafo de relleno ni respuesta seca", () => {
+    expect(plano).toContain("Es un techo y no una cuota");
+    expect(plano).toContain("a un dato suelto se le suma UN microargumento de valor");
   });
 });
 

@@ -150,6 +150,36 @@ export const researchedProductSchema = z
     presentation: z.string().trim().min(1).max(200),
     format: z.string().trim().min(1).max(80),
     description: z.string().trim().min(1).max(700),
+    /** PARA QUE SIRVE: uso principal y secundarios. Distinto de QUE ES. */
+    purpose: z.string().trim().min(1).max(600),
+    /** PARA QUIEN ES, solo lo oficialmente respaldado. */
+    audience: z.string().trim().max(400),
+    subcategory: z.string().trim().max(80),
+    /**
+     * Como la busca una clienta, separadas por comas.
+     *
+     * Texto y no arreglo por una razon del proveedor, no de diseño: el esquema
+     * de respuesta tiene un techo y este contrato lo estaba tocando —el REST
+     * contestaba 400 INVALID_ARGUMENT y ninguna ficha se escribia—. Una lista de
+     * palabras es lo que menos pierde al viajar como texto, y se parte en el
+     * patch. Antes de agregar otro arreglo aqui, medir contra ese techo.
+     */
+    keywords: z.string().trim().max(600),
+    /** En que se diferencia de las otras referencias de la tienda. */
+    vs_similares: z
+      .array(
+        z
+          .object({
+            reference: z.string().trim().min(1).max(200),
+            difference: z.string().trim().min(1).max(400),
+          })
+          .strict(),
+      )
+      .max(5),
+    /** Texto y no numero: "0,15 ml (4 gotas)" y "no declarado" caben igual. */
+    serving_size: z.string().trim().max(120).nullable(),
+    servings_per_container: z.string().trim().max(60).nullable(),
+    allergens: z.string().trim().max(300).nullable(),
     active_ingredients: z
       .array(
         z
@@ -170,7 +200,8 @@ export const researchedProductSchema = z
           })
           .strict(),
       )
-      .length(3),
+      .min(1)
+      .max(3),
     faqs: z
       .array(
         z
@@ -210,6 +241,69 @@ export const researchedProductSchema = z
   })
   .strict();
 
+/**
+ * Salida de la capa de seguridad. No reescribe la ficha: la clasifica.
+ *
+ * `strict()` como el resto de los contratos: una llave extra es una invencion
+ * del modelo, no un extra util.
+ */
+export const safetyLayerSchema = z
+  .object({
+    live_ready: z.array(z.string().trim().min(1).max(220)).min(3).max(8),
+    caution_guidance: z
+      .array(
+        z
+          .object({
+            claim: z.string().trim().min(1).max(200),
+            reason: z.string().trim().min(1).max(300),
+            safe_form: z.string().trim().min(1).max(300),
+          })
+          .strict(),
+      )
+      .max(8),
+    avoid_guidance: z
+      .array(
+        z
+          .object({
+            avoid: z.string().trim().min(1).max(200),
+            reason: z.string().trim().min(1).max(200),
+            alternative: z.string().trim().max(300),
+          })
+          .strict(),
+      )
+      .max(10),
+    sensitive_terms: z.array(z.string().trim().min(1).max(40)).max(30),
+    advisor_summary: z.string().trim().min(1).max(900),
+  })
+  .strict();
+
+/**
+ * Resultado de investigar UN hueco de la ficha.
+ *
+ * Plano y con pocos campos a proposito: el contrato de la investigacion
+ * completa ya toca el techo del proveedor, y este se pide en una llamada
+ * aparte justamente para no competir con aquel.
+ */
+export const gapVerificationSchema = z
+  .object({
+    outcome: z.enum(["confirmado", "no_publicado", "contradictorio"]),
+    finding: z.string().trim().min(1).max(900),
+    searched_in: z.array(z.string().trim().min(1).max(160)).max(10),
+    sources: z
+      .array(
+        z
+          .object({
+            label: z.string().trim().min(1).max(200),
+            url: z.string().trim().min(1).max(500),
+          })
+          .strict(),
+      )
+      .max(8),
+  })
+  .strict();
+
+export type GapVerification = z.infer<typeof gapVerificationSchema>;
+export type SafetyLayer = z.infer<typeof safetyLayerSchema>;
 export type ResearchedProduct = z.infer<typeof researchedProductSchema>;
 export type GeneratedQuestions = z.infer<typeof generatedQuestionsSchema>;
 export type Evaluation = z.infer<typeof evaluationSchema>;

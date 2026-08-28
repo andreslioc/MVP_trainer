@@ -61,9 +61,11 @@ export function AnswerPanel({
           role="alert"
         >
           <p className="font-semibold text-confidence-low-fg">No se pudo generar.</p>
-          <p className="mt-1 text-sm text-confidence-low-fg">
-            {error} Tu pregunta sigue en el formulario.
-          </p>
+          {/* La coletilla va aparte: el mensaje del servidor puede terminar en
+              dos puntos y una cita, y concatenarlos dejaba "…su calidad Tu
+              pregunta sigue en el formulario." */}
+          <p className="mt-1 text-sm text-confidence-low-fg">{error}</p>
+          <p className="mt-1 text-sm text-confidence-low-fg">Tu pregunta sigue en el formulario.</p>
         </div>
       ) : answer ? (
         <p className="mt-6 whitespace-pre-wrap text-xl leading-relaxed text-fg">{answer}</p>

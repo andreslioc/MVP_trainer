@@ -12,6 +12,7 @@ import {
 import { createAiGateway } from "../../lib/ai/gateway.ts";
 import { buildEvaluateAnswerPrompt } from "../../lib/ai/prompts/evaluate-answer.ts";
 import { type Evaluation, evaluationSchema } from "../../lib/ai/schemas.ts";
+import { applyResponsibleCommunication } from "../copilot/responsible.ts";
 import {
   generateStructured,
   type StructuredOutputInput,
@@ -142,12 +143,38 @@ export async function evaluateTrainingAnswer(input: unknown, options: Evaluation
     const evaluation = evaluationSchema.safeParse(generated.data.value);
     if (!evaluation.success) return recoverableError(answer.id);
 
+    // La respuesta mejorada es lo que la asesora aprende a decir, asi que pasa
+    // por el mismo gate que una respuesta del Copilot. Ensenar mal una frase
+    // prohibida es peor que decirla una vez en camara: se repite en cada live.
+    const responsible = applyResponsibleCommunication({
+      question: context.question.text,
+      composition: {
+        intent: "informacion",
+        express: evaluation.data.improved_answer,
+        estandar: evaluation.data.improved_answer,
+        profunda: evaluation.data.improved_answer,
+        confidence: "medio",
+        cta_used: null,
+        rule_applied: null,
+      },
+      product: context.product,
+      // La pregunta de riesgo es el ejercicio, no un motivo para sustituir la
+      // respuesta: se validan sus afirmaciones, no se reemplaza su contenido.
+      mode: "teaching",
+    });
+    // Si la mejorada no pasa, se guarda la respuesta ideal de la pregunta: es la
+    // referencia de esa practica y ya esta revisada. Las notas y el feedback se
+    // conservan, que es lo que la asesora necesita para corregir.
+    const improvedAnswer = responsible.ok
+      ? responsible.data.composition.express
+      : context.question.idealAnswer;
+
     const [completed] = await database
       .update(trainingAnswers)
       .set({
         scores: evaluation.data.scores,
         feedback: evaluation.data.feedback,
-        improvedAnswer: evaluation.data.improved_answer,
+        improvedAnswer,
       })
       .where(eq(trainingAnswers.id, answer.id))
       .returning();

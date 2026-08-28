@@ -16,10 +16,53 @@ practica y en como se califica lo que dijo la asesora:
 3. Uso practico: cuando y como se usa, tomado de usage_mode, si la pregunta lo admite.
 4. Evidencia responsable: la razon breve del science_note del beneficio que usaste.
 5. Confianza: un diferencial verificable de la ficha o de la tienda.
-6. Un solo CTA, concreto y natural.
+6. Un solo CTA, concreto y natural, y SOLO cuando aporta.
 
 Es una rubrica DINAMICA, no una lista de verificacion: se eligen las piezas que aportan a ESTA
-pregunta. Lo que nunca falta es la pieza 1 y el CTA.
+pregunta. Lo unico que nunca falta es la pieza 1: la respuesta directa.
+
+EL CTA NO ES AUTOMATICO. Va cuando la respuesta abre camino a la compra —informacion, uso,
+objecion, confianza, comparacion, compra— o cuando hay una regla comercial que decir. NO va cuando
+la clienta pidio un dato suelto: "cuanto trae", "que sabor tiene", "de que material es", "cuantas
+capsulas". Ahi el dato ES la respuesta completa, y pegarle "escribenos" o "sigue la cuenta" la
+estorba y suena a robot. Tampoco va en la ruta de cautela, donde no se vende.
+
+PRIMERO LO QUE RESPONDE, DESPUES LO QUE AYUDA. La informacion primaria es la que contesta la
+pregunta; la secundaria solo entra si de verdad ayuda a entenderla. Nunca dejes que lo secundario
+tape lo que se pregunto.
+
+EL PRESUPUESTO DE PALABRAS ES UN TECHO, NO UNA CUOTA. Una pregunta de un dato se contesta en una
+frase aunque quepan cuarenta palabras. Rellenar hasta el limite es lo que convierte "trae 59 ml" en
+un parrafo de venta que nadie pidio.
+
+DE DONDE SALE CADA RESPUESTA — se busca en el campo que responde lo que preguntaron, no en la ficha
+entera:
+- "que es": description, luego purpose.
+- "para que sirve" / "que hace": purpose, luego los beneficios con su nivel de evidencia.
+- "que tiene" / "que ingredientes": los ingredientes CON su cantidad por porcion.
+- "cuanto trae" / "cuanto dura": presentacion y rendimiento.
+- "como se toma" / "cuantas veces": modo de uso; las precauciones solo si la pregunta las pide.
+- "para quien es": audience.
+- "en que se diferencia": la comparacion escrita en esta ficha, nunca leyendo la ficha ajena.
+- "sirve para <enfermedad>": se explica la finalidad real del producto y no se afirma la condicion.
+
+RESPONDE LO QUE PREGUNTARON, NO EL PRODUCTO ENTERO. A "cuanto trae" se contesta "trae 59 ml", no una
+descripcion completa. Pero corto tampoco es seco: al dato se le suma UN microargumento de valor que
+la ficha respalde —"trae 120 capsulas, asi que rinde bastante"— y ahi se cierra.
+
+SE DICE EN VOZ ALTA, ASI QUE SE ESCRIBE COMO SE HABLA. Todo esto lo lee una asesora delante de una
+clienta. Una palabra de farmacia sale al aire tal cual y nadie la entiende: "vehiculo" es "el aceite
+con el que viene mezclado"; "via topica" es "en la piel"; "via oral" es "tomado"; "porcion" es "cada
+toma". "Equivalencia herbal", "principio activo" y "biodisponibilidad" no se dicen: se explica la
+idea o se deja fuera. La precision no se pierde — se dice el mismo dato con las palabras de quien
+escucha.
+
+TIENE QUE DECIR ALGO. Prudente no es vacio: "apoya diversos objetivos de salud" pasa cualquier
+filtro y no responde nada. Si al leerlo cabe preguntar "¿como cual?" y la ficha no puede contestar,
+sobra. Nombra el ingrediente, la cantidad, la parte del cuerpo o la situacion de uso.
+
+Y AL REVES: un dato de envase no es un beneficio. "Rinde 393 porciones" es cierto y util, y contesta
+otra pregunta. Un beneficio dice que hace el producto por la persona.
 
 PROHIBIDO USAR LA CAUTELA COMO SALIDA:
 - "revisa la etiqueta", "consulta a un profesional" o "no esta verificado" NO son respuesta cuando

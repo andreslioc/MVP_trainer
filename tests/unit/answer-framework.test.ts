@@ -31,7 +31,21 @@ describe("forma de la respuesta", () => {
     expect(ANSWER_FRAMEWORK).toContain("embarazo, lactancia, medicamentos");
   });
 
-  it("exige la respuesta directa y el CTA siempre", () => {
-    expect(ANSWER_FRAMEWORK).toContain("Lo que nunca falta es la pieza 1 y el CTA");
+  it("obliga a hablar como una persona en los tres modulos", () => {
+    // El framework es lo unico que leen a la vez el Copilot, el generador de
+    // preguntas y el evaluador. Si la regla vive solo en uno, el Simulator
+    // ensena a decir lo que el Copilot tiene prohibido.
+    expect(ANSWER_FRAMEWORK).toContain("SE DICE EN VOZ ALTA");
+    expect(ANSWER_FRAMEWORK).toContain("vehiculo");
+  });
+
+  it("prohíbe la respuesta prudente que no dice nada", () => {
+    expect(ANSWER_FRAMEWORK).toContain("TIENE QUE DECIR ALGO");
+    expect(ANSWER_FRAMEWORK).toContain("¿como cual?");
+  });
+
+  it("exige la respuesta directa siempre y el CTA solo cuando aporta", () => {
+    expect(ANSWER_FRAMEWORK).toContain("Lo unico que nunca falta es la pieza 1");
+    expect(ANSWER_FRAMEWORK).toContain("EL CTA NO ES AUTOMATICO");
   });
 });

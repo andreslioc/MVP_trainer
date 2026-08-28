@@ -145,6 +145,11 @@ async function main() {
       console.log(
         `\nESTANDAR (${palabras(c.estandar)} palabras, ~${Math.ceil(palabras(c.estandar) / 2.5)} s):\n  ${c.estandar}`,
       );
+      // La profunda ya venia en la composicion y no se imprimia: es la unica
+      // vista donde se ve si la ficha tiene fondo o solo tiene etiqueta.
+      console.log(
+        `\nPROFUNDA (${palabras(c.profunda)} palabras, ~${Math.ceil(palabras(c.profunda) / 2.5)} s):\n  ${c.profunda}`,
+      );
       console.log("");
     }
   } finally {

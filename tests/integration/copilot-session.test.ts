@@ -40,12 +40,14 @@ const authorize = (id: string) => async () => ({
 function composition(): CopilotComposition {
   return {
     intent: "informacion",
+    // Menciona el incentivo: desde ahora, una respuesta que dice aplicar una
+    // regla comercial sin nombrarla no cuenta como que la aplico.
     express:
-      "Contiene magnesio verificado en la ficha. Revisa la etiqueta para conocer la porción.",
+      "Contiene magnesio verificado en la ficha y tenemos envío gratis en compras desde $120.000.",
     estandar:
-      "Contiene magnesio verificado en la ficha y viene en cápsulas. Revisa la etiqueta para conocer la porción y confirmar cómo integrarlo a tu rutina.",
+      "Contiene magnesio verificado en la ficha y viene en cápsulas. Tenemos envío gratis en compras desde $120.000 y puedes confirmar la porción en la etiqueta.",
     profunda:
-      "La ficha registra magnesio y una presentación en cápsulas. Su beneficio permitido es complementar la ingesta. Revisa siempre la etiqueta para confirmar la porción y consulta a un profesional si usas medicamentos.",
+      "La ficha registra magnesio y una presentación en cápsulas. Su beneficio permitido es complementar la ingesta. Tenemos envío gratis en compras desde $120.000. Revisa siempre la etiqueta para confirmar la porción y consulta a un profesional si usas medicamentos.",
     confidence: "alto",
     cta_used: cta,
     rule_applied: activeRuleKey,

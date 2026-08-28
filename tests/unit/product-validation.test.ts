@@ -22,7 +22,7 @@ describe("product validation", () => {
     expect(productValidationError(result.error).field).toBe("imageUrl");
   });
 
-  it.each([2, 4])("rejects %i benefits and names the benefits field", (benefitCount) => {
+  it.each([0, 4])("rejects %i benefits and names the benefits field", (benefitCount) => {
     const benefits = validProductInput().benefits.slice(0, benefitCount);
     while (benefits.length < benefitCount) {
       benefits.push({

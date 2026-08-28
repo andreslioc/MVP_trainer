@@ -33,7 +33,7 @@ export function validProductInput(overrides: Partial<ProductInput> = {}): Produc
       },
       {
         rank: 3,
-        claim: "Fácil de integrar a la rutina",
+        claim: "Una cápsula al día con la comida",
         science_note: "La porción está indicada en la etiqueta.",
         evidence_level: "baja",
       },

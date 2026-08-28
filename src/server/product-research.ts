@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 
 import { db } from "../db/client.ts";
 import { products, prompts } from "../db/schema.ts";
@@ -8,7 +8,13 @@ import {
   buildStructureProductPrompt,
   researchRetryMessage,
 } from "../lib/ai/prompts/research-product.ts";
-import { type ResearchedProduct, researchedProductSchema } from "../lib/ai/schemas.ts";
+import { buildSafetyLayerPrompt } from "../lib/ai/prompts/safety-layer.ts";
+import {
+  type ResearchedProduct,
+  researchedProductSchema,
+  type SafetyLayer,
+  safetyLayerSchema,
+} from "../lib/ai/schemas.ts";
 import {
   generateStructured,
   type StructuredOutputInput,
@@ -39,6 +45,16 @@ export type ProductResearchDependencies = {
   structure?: (
     input: StructuredOutputInput<ResearchedProduct>,
   ) => Promise<StructuredOutputResult<ResearchedProduct>>;
+  /**
+   * Paso 3: clasifica el riesgo de decir cada cosa en camara.
+   *
+   * Llamada aparte y no una seccion mas del paso 2: investigar, ordenar y
+   * decidir que se puede decir son tres trabajos, y pedirle los tres a la misma
+   * llamada hace que descuide uno.
+   */
+  classifySafety?: (
+    input: StructuredOutputInput<SafetyLayer>,
+  ) => Promise<StructuredOutputResult<SafetyLayer>>;
   /** Sigue el redirect del buscador hasta la pagina real. */
   resolveCitation?: (url: string) => Promise<{ url: string }>;
 };
@@ -66,6 +82,9 @@ function dependencies(options: ProductResearchDependencies) {
     structure:
       options.structure ??
       ((input: StructuredOutputInput<ResearchedProduct>) => generateStructured(input, aiGateway)),
+    classifySafety:
+      options.classifySafety ??
+      ((input: StructuredOutputInput<SafetyLayer>) => generateStructured(input, aiGateway)),
   };
 }
 
@@ -94,7 +113,7 @@ export async function researchProduct(
   productId: string,
   options: ProductResearchDependencies = {},
 ) {
-  const { authorize, database, search, structure } = dependencies(options);
+  const { authorize, database, search, structure, classifySafety } = dependencies(options);
   const authorization = await authorize("admin");
   if (!authorization.ok) return authorization;
 
@@ -107,7 +126,36 @@ export async function researchProduct(
     return { ok: false as const, error: { code: "NOT_FOUND", message: "La ficha no existe." } };
   }
 
-  const researchPrompt = buildResearchProductPrompt(product);
+  // Las hermanas de catalogo: mismas palabras en el nombre o misma marca. Se le
+  // dan al investigador para que sepa de cuales distinguir esta referencia, que
+  // es justo lo contrario de mezclarlas.
+  const siblings = await database
+    .select({
+      name: products.name,
+      brand: products.brand,
+      presentation: products.presentation,
+    })
+    .from(products)
+    .where(and(eq(products.category, product.category), ne(products.id, product.id)))
+    .limit(200);
+  const productWords = new Set(
+    product.name
+      .toLowerCase()
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter((word) => word.length > 3),
+  );
+  const related = siblings
+    .filter(
+      (item) =>
+        item.brand === product.brand ||
+        item.name
+          .toLowerCase()
+          .split(/[^\p{L}\p{N}]+/u)
+          .some((word) => word.length > 3 && productWords.has(word)),
+    )
+    .slice(0, 8);
+
+  const researchPrompt = buildResearchProductPrompt(product, related);
   const researchPromptId = await activePromptId(database, "research_product");
   let found = await search({
     advisorId: authorization.data.id,
@@ -161,7 +209,34 @@ export async function researchProduct(
   });
   if (!structured.ok) return structured;
 
-  const patch = researchToProductPatch(structured.data.value, citations);
+  // Paso 3: la capa de seguridad. Si falla, la ficha se escribe igual con lo
+  // investigado y sin los campos de comunicacion: perder la clasificacion es
+  // recuperable —se vuelve a correr—, perder la investigacion con sus fuentes no.
+  const safetyPrompt = buildSafetyLayerPrompt({
+    product: {
+      name: product.name,
+      brand: product.brand,
+      category: product.category,
+      presentation: product.presentation,
+    },
+    researched: structured.data.value,
+  });
+  const safety = await classifySafety({
+    advisorId: authorization.data.id,
+    purpose: "safety_layer",
+    promptId: await activePromptId(database, "safety_layer"),
+    schema: safetyLayerSchema,
+    system: safetyPrompt.system,
+    messages: safetyPrompt.messages,
+    maxTokens: 4_000,
+    effort: "high",
+  });
+
+  const patch = researchToProductPatch(
+    structured.data.value,
+    citations,
+    safety.ok ? safety.data.value : null,
+  );
   // Se valida contra el esquema de la ficha antes de escribir: el modelo puede
   // cumplir su contrato y aun asi violar el del producto.
   const parsed = productInputSchema.safeParse({
@@ -194,7 +269,7 @@ export async function researchProduct(
     if (!updated) throw new Error("No se actualizo la ficha.");
     return {
       ok: true as const,
-      data: { product: updated, sources: citations.length },
+      data: { product: updated, sources: citations.length, safetyApplied: safety.ok },
     };
   } catch {
     return {

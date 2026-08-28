@@ -8,6 +8,14 @@ type ProductKnowledge = {
   presentation: string;
   format: string;
   description?: string;
+  purpose?: string;
+  audience?: string;
+  liveReady?: unknown;
+  cautionGuidance?: unknown;
+  avoidGuidance?: unknown;
+  advisorSummary?: string;
+  vsSimilares?: unknown;
+  verificationGaps?: unknown;
   usageMode?: string;
   activeIngredients: unknown;
   benefits: unknown;
@@ -86,6 +94,17 @@ export function productKnowledgeForPrompt(
     presentation: product.presentation,
     format: product.format,
     description: product.description ?? "",
+    purpose: product.purpose ?? "",
+    audience: product.audience ?? "",
+    // Las frases ya filtradas: el Copilot elige de aqui antes de redactar.
+    live_ready: product.liveReady ?? [],
+    vs_similares: product.vsSimilares ?? [],
+    verification_gaps: product.verificationGaps ?? [],
+    // La guia de comunicacion: que se dice con cautela y como, y que no se dice
+    // con que se reemplaza. Sin la alternativa, prohibir deja muda a la asesora.
+    caution_guidance: product.cautionGuidance ?? [],
+    avoid_guidance: product.avoidGuidance ?? [],
+    advisor_summary: product.advisorSummary ?? "",
     usage_mode: product.usageMode ?? "",
     active_ingredients: product.activeIngredients,
     benefits: product.benefits,

@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+import { CLAIM_MAX_WORDS, CLAIM_TARGET_WORDS, countWords, findJargon } from "../camera-register.ts";
+import { findEmptyPhrase, isAllGeneric, isOnlyPackaging } from "../vague-claims.ts";
+
 const requiredText = z.string().trim().min(1, "Este campo es obligatorio.");
 const optionalText = z.preprocess(
   (value) => (value === "" ? undefined : value),
@@ -34,12 +37,67 @@ export const activeIngredientSchema = z
     }
   });
 
-export const productBenefitSchema = z.object({
-  rank: z.number().int().min(1).max(3),
-  claim: requiredText,
-  science_note: requiredText,
-  evidence_level: z.enum(["alta", "media", "baja"]),
-});
+export const productBenefitSchema = z
+  .object({
+    rank: z.number().int().min(1).max(3),
+    claim: requiredText,
+    science_note: requiredText,
+    evidence_level: z.enum(["alta", "media", "baja"]),
+    technical_note: optionalText,
+  })
+  .superRefine((benefit, context) => {
+    // Registro de camara: `claim` y `science_note` los lee la asesora al aire;
+    // `technical_note` no. La jerga se rechaza en los dos primeros y se permite
+    // en el tercero, que es justo el lugar que se creo para ella.
+    if (countWords(benefit.claim) > CLAIM_MAX_WORDS) {
+      context.addIssue({
+        code: "custom",
+        message: `La frase que se dice en camara no puede pasar de ${CLAIM_MAX_WORDS} palabras; apunta a ${CLAIM_TARGET_WORDS}.`,
+        path: ["claim"],
+      });
+    }
+    for (const field of ["claim", "science_note"] as const) {
+      const jargon = findJargon(benefit[field]);
+      if (jargon) {
+        context.addIssue({
+          code: "custom",
+          message: `"${jargon}" no se dice en camara. Ese dato va en el respaldo tecnico.`,
+          path: [field],
+        });
+      }
+      // Concrecion: la seguridad sola empuja a la frase que no afirma nada, y
+      // "apoya diversos objetivos de salud" pasa todos los filtros sin decir
+      // nada. Un beneficio tiene que nombrar algo que se pueda señalar.
+      const emptyPhrase = findEmptyPhrase(benefit[field]);
+      if (emptyPhrase) {
+        context.addIssue({
+          code: "custom",
+          message: `"${emptyPhrase}" no dice nada. Nombra cual: el ingrediente, la cantidad, la parte del cuerpo o la situacion de uso.`,
+          path: [field],
+        });
+      }
+    }
+    if (isAllGeneric(benefit.claim)) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "Este beneficio solo tiene palabras genericas. Si al leerlo cabe preguntar «¿como cual?», no es un beneficio.",
+        path: ["claim"],
+      });
+    }
+    // El error contrario, y se cae en el huyendo de la vaguedad: un dato de
+    // etiqueta ocupando el espacio del beneficio. El rendimiento va en los
+    // diferenciales, la cantidad en los ingredientes y el manejo en el modo de
+    // uso. Aqui va lo que el producto hace por la persona.
+    if (isOnlyPackaging(benefit.claim)) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "Esto es un dato de envase, cantidad o manejo, no un beneficio. El rendimiento va en diferenciales y la dosis en modo de uso; aqui va que hace por la persona.",
+        path: ["claim"],
+      });
+    }
+  });
 
 const sourceSchema = z.object({
   label: requiredText,
@@ -57,10 +115,61 @@ export const productInputSchema = z
     format: requiredText,
     imageUrl: optionalUrl,
     description: z.string().trim(),
+    purpose: z
+      .string()
+      .trim()
+      .refine((value) => value === "" || findEmptyPhrase(value) === null, {
+        message:
+          "El para que sirve no puede prometer variedad sin nombrarla: di para que exactamente.",
+      })
+      .default(""),
+    audience: z.string().trim().default(""),
+    subcategory: z.string().trim().default(""),
+    // Son las frases que salen por la boca: pasan por el mismo registro de
+    // camara que la frase de un beneficio.
+    liveReady: z
+      .array(
+        requiredText
+          .refine((line) => findJargon(line) === null, {
+            message: "Esta frase se dice al aire: la jerga tecnica no puede aparecer aqui.",
+          })
+          .refine((line) => findEmptyPhrase(line) === null && !isAllGeneric(line), {
+            message: "Esta frase no dice nada concreto: nombra el dato que la sostiene.",
+          }),
+      )
+      .max(6, "Mas de seis frases no se recuerdan en camara.")
+      .default([]),
+    keywords: z.array(requiredText).default([]),
+    vsSimilares: z
+      .array(z.object({ reference: requiredText, difference: requiredText }))
+      .default([]),
+    verificationGaps: z.array(requiredText).default([]),
+    cautionGuidance: z
+      .array(
+        z.object({
+          claim: requiredText,
+          reason: requiredText,
+          // La forma segura pasa por el registro de camara: se dice tal cual.
+          safe_form: requiredText.refine((line) => findJargon(line) === null, {
+            message: "Esta frase se dice al aire: la jerga tecnica no puede aparecer aqui.",
+          }),
+        }),
+      )
+      .default([]),
+    avoidGuidance: z
+      .array(
+        z.object({ avoid: requiredText, reason: requiredText, alternative: z.string().trim() }),
+      )
+      .default([]),
+    advisorSummary: z.string().trim().default(""),
     activeIngredients: z.array(activeIngredientSchema),
     benefits: z
       .array(productBenefitSchema)
-      .length(3, "La ficha debe contener exactamente tres beneficios priorizados."),
+      // Uno a tres y no exactamente tres: forzar el tercero es como se llena el
+      // hueco con un dato de envase o con una frase vacia. Un producto con dos
+      // beneficios reales tiene dos.
+      .min(1, "La ficha necesita al menos un beneficio.")
+      .max(3, "Maximo tres beneficios priorizados."),
     faqs: z.array(z.object({ question: requiredText, answer: requiredText })),
     objections: z.array(z.object({ objection: requiredText, response: requiredText })),
     differentiators: z.array(z.object({ claim: requiredText, evidence: requiredText })),
@@ -85,11 +194,60 @@ export const productInputSchema = z
     ),
   })
   .superRefine((product, context) => {
+    // Registro de camara en TODO lo que la asesora lee al aire, no solo en los
+    // beneficios: "vehiculo" llego a una respuesta desde `contraindications`,
+    // que nadie estaba mirando. Quedan fuera `technical_note` —creado para la
+    // jerga—, `claims_caution` —lista de terminos gatillo— y
+    // `verification_gaps`, que es nota interna.
+    const cameraFields: Array<[string, string]> = [
+      ["description", product.description],
+      ["purpose", product.purpose],
+      ["audience", product.audience],
+      ["usageMode", product.usageMode],
+      ["precautions", product.precautions],
+      ...product.contraindications.map(
+        (item, index) => [`contraindications.${index}`, item] as [string, string],
+      ),
+      ...product.claimsAllowed.map(
+        (item, index) => [`claimsAllowed.${index}`, item] as [string, string],
+      ),
+      ...product.faqs.map(
+        (item, index) => [`faqs.${index}.answer`, item.answer] as [string, string],
+      ),
+      ...product.objections.map(
+        (item, index) => [`objections.${index}.response`, item.response] as [string, string],
+      ),
+      ...product.differentiators.flatMap(
+        (item, index) =>
+          [
+            [`differentiators.${index}.claim`, item.claim],
+            [`differentiators.${index}.evidence`, item.evidence],
+          ] as Array<[string, string]>,
+      ),
+      ...product.vsSimilares.map(
+        (item, index) => [`vsSimilares.${index}.difference`, item.difference] as [string, string],
+      ),
+      ...product.activeIngredients.map(
+        (item, index) => [`activeIngredients.${index}.name`, item.name] as [string, string],
+      ),
+    ];
+    for (const [path, value] of cameraFields) {
+      const jargon = findJargon(value);
+      if (jargon) {
+        context.addIssue({
+          code: "custom",
+          message: `"${jargon}" es palabra de etiqueta y esto se lee en camara. Dilo como se lo dirias a una clienta.`,
+          path: path.split("."),
+        });
+      }
+    }
+
     const ranks = new Set(product.benefits.map((benefit) => benefit.rank));
-    if (ranks.size !== 3 || ![1, 2, 3].every((rank) => ranks.has(rank))) {
+    const expected = product.benefits.map((_, index) => index + 1);
+    if (ranks.size !== product.benefits.length || !expected.every((rank) => ranks.has(rank))) {
       context.addIssue({
         code: "custom",
-        message: "Los beneficios deben usar los rangos 1, 2 y 3 una sola vez.",
+        message: `Los beneficios deben usar los rangos ${expected.join(", ")} una sola vez.`,
         path: ["benefits"],
       });
     }

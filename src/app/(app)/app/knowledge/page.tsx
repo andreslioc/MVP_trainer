@@ -5,10 +5,36 @@ import { formatCop } from "../../../../lib/pricing.ts";
 import { ResearchButton } from "./research-button.tsx";
 import { listProducts } from "../../../../server/products.ts";
 
-export default async function KnowledgePage() {
+/** Sin tildes y en minusculas: "colageno" y "colágeno" son la misma busqueda. */
+function normalize(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("es")
+    .trim();
+}
+
+export default async function KnowledgePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   const session = await getSession();
   if (!session.ok) return null;
+  const { q } = await searchParams;
   const result = await listProducts({ authorize: async () => session });
+
+  const search = normalize(q ?? "");
+  // Nombre, marca y SKU: la asesora busca "oregano" o "piping", y la bodega
+  // busca por SKU. El mismo criterio que en Pre-training, para que buscar sea
+  // lo mismo en los dos modulos.
+  const shown = result.ok
+    ? result.data.filter(
+        (product) =>
+          search === "" ||
+          normalize(`${product.name} ${product.brand} ${product.sku ?? ""}`).includes(search),
+      )
+    : [];
 
   return (
     <section aria-labelledby="page-title">
@@ -59,109 +85,160 @@ export default async function KnowledgePage() {
           ) : null}
         </div>
       ) : (
-        <div className="mt-8 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {result.data.map((product) => (
-            <article
-              aria-labelledby={`product-${product.id}`}
-              className="flex flex-col rounded-card border border-border bg-surface p-4"
-              key={product.id}
+        <>
+          {/* Formulario GET y no un input controlado: la busqueda vive en la URL,
+              se puede compartir y recargar, y la pagina sigue siendo un Server
+              Component sin un solo kilobyte de JavaScript. */}
+          <form action="/app/knowledge" className="mt-8 flex flex-wrap gap-2" method="get">
+            <label className="flex-1 text-sm font-medium text-fg" htmlFor="knowledge-q">
+              <span className="sr-only">Buscar ficha</span>
+              <input
+                autoComplete="off"
+                className="min-h-11 w-full rounded-card border border-border-control bg-surface px-3"
+                defaultValue={q ?? ""}
+                id="knowledge-q"
+                name="q"
+                placeholder="Busca por nombre, marca o SKU"
+                type="search"
+              />
+            </label>
+            <button
+              className="min-h-11 rounded-card bg-primary px-4 font-semibold text-primary-fg hover:bg-primary-deep"
+              type="submit"
             >
-              {product.imageUrl ? (
-                <div className="mb-4 flex aspect-video w-full items-center justify-center overflow-hidden rounded-card border border-border">
-                  {/* biome-ignore lint/performance/noImgElement: las fuentes remotas tienen dimensiones variables; el elemento nativo conserva su tamaño y proporción sin ampliarlas */}
-                  <img
-                    alt=""
-                    className="h-auto max-h-full w-auto max-w-full object-contain"
-                    decoding="async"
-                    loading="lazy"
-                    src={product.imageUrl}
-                  />
-                </div>
-              ) : null}
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
-                    {product.brand} · {product.category}
-                  </p>
-                  {product.sku ? (
-                    <p className="mt-1 text-xs text-fg-muted">SKU {product.sku}</p>
-                  ) : null}
-                  <h2 className="mt-1 text-xl font-semibold text-fg" id={`product-${product.id}`}>
-                    {product.name}
-                  </h2>
-                  <p className="mt-1 text-sm text-fg-muted">
-                    {product.presentation} · {product.format}
-                  </p>
-                  {/* El precio es lo primero que pregunta una clienta en el
+              Buscar
+            </button>
+            {search ? (
+              <Link
+                className="inline-flex min-h-11 items-center rounded-card border border-border-control px-4 font-semibold text-primary-deep"
+                href="/app/knowledge"
+              >
+                Limpiar
+              </Link>
+            ) : null}
+          </form>
+
+          <p className="mt-3 text-sm text-fg-muted">
+            {search
+              ? `${shown.length} de ${result.data.length} fichas`
+              : `${result.data.length} fichas`}
+          </p>
+
+          {shown.length === 0 ? (
+            <p className="mt-6 rounded-card border border-border bg-surface p-4 text-fg-muted">
+              Ninguna ficha coincide con «{q}».
+            </p>
+          ) : null}
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+            {shown.map((product) => (
+              <article
+                aria-labelledby={`product-${product.id}`}
+                className="flex flex-col rounded-card border border-border bg-surface p-4"
+                key={product.id}
+              >
+                {product.imageUrl ? (
+                  <div className="mb-4 flex aspect-video w-full items-center justify-center overflow-hidden rounded-card border border-border">
+                    {/* biome-ignore lint/performance/noImgElement: las fuentes remotas tienen dimensiones variables; el elemento nativo conserva su tamaño y proporción sin ampliarlas */}
+                    <img
+                      alt=""
+                      className="h-auto max-h-full w-auto max-w-full object-contain"
+                      decoding="async"
+                      loading="lazy"
+                      src={product.imageUrl}
+                    />
+                  </div>
+                ) : null}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
+                      {product.brand} · {product.category}
+                    </p>
+                    {product.sku ? (
+                      <p className="mt-1 text-xs text-fg-muted">SKU {product.sku}</p>
+                    ) : null}
+                    <h2 className="mt-1 text-xl font-semibold text-fg" id={`product-${product.id}`}>
+                      {product.name}
+                    </h2>
+                    <p className="mt-1 text-sm text-fg-muted">
+                      {product.presentation} · {product.format}
+                    </p>
+                    {/* El precio es lo primero que pregunta una clienta en el
                       chat: se lee desde la tarjeta, sin abrir la ficha. */}
-                  <p className="mt-2 text-lg font-semibold tabular-nums text-fg">
-                    {formatCop(product.priceCop) ?? (
-                      <span className="text-sm font-semibold text-confidence-mid-fg">
-                        Sin precio
-                      </span>
-                    )}
-                  </p>
-                  {product.description ? (
-                    <p className="mt-2 line-clamp-3 text-sm text-fg-muted">{product.description}</p>
-                  ) : null}
+                    <p className="mt-2 text-lg font-semibold tabular-nums text-fg">
+                      {formatCop(product.priceCop) ?? (
+                        <span className="text-sm font-semibold text-confidence-mid-fg">
+                          Sin precio
+                        </span>
+                      )}
+                    </p>
+                    {product.description ? (
+                      <p className="mt-2 line-clamp-3 text-sm text-fg-muted">
+                        {product.description}
+                      </p>
+                    ) : null}
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full border px-2 py-1 text-xs font-semibold ${
+                      product.verifiedAt
+                        ? "border-success bg-confidence-high-bg text-confidence-high-fg"
+                        : "border-warning-border bg-confidence-mid-bg text-confidence-mid-fg"
+                    }`}
+                  >
+                    {product.verifiedAt ? "Verificada" : "Por verificar"}
+                  </span>
                 </div>
-                <span
-                  className={`shrink-0 rounded-full border px-2 py-1 text-xs font-semibold ${
-                    product.verifiedAt
-                      ? "border-success bg-confidence-high-bg text-confidence-high-fg"
-                      : "border-warning-border bg-confidence-mid-bg text-confidence-mid-fg"
-                  }`}
-                >
-                  {product.verifiedAt ? "Verificada" : "Por verificar"}
-                </span>
-              </div>
-              {product.usageMode ? (
-                <p className="mt-3 text-sm text-fg">
-                  <span className="font-semibold">Modo de uso:</span> {product.usageMode}
-                </p>
-              ) : null}
-              {/* Los casos, no el parrafo. `precautions` dice lo mismo en las 89
+                {product.usageMode ? (
+                  <p className="mt-3 text-sm text-fg">
+                    <span className="font-semibold">Modo de uso:</span> {product.usageMode}
+                  </p>
+                ) : null}
+                {/* Los casos, no el parrafo. `precautions` dice lo mismo en las 89
                   fichas y se salta con la vista; una lista de cuatro palabras se
                   lee mientras se habla. El parrafo completo vive en la ficha. */}
-              {product.contraindications.length > 0 ? (
-                <div className="mt-2 text-sm text-confidence-mid-fg">
-                  <span className="font-semibold">Casos de no uso:</span>
-                  <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
-                    {product.contraindications.map((item) => (
-                      <li className="flex gap-1" key={item}>
-                        <span aria-hidden="true">·</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+                {product.contraindications.length > 0 ? (
+                  <div className="mt-2 text-sm text-confidence-mid-fg">
+                    <span className="font-semibold">Casos de no uso:</span>
+                    <ul className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                      {product.contraindications.map((item) => (
+                        <li className="flex gap-1" key={item}>
+                          <span aria-hidden="true">·</span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                <ol className="mt-4 space-y-2 text-sm text-fg">
+                  {product.benefits.map((benefit) => (
+                    <li className="flex gap-2" key={benefit.rank}>
+                      <span className="font-semibold text-primary-deep">{benefit.rank}.</span>
+                      <span>{benefit.claim}</span>
+                    </li>
+                  ))}
+                </ol>
+                <div className="mt-auto flex flex-wrap items-start gap-4 pt-5">
+                  {session.data.role === "admin" ? (
+                    <>
+                      <Link
+                        className="inline-flex min-h-11 items-center font-semibold text-primary underline-offset-4 hover:underline"
+                        href={`/app/knowledge/${product.id}`}
+                      >
+                        Editar ficha
+                      </Link>
+                      <ResearchButton
+                        productId={product.id}
+                        verified={product.verifiedAt !== null}
+                      />
+                    </>
+                  ) : (
+                    <p className="text-sm text-fg-muted">Disponible para consulta del equipo.</p>
+                  )}
                 </div>
-              ) : null}
-              <ol className="mt-4 space-y-2 text-sm text-fg">
-                {product.benefits.map((benefit) => (
-                  <li className="flex gap-2" key={benefit.rank}>
-                    <span className="font-semibold text-primary-deep">{benefit.rank}.</span>
-                    <span>{benefit.claim}</span>
-                  </li>
-                ))}
-              </ol>
-              <div className="mt-auto flex flex-wrap items-start gap-4 pt-5">
-                {session.data.role === "admin" ? (
-                  <>
-                    <Link
-                      className="inline-flex min-h-11 items-center font-semibold text-primary underline-offset-4 hover:underline"
-                      href={`/app/knowledge/${product.id}`}
-                    >
-                      Editar ficha
-                    </Link>
-                    <ResearchButton productId={product.id} verified={product.verifiedAt !== null} />
-                  </>
-                ) : (
-                  <p className="text-sm text-fg-muted">Disponible para consulta del equipo.</p>
-                )}
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        </>
       )}
     </section>
   );

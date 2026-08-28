@@ -12,6 +12,64 @@ import { CollapsibleSection } from "./collapsible-section.tsx";
 export function ProductStudy({ product }: { product: ProductRecord }) {
   return (
     <div className="mt-6">
+      {product.advisorSummary ? (
+        <div className="mb-4 rounded-card border border-border bg-surface p-4">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-primary">
+            Lo que tienes que recordar
+          </h3>
+          <p className="mt-2 text-fg">{product.advisorSummary}</p>
+        </div>
+      ) : null}
+
+      {product.liveReady.length > 0 ? (
+        <CollapsibleSection count={product.liveReady.length} open title="Frases listas para decir">
+          <ul className="space-y-2">
+            {product.liveReady.map((line) => (
+              <li className="flex gap-2 text-fg" key={line}>
+                <span aria-hidden="true" className="text-confidence-high-fg">
+                  ·
+                </span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        </CollapsibleSection>
+      ) : null}
+
+      {product.cautionGuidance.length > 0 ? (
+        <CollapsibleSection count={product.cautionGuidance.length} title="Se puede decir, pero así">
+          <ul className="space-y-3">
+            {product.cautionGuidance.map((item) => (
+              <li key={item.claim}>
+                <p className="font-medium text-fg">{item.claim}</p>
+                <p className="mt-1 text-sm text-fg-muted">{item.reason}</p>
+                <p className="mt-1 rounded-card border border-warning-border bg-confidence-mid-bg px-3 py-2 text-sm text-confidence-mid-fg">
+                  Dilo así: {item.safe_form}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </CollapsibleSection>
+      ) : null}
+
+      {product.avoidGuidance.length > 0 ? (
+        <CollapsibleSection count={product.avoidGuidance.length} title="Esto no se dice">
+          <ul className="space-y-3">
+            {product.avoidGuidance.map((item) => (
+              <li key={item.avoid}>
+                <p className="font-medium text-confidence-low-fg">{item.avoid}</p>
+                <p className="mt-1 text-sm text-fg-muted">{item.reason}</p>
+                {item.alternative ? (
+                  <p className="mt-1 rounded-card border border-success bg-confidence-high-bg px-3 py-2 text-sm text-confidence-high-fg">
+                    En su lugar: {item.alternative}
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </CollapsibleSection>
+      ) : null}
+
       <CollapsibleSection count={product.benefits.length} open title="Beneficios y su razón">
         <ol className="space-y-3">
           {product.benefits.map((benefit) => (
@@ -24,6 +82,16 @@ export function ProductStudy({ product }: { product: ProductRecord }) {
               <p className="mt-1 pl-5 text-xs uppercase tracking-wide text-fg-muted">
                 Evidencia {benefit.evidence_level}
               </p>
+              {/* Plegado y no a la vista: es lo que sostiene la frase cuando una
+                  clienta aprieta, no lo que se lee al aire. */}
+              {benefit.technical_note ? (
+                <details className="mt-1 pl-5">
+                  <summary className="cursor-pointer text-xs font-semibold text-primary-deep">
+                    Respaldo técnico
+                  </summary>
+                  <p className="mt-1 text-sm text-fg-muted">{benefit.technical_note}</p>
+                </details>
+              ) : null}
             </li>
           ))}
         </ol>
@@ -93,22 +161,22 @@ export function ProductStudy({ product }: { product: ProductRecord }) {
         </CollapsibleSection>
       ) : null}
 
-      <CollapsibleSection title="Qué se puede decir y qué no">
+      <CollapsibleSection title="Qué decir y qué no decir">
         {product.claimsAllowed.length > 0 ? (
           <div>
-            <p className="font-medium text-confidence-high-fg">Se puede afirmar</p>
+            <p className="font-medium text-confidence-high-fg">Puedes decirlo tal cual</p>
             <ClaimList items={product.claimsAllowed} />
           </div>
         ) : null}
         {product.claimsCaution.length > 0 ? (
           <div className="mt-3">
-            <p className="font-medium text-confidence-mid-fg">Solo con cautela</p>
+            <p className="font-medium text-confidence-mid-fg">Cuidado al decir esto</p>
             <ClaimList items={product.claimsCaution} />
           </div>
         ) : null}
         {product.claimsForbidden.length > 0 ? (
           <div className="mt-3">
-            <p className="font-medium text-confidence-low-fg">Nunca se dice</p>
+            <p className="font-medium text-confidence-low-fg">Esto nunca se dice</p>
             <ClaimList items={product.claimsForbidden} />
           </div>
         ) : null}

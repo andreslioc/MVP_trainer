@@ -35,6 +35,17 @@ function closesSale(rules: CommercialRule[], ruleKey: string) {
   return rules.find((rule) => rule.key === ruleKey)?.value.closes_sale === true;
 }
 
+/**
+ * Un CTA de ultimo recurso solo sale cuando no hay otro disponible.
+ *
+ * "Sigue la cuenta" despues de "que ingredientes tiene" no es un cierre: es
+ * ruido pegado a una respuesta util. Se lee de la regla —`last_resort`— igual
+ * que `closes_sale`, para que se configure sin tocar este archivo.
+ */
+function isLastResort(rules: CommercialRule[], ruleKey: string) {
+  return rules.find((rule) => rule.key === ruleKey)?.value.last_resort === true;
+}
+
 const incentiveRuleKeys = new Set(["envio_gratis", "promo_live", "cupon_por_seguir"]);
 
 /**
@@ -65,12 +76,16 @@ export function orchestrateCopilot(input: CopilotOrchestrationInput) {
   const closing = BUY_READY_INTENTS.has(input.intent ?? "")
     ? availableCtas.filter((candidate) => closesSale(input.rules, candidate.ruleKey))
     : [];
+  const preferred = availableCtas.filter(
+    (candidate) => !isLastResort(input.rules, candidate.ruleKey),
+  );
+  const rotatable = preferred.length > 0 ? preferred : availableCtas;
   const previousCta = input.ctasUsed.at(-1)?.cta;
   const ctaText =
     closing.length > 0
       ? (closing[0]?.text ?? null)
       : chooseWithoutImmediateRepeat(
-          availableCtas.map((candidate) => candidate.text),
+          rotatable.map((candidate) => candidate.text),
           previousCta,
         );
   const cta = ctaText

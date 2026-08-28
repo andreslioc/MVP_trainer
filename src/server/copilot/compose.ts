@@ -32,6 +32,8 @@ import {
 } from "../../lib/ai/structured.ts";
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { writeLlmCall } from "../llm-calls.ts";
+import { incentiveWasSaid } from "../../lib/copilot/incentive-said.ts";
+import { asksSingleFact } from "../../lib/copilot/single-fact.ts";
 import { availableCtasFromRules, orchestrateCopilot } from "./orchestrator.ts";
 import { promoPercentFor } from "./session.ts";
 import { applyResponsibleCommunication, type ResponsibleAlert } from "./responsible.ts";
@@ -164,7 +166,7 @@ function copilotFailure(error: { code: string; retryable?: boolean }) {
       message:
         error.retryable === false
           ? "No se pudo generar y reintentar no va a ayudar. Responde con tus propias palabras."
-          : "No se pudo generar. Intenta de nuevo. Tu pregunta sigue en el formulario.",
+          : "No se pudo generar. Intenta de nuevo.",
     },
   };
 }
@@ -257,13 +259,20 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
     // La orquestacion va DESPUES de clasificar y no antes: elegir el CTA sin
     // saber que pregunto la clienta es como termino respondiendo "sigue la
     // cuenta" a alguien que pregunto el precio.
-    const orchestration = orchestrateCopilot({
-      availableCtas: availableCtasFromRules(activeRules),
-      rules: activeRules,
-      ctasUsed: session.ctasUsed,
-      promosMentioned: session.promosMentioned,
-      intent: classified.data.value.intent,
-    });
+    // Una pregunta de un dato suelto se contesta con el dato: sin CTA y sin
+    // incentivo. Se decide aqui y no en el prompt porque el prompt ya lleva una
+    // orden mas fuerte —vender— y con solo el permiso para omitirlo el modelo
+    // seguia pegando el CTA en las tres versiones.
+    const singleFact = asksSingleFact(parsedInput.data.customerQuestion);
+    const orchestration = singleFact
+      ? { cta: null, incentive: null, ruleApplied: null }
+      : orchestrateCopilot({
+          availableCtas: availableCtasFromRules(activeRules),
+          rules: activeRules,
+          ctasUsed: session.ctasUsed,
+          promosMentioned: session.promosMentioned,
+          intent: classified.data.value.intent,
+        });
 
     let composition: CopilotComposition;
     let alerts: ResponsibleAlert[] = [];
@@ -332,6 +341,38 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
     alerts = responsible.data.alerts;
     if (!composition.cta_used || !composition.rule_applied) {
       appliedOrchestration = { cta: null, incentive: null, ruleApplied: null };
+    }
+    // Un incentivo que el texto no menciona no se da por dicho: la insignia
+    // mentiria y, peor, se guardaria en la memoria de la sesion como ya
+    // ofrecido, dejando de ofrecerse el resto del live.
+    const answerForCheck = composition[parsedInput.data.lengthVariant];
+    if (
+      appliedOrchestration.incentive &&
+      !incentiveWasSaid(answerForCheck, appliedOrchestration.incentive)
+    ) {
+      appliedOrchestration = { ...appliedOrchestration, incentive: null, ruleApplied: null };
+      composition = { ...composition, rule_applied: null };
+      // El incentivo se descarta siempre —no se puede dar por dicho lo que no se
+      // dijo—, pero solo se ALERTA cuando de verdad se esperaba: con intencion
+      // de precio o de compra, o con un precio especial encendido. En una
+      // pregunta informativa, callar el envio gratis es lo correcto segun las
+      // reglas de composicion, y avisar de ello en cada respuesta ensena a la
+      // asesora a ignorar las alertas, que es como se pierde la unica que
+      // importaba.
+      const incentiveWasExpected =
+        classified.data.value.intent === "precio" ||
+        classified.data.value.intent === "compra" ||
+        promoPercentFor(session.productPromos, product.id) !== null;
+      if (incentiveWasExpected) {
+        alerts = [
+          ...alerts,
+          {
+            code: "INCENTIVE_NOT_SAID",
+            message:
+              "La respuesta no menciona el incentivo comercial disponible, así que no se marca como usado.",
+          },
+        ];
+      }
     }
 
     const answerText = composition[parsedInput.data.lengthVariant];

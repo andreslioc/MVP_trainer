@@ -45,9 +45,14 @@ function parseOrchestration(input: { messages: Array<{ content: string }> }) {
 function composition(orchestration: ReturnType<typeof parseOrchestration>): CopilotComposition {
   return {
     intent: "compra",
-    express: "La ficha contiene información verificada para orientar tu compra de forma clara.",
-    estandar: "La ficha contiene información verificada para orientar tu compra de forma clara.",
-    profunda: "La ficha contiene información verificada para orientar tu compra de forma clara.",
+    // El texto menciona el incentivo: una respuesta que dice aplicar una regla
+    // sin nombrarla ya no cuenta como que la aplico.
+    express:
+      "La ficha contiene información verificada para orientar tu compra, y tenemos envío gratis en compras desde $120.000.",
+    estandar:
+      "La ficha contiene información verificada para orientar tu compra, y tenemos envío gratis en compras desde $120.000.",
+    profunda:
+      "La ficha contiene información verificada para orientar tu compra, y tenemos envío gratis en compras desde $120.000.",
     confidence: "alto",
     cta_used: orchestration.cta?.text ?? null,
     rule_applied: orchestration.ruleApplied,

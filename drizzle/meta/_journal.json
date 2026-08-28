@@ -148,6 +148,20 @@
       "when": 1787684074682,
       "tag": "0020_white_yellowjacket",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1787925314462,
+      "tag": "0021_first_the_initiative",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1787926871487,
+      "tag": "0022_exotic_wolfpack",
+      "breakpoints": true
     }
   ]
 }

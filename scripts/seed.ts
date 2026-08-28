@@ -9,6 +9,8 @@ import {
   RESEARCH_PRODUCT_PROMPT,
   STRUCTURE_PRODUCT_PROMPT,
 } from "../src/lib/ai/prompts/research-product.ts";
+import { SAFETY_LAYER_PROMPT } from "../src/lib/ai/prompts/safety-layer.ts";
+import { STRUCTURE_GAP_PROMPT, VERIFY_GAP_PROMPT } from "../src/lib/ai/prompts/verify-gap.ts";
 import { loadEnv } from "../src/lib/load-env.ts";
 
 loadEnv();
@@ -29,7 +31,11 @@ const commercialRuleSeeds = [
   },
   {
     key: "seguir_tiktok",
-    value: { cta: "Sigue la cuenta para ver los proximos lives" },
+    // `last_resort` lo saca de la rotacion normal: seguir la cuenta no es un
+    // cierre, y contestarle "siguenos" a quien pregunto que ingredientes tiene
+    // cambia una respuesta util por un seguidor. Sale solo cuando no hay otro
+    // CTA disponible. Campo de la regla, no lista en el codigo.
+    value: { cta: "Sigue la cuenta para ver los proximos lives", last_resort: true },
     active: true,
   },
   {
@@ -64,6 +70,9 @@ const promptNames = [
   "promote_insight",
   "research_product",
   "structure_product",
+  "safety_layer",
+  "verify_gap",
+  "structure_gap",
 ] as const;
 
 async function main(): Promise<void> {
@@ -112,7 +121,13 @@ async function main(): Promise<void> {
                             ? RESEARCH_PRODUCT_PROMPT
                             : name === "structure_product"
                               ? STRUCTURE_PRODUCT_PROMPT
-                              : `Plantilla inicial versionada para ${name}.`,
+                              : name === "safety_layer"
+                                ? SAFETY_LAYER_PROMPT
+                                : name === "verify_gap"
+                                  ? VERIFY_GAP_PROMPT
+                                  : name === "structure_gap"
+                                    ? STRUCTURE_GAP_PROMPT
+                                    : `Plantilla inicial versionada para ${name}.`,
             active: true,
           })),
         )

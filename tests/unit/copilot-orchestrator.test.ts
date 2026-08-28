@@ -68,6 +68,36 @@ describe("Copilot commercial orchestrator", () => {
     expect(result.incentive?.ruleKey).toBe("promo_live");
   });
 
+  it("deja el CTA de último recurso fuera de la rotación cuando hay otro", () => {
+    const result = orchestrateCopilot({
+      availableCtas: [
+        { text: "Sigue la cuenta para ver los proximos lives", ruleKey: "seguir_tiktok" },
+        { text: "Escríbenos y te lo apartamos", ruleKey: "canal_whatsapp" },
+      ],
+      rules: [
+        { key: "seguir_tiktok", value: { last_resort: true }, active: true },
+        { key: "canal_whatsapp", value: { closes_sale: true }, active: true },
+      ],
+      ctasUsed: [],
+      promosMentioned: [],
+      intent: "informacion",
+    });
+    expect(result.cta?.ruleKey).toBe("canal_whatsapp");
+  });
+
+  it("usa el de último recurso cuando es el único que queda", () => {
+    const result = orchestrateCopilot({
+      availableCtas: [
+        { text: "Sigue la cuenta para ver los proximos lives", ruleKey: "seguir_tiktok" },
+      ],
+      rules: [{ key: "seguir_tiktok", value: { last_resort: true }, active: true }],
+      ctasUsed: [],
+      promosMentioned: [],
+      intent: "informacion",
+    });
+    expect(result.cta?.ruleKey).toBe("seguir_tiktok");
+  });
+
   it("returns null instead of inventing a CTA or promotion", () => {
     const result = orchestrateCopilot({
       availableCtas: [{ text: "CTA de regla apagada", ruleKey: "apagada" }],

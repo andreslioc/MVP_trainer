@@ -10,6 +10,7 @@ import { BenefitsFields } from "./benefits-fields.tsx";
 import { IngredientFields, SourceFields } from "./ingredient-fields.tsx";
 import { PairListFields } from "./pair-list-fields.tsx";
 import { FormSection } from "./form-section.tsx";
+import { PositioningFields } from "./positioning-fields.tsx";
 import { PriceFields } from "./price-fields.tsx";
 import {
   type EditableProduct,
@@ -141,7 +142,9 @@ export function ProductForm({ product }: { product?: EditableProduct }) {
           </div>
         </FormSection>
 
-        <BenefitsFields errors={errors} register={register} />
+        <PositioningFields control={control} errors={errors} register={register} />
+
+        <BenefitsFields control={control} errors={errors} register={register} />
 
         <PriceFields errors={errors} register={register} watch={watch} />
 
@@ -215,9 +218,9 @@ export function ProductForm({ product }: { product?: EditableProduct }) {
             {(
               [
                 ["contraindicationsText", "Casos de no uso"],
-                ["claimsAllowedText", "Afirmaciones permitidas"],
-                ["claimsCautionText", "Afirmaciones con cautela"],
-                ["claimsForbiddenText", "Afirmaciones prohibidas"],
+                ["claimsAllowedText", "Puedes decirlo tal cual"],
+                ["claimsCautionText", "Cuidado al decir esto"],
+                ["claimsForbiddenText", "Esto nunca se dice"],
                 ["complementProductIdsText", "IDs de productos complementarios"],
               ] as const
             ).map(([name, label]) => (

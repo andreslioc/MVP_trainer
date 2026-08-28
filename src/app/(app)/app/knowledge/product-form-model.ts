@@ -33,16 +33,31 @@ export const productFormSchema = z.object({
   ),
   benefits: z
     .array(
-      z.object({
-        claim: required,
-        science_note: required,
-        evidence_level: z.enum(["alta", "media", "baja"]),
-      }),
+      z
+        .object({
+          claim: z.string(),
+          science_note: z.string(),
+          evidence_level: z.enum(["alta", "media", "baja"]),
+          technical_note: z.string(),
+        })
+        .refine((benefit) => benefit.claim.trim() === "" || benefit.science_note.trim() !== "", {
+          message: "Un beneficio con frase necesita su porque.",
+          path: ["science_note"],
+        }),
     )
     .length(3),
+  // Tres ranuras en pantalla, pero una ficha puede tener uno o dos beneficios
+  // reales. Las vacias se descartan al guardar en vez de obligar a rellenarlas.
   faqs: z.array(z.object({ question: required, answer: required })),
   objections: z.array(z.object({ objection: required, response: required })),
   differentiators: z.array(z.object({ claim: required, evidence: required })),
+  purpose: z.string(),
+  audience: z.string(),
+  subcategory: z.string(),
+  liveReadyText: z.string(),
+  keywordsText: z.string(),
+  vsSimilares: z.array(z.object({ reference: required, difference: required })),
+  verificationGapsText: z.string(),
   usageMode: z.string(),
   precautions: z.string(),
   contraindicationsText: z.string(),
@@ -88,20 +103,29 @@ export function productFormDefaults(product?: EditableProduct): ProductFormValue
         unit: ingredient.unit ?? "",
         verified: ingredient.verified,
       })) ?? [],
-    benefits: product?.benefits.map(({ claim, science_note, evidence_level }) => ({
+    benefits: product?.benefits.map(({ claim, science_note, evidence_level, technical_note }) => ({
+      technical_note: technical_note ?? "",
       claim,
       science_note,
       evidence_level,
     })) ?? [
-      { claim: "", science_note: "", evidence_level: "media" },
-      { claim: "", science_note: "", evidence_level: "media" },
-      { claim: "", science_note: "", evidence_level: "media" },
+      { claim: "", science_note: "", evidence_level: "media", technical_note: "" },
+      { claim: "", science_note: "", evidence_level: "media", technical_note: "" },
+      { claim: "", science_note: "", evidence_level: "media", technical_note: "" },
     ],
     faqs: product?.faqs.map(({ question, answer }) => ({ question, answer })) ?? [],
     objections:
       product?.objections.map(({ objection, response }) => ({ objection, response })) ?? [],
     differentiators:
       product?.differentiators.map(({ claim, evidence }) => ({ claim, evidence })) ?? [],
+    purpose: product?.purpose ?? "",
+    audience: product?.audience ?? "",
+    subcategory: product?.subcategory ?? "",
+    liveReadyText: product?.liveReady.join("\n") ?? "",
+    keywordsText: product?.keywords.join("\n") ?? "",
+    vsSimilares:
+      product?.vsSimilares.map(({ reference, difference }) => ({ reference, difference })) ?? [],
+    verificationGapsText: product?.verificationGaps.join("\n") ?? "",
     usageMode: product?.usageMode ?? "",
     precautions: product?.precautions ?? "",
     contraindicationsText: product?.contraindications.join("\n") ?? "",
@@ -138,10 +162,19 @@ export function toProductInput(values: ProductFormValues, product?: EditableProd
         ingredient.amountText.trim() === "" ? undefined : Number(ingredient.amountText),
       unit: ingredient.unit.trim() || undefined,
     })),
-    benefits: values.benefits.map((benefit, index) => ({ ...benefit, rank: index + 1 })),
+    benefits: values.benefits
+      .filter((benefit) => benefit.claim.trim() !== "")
+      .map((benefit, index) => ({ ...benefit, rank: index + 1 })),
     faqs: values.faqs,
     objections: values.objections,
     differentiators: values.differentiators,
+    purpose: values.purpose,
+    audience: values.audience,
+    subcategory: values.subcategory,
+    liveReady: lines(values.liveReadyText),
+    keywords: lines(values.keywordsText),
+    vsSimilares: values.vsSimilares,
+    verificationGaps: lines(values.verificationGapsText),
     usageMode: values.usageMode,
     precautions: values.precautions,
     contraindications: lines(values.contraindicationsText),

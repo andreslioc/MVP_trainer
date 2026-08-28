@@ -63,6 +63,38 @@ export type ProductBenefit = {
   claim: string;
   science_note: string;
   evidence_level: "alta" | "media" | "baja";
+  /**
+   * Respaldo con nombres de estudios, PMID y terminos tecnicos. Opcional, y
+   * jamas se lee en camara: existe para que la asesora sepa que sostiene la
+   * frase que si dice. Vive en el jsonb, asi que agregarlo no cuesta migracion.
+   */
+  technical_note?: string;
+};
+
+/**
+ * Una afirmacion que si se puede hacer, pero solo dicha de cierta forma.
+ *
+ * Guardar solo la prohibicion deja a la asesora sin salida: sabe que no puede
+ * decir "mata hongos" y no sabe que SI puede decir. `safe_form` es la frase que
+ * reemplaza, y por eso este bloque vale mas que la lista de prohibidas.
+ */
+export type CautionGuidance = {
+  claim: string;
+  reason: string;
+  safe_form: string;
+};
+
+/** Una frase a evitar, con el motivo y —cuando existe— con que se reemplaza. */
+export type AvoidGuidance = {
+  avoid: string;
+  reason: string;
+  alternative: string;
+};
+
+/** Como se diferencia de otra referencia de la misma linea, escrito por ficha. */
+export type ProductComparison = {
+  reference: string;
+  difference: string;
 };
 
 export const advisors = pgTable(
@@ -90,7 +122,53 @@ export const products = pgTable(
     presentation: text("presentation").notNull(),
     format: text("format").notNull(),
     imageUrl: text("image_url"),
+    /** Solo QUE ES. El para que sirve vive en `purpose` y la comparacion en `vsSimilares`. */
     description: text("description").notNull().default(""),
+    /**
+     * Para que sirve, en palabras de clienta.
+     *
+     * Campo propio y no un parrafo mas de `description` porque es la primera
+     * pregunta de un live y la unica que la etiqueta no responde: la etiqueta
+     * dice que trae, no que hace por quien lo compra.
+     */
+    purpose: text("purpose").notNull().default(""),
+    /** Para quien es y para quien no: adultos, deportistas, tipo de piel, especie. */
+    audience: text("audience").notNull().default(""),
+    /** Subcategoria dentro de la categoria del catalogo, que es demasiado ancha. */
+    subcategory: text("subcategory").notNull().default(""),
+    /**
+     * Las frases decibles, ya filtradas.
+     *
+     * Arreglo y no un texto: la asesora dice UNA, no un parrafo, y el Copilot
+     * elige la que responde la pregunta. Un bloque de prosa obliga a recortarlo
+     * en vivo, que es justo lo que no se puede hacer en camara.
+     */
+    liveReady: jsonb("live_ready").$type<string[]>().notNull().default([]),
+    /** Como la busca la gente, con las faltas de ortografia que de verdad escribe. */
+    keywords: jsonb("keywords").$type<string[]>().notNull().default([]),
+    /**
+     * En que se diferencia de las otras referencias de su misma linea.
+     *
+     * Se escribe por ficha y no se resuelve mezclando fichas: "cual es la
+     * diferencia con el otro" es de las preguntas mas frecuentes cuando hay
+     * varias presentaciones del mismo producto, y responderla leyendo la ficha
+     * ajena es exactamente como se cruzan los datos entre referencias.
+     */
+    vsSimilares: jsonb("vs_similares").$type<ProductComparison[]>().notNull().default([]),
+    /** Lo que no esta confirmado ni demostrado. Antes vivia mezclado en `claimsCaution`. */
+    verificationGaps: jsonb("verification_gaps").$type<string[]>().notNull().default([]),
+    /**
+     * Lo que se puede decir con cautela, y COMO se dice.
+     *
+     * `claimsCaution` se queda como lista de terminos sensibles porque es lo que
+     * el gate compara contra la respuesta; esto es lo que la asesora lee. Son
+     * dos usos distintos del mismo tema y por eso son dos columnas.
+     */
+    cautionGuidance: jsonb("caution_guidance").$type<CautionGuidance[]>().notNull().default([]),
+    /** Lo que no se dice de ESTE producto, con motivo y alternativa segura. */
+    avoidGuidance: jsonb("avoid_guidance").$type<AvoidGuidance[]>().notNull().default([]),
+    /** Tres a seis frases: lo que la asesora deberia recordar primero. */
+    advisorSummary: text("advisor_summary").notNull().default(""),
     activeIngredients: jsonb("active_ingredients")
       .$type<ActiveIngredient[]>()
       .notNull()
