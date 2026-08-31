@@ -251,11 +251,17 @@ export async function researchProduct(
     priceCop: product.priceCop,
   });
   if (!parsed.success) {
+    // El mensaje nombra el campo y el motivo: un lote de 149 que solo dice
+    // "no cumple el contrato" obliga a reinvestigar para averiguar que fallo.
+    const detail = parsed.error.issues
+      .slice(0, 3)
+      .map((issue) => `${issue.path.join(".") || "ficha"}: ${issue.message}`)
+      .join(" · ");
     return {
       ok: false as const,
       error: {
         code: "INVALID_RESEARCH",
-        message: "La investigacion no cumple el contrato de la ficha.",
+        message: `La investigacion no cumple el contrato de la ficha. ${detail}`,
       },
     };
   }

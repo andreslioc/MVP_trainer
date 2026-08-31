@@ -86,8 +86,7 @@ export const productBenefitSchema = z
     if (isAllGeneric(benefit.claim)) {
       context.addIssue({
         code: "custom",
-        message:
-          "Este beneficio solo tiene palabras genericas. Si al leerlo cabe preguntar «¿como cual?», no es un beneficio.",
+        message: `Este beneficio solo tiene palabras genericas: "${benefit.claim}". Si al leerlo cabe preguntar «¿como cual?», no es un beneficio.`,
         path: ["claim"],
       });
     }
@@ -98,8 +97,7 @@ export const productBenefitSchema = z
     if (isOnlyPackaging(benefit.claim)) {
       context.addIssue({
         code: "custom",
-        message:
-          "Esto es un dato de envase, cantidad o manejo, no un beneficio. El rendimiento va en diferenciales y la dosis en modo de uso; aqui va que hace por la persona.",
+        message: `Esto es un dato de envase, cantidad o manejo, no un beneficio: "${benefit.claim}". El rendimiento va en diferenciales y la dosis en modo de uso; aqui va que hace por la persona.`,
         path: ["claim"],
       });
     }
@@ -143,7 +141,10 @@ export const productInputSchema = z
             message: "Esta frase no dice nada concreto: nombra el dato que la sostiene.",
           }),
       )
-      .max(6, "Mas de seis frases no se recuerdan en camara.")
+      // Ocho, no seis: es lo que produce la capa de seguridad —su contrato es
+      // min(3).max(8)— y el limite de seis lo puse a ojo. Dos esquemas nuestros
+      // en desacuerdo rechazaban fichas correctas.
+      .max(8, "Mas de ocho frases no se recuerdan en camara.")
       .default([]),
     keywords: z.array(requiredText).default([]),
     vsSimilares: z

@@ -94,6 +94,12 @@ async function main() {
     saveState(statePath, state);
 
     const { researchProduct } = await import("../src/server/product-research.ts");
+    // `--limit=N` corre solo N fichas y para. El lote sigue siendo reanudable:
+    // lo hecho queda en el estado y la siguiente tanda arranca donde quedo.
+    // Revisar quince y seguir vale mas que descubrir al final que una regla
+    // rechazaba un tercio del catalogo.
+    const limit = Number(option("--limit") ?? "") || Number.POSITIVE_INFINITY;
+    let done = 0;
     let stoppedByQuota = false;
     for (const [index, product] of catalog.entries()) {
       if (state.successes[product.id]) continue;
@@ -135,6 +141,11 @@ async function main() {
       }
       saveState(statePath, state);
       if (stoppedByQuota) break;
+      done += 1;
+      if (done >= limit) {
+        console.info(`\nTanda de ${limit} terminada. Corre el mismo comando para seguir.`);
+        break;
+      }
     }
 
     const finalRows = await connection.db

@@ -65,7 +65,7 @@ export function PositioningFields({
           Frases listas para el live
           <textarea className={`${inputClass} min-h-24`} {...register("liveReadyText")} />
           <span className="mt-1 block text-xs font-normal text-fg-muted">
-            Una por línea, máximo seis. Se dicen tal cual, sin jerga técnica: son lo primero que
+            Una por línea, máximo ocho. Se dicen tal cual, sin jerga técnica: son lo primero que
             toma el Copilot para la respuesta Express.
           </span>
           {errors.liveReadyText ? (

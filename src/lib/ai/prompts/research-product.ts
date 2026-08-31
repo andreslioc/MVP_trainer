@@ -106,6 +106,12 @@ Reglas obligatorias:
   los que el fabricante declare: sin alcohol, sin gluten, non-GMO, apto vegetarianos o veganos,
   organico certificado, analisis de terceros, pais de fabricacion. Son diferenciales de venta reales
   y casi siempre estan publicados; omitirlos deja la ficha sin con que responder "¿por que confiar?".
+- LA COMPARACION TAMBIEN SE DICE EN CAMARA. vs_similares no es una nota tecnica: la asesora la lee
+  cuando le preguntan "¿cual es la diferencia con el otro?". Ahi vale lo mismo que en el resto —
+  "vehiculo" es "el aceite con el que viene mezclado", "principio activo" es "el ingrediente
+  principal", "via oral" es "tomado"— y una diferencia se explica con la cifra y el formato, no con
+  el vocabulario de la etiqueta. Es donde mas se cuela el tecnicismo, porque comparar invita a
+  precisar.
 - vs_similares SE LLENA CON LA REFERENCIA CON LA QUE DE VERDAD SE CONFUNDE: misma marca, mismo
   tamaño, mismo formato y distinta concentracion o version. Comparar contra un producto que no se
   parece —otro ingrediente, otra categoria— gasta el campo y deja fuera la unica comparacion que
