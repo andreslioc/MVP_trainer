@@ -44,7 +44,7 @@ describe("database schema", () => {
 
   it("creates every enum with its exact ordered values", async () => {
     const expected: Record<string, string[]> = {
-      advisor_role: ["asesor", "admin"],
+      advisor_role: ["asesor", "supervisor", "admin"],
       advisor_status: ["activa", "inactiva"],
       question_intent: [
         "informacion",

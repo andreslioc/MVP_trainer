@@ -8,6 +8,10 @@ import {
 } from "../../../../server/training/categories.ts";
 import { evaluateTrainingAnswer } from "../../../../server/training/evaluate.ts";
 import {
+  finishPracticeIfComplete,
+  recordPracticeTime,
+} from "../../../../server/training/practice-time.ts";
+import {
   generateTrainingQuestions,
   startTrainingSession,
 } from "../../../../server/training/questions.ts";
@@ -38,6 +42,18 @@ export async function evaluateTrainingAnswerAction(input: {
   advisorAnswer: string;
 }) {
   const result = await evaluateTrainingAnswer(input);
+  // Se cierra despues de guardar, no antes: si la evaluacion falla, la
+  // practica sigue abierta y la asesora puede reintentar esa pregunta.
+  if (result.ok) await finishPracticeIfComplete(input.sessionId);
   revalidatePath(`/app/training/${input.sessionId}`);
   return result;
+}
+
+/**
+ * Pulso de tiempo de practica. No revalida nada: se llama cada 30 segundos y
+ * revalidar la ruta en cada pulso volveria a pedir la pregunta al servidor
+ * mientras la asesora esta escribiendo.
+ */
+export async function recordPracticeTimeAction(input: { sessionId: string; seconds: number }) {
+  return recordPracticeTime(input);
 }

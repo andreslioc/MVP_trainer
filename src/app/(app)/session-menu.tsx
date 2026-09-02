@@ -1,10 +1,5 @@
-import type { AdvisorRole } from "../../lib/auth.ts";
+import { type AdvisorRole, ROLE_LABELS } from "../../lib/roles.ts";
 import { logout } from "../logout/actions.ts";
-
-const roleLabels: Record<AdvisorRole, string> = {
-  admin: "Administradora",
-  asesor: "Asesora",
-};
 
 function initialsOf(displayName: string) {
   return displayName
@@ -28,7 +23,7 @@ export function SessionMenu({ advisor }: { advisor: { displayName: string; role:
               : "border-border bg-background text-fg-muted"
           }`}
         >
-          {roleLabels[advisor.role]}
+          {ROLE_LABELS[advisor.role]}
         </span>
       </div>
       <span

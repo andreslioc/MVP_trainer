@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { getSession } from "../../../../../lib/auth.ts";
 import { getTrainingSession } from "../../../../../server/training/questions.ts";
+import { PracticeTimer } from "./practice-timer.tsx";
 import { TrainingResponseForm } from "./training-response-form.tsx";
 
 export default async function TrainingSessionPage({
@@ -37,6 +38,7 @@ export default async function TrainingSessionPage({
 
   return (
     <section aria-labelledby="page-title" className="max-w-4xl">
+      <PracticeTimer sessionId={result.data.id} />
       <p className="text-sm font-semibold text-primary">Práctica en curso</p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg" id="page-title">
         {result.data.title}

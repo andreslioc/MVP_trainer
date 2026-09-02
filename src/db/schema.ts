@@ -14,7 +14,15 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-export const advisorRole = pgEnum("advisor_role", ["asesor", "admin"]);
+/**
+ * Los tres rangos, de menor a mayor alcance. El orden del enum es el orden de
+ * la jerarquia y `roleRank` en `lib/auth.ts` depende de el.
+ *
+ * - `asesor`: los cinco modulos de su trabajo diario.
+ * - `supervisor`: todo lo del administrador MENOS las cuentas.
+ * - `admin`: todo, incluidas cuentas, invitaciones y las analiticas por asesora.
+ */
+export const advisorRole = pgEnum("advisor_role", ["asesor", "supervisor", "admin"]);
 export const advisorStatus = pgEnum("advisor_status", ["activa", "inactiva"]);
 export const questionIntent = pgEnum("question_intent", [
   "informacion",
@@ -363,10 +371,21 @@ export const trainingSessions = pgTable(
     practiceSize: integer("practice_size"),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
+    /**
+     * Segundos que la asesora estuvo PRACTICANDO, acumulados en pulsos.
+     *
+     * No se calcula como `finished_at - started_at` a proposito: una pestaña
+     * olvidada abierta toda la noche daria ocho horas de practica. La pantalla
+     * suma solo mientras esta visible y hay actividad, y manda el acumulado en
+     * pulsos; cada pulso viene acotado del lado del servidor, asi que ni un
+     * cliente roto ni uno manipulado pueden inflar el total.
+     */
+    activeSeconds: integer("active_seconds").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("training_sessions_advisor_started_idx").on(table.advisorId, table.startedAt.desc()),
+    check("training_sessions_active_seconds_sane", sql`${table.activeSeconds} between 0 and 86400`),
     index("training_sessions_product_id_idx").on(table.productId),
     index("training_sessions_category_idx").on(table.category),
     // Una practica apunta a una ficha o a una categoria, nunca a las dos ni a

@@ -2,8 +2,14 @@
 
 import { useState, useTransition } from "react";
 
-import type { AdvisorRoleValue, AdvisorStatusValue } from "../../../../lib/validation/advisor.ts";
+import {
+  type AdvisorRoleValue,
+  type AdvisorStatusValue,
+  advisorRoles,
+} from "../../../../lib/validation/advisor.ts";
+import { ROLE_LABELS } from "../../../../lib/roles.ts";
 import { updateAdvisorRoleAction, updateAdvisorStatusAction } from "./actions.ts";
+import { DeleteAccountDialog } from "./delete-account-dialog.tsx";
 
 export type AdvisorRowData = {
   id: string;
@@ -14,15 +20,11 @@ export type AdvisorRowData = {
   isSelf: boolean;
 };
 
-const roleLabels: Record<AdvisorRoleValue, string> = {
-  admin: "Administradora",
-  asesor: "Asesora",
-};
-
 export function AdvisorRow({ advisor }: { advisor: AdvisorRowData }) {
   const [role, setRole] = useState(advisor.role);
   const [status, setStatus] = useState(advisor.status);
   const [error, setError] = useState<string>();
+  const [borrada, setBorrada] = useState(false);
   const [pending, startTransition] = useTransition();
   const roleFieldId = `role-${advisor.id}`;
 
@@ -52,6 +54,11 @@ export function AdvisorRow({ advisor }: { advisor: AdvisorRowData }) {
       }
     });
   }
+
+  // La fila desaparece en cuanto el borrado responde, sin esperar a que la
+  // pagina se recargue: dejar visible una cuenta que ya no existe invita a
+  // apretarle otro boton.
+  if (borrada) return null;
 
   return (
     <tr className="border-t border-border align-top">
@@ -83,8 +90,16 @@ export function AdvisorRow({ advisor }: { advisor: AdvisorRowData }) {
           onChange={(event) => changeRole(event.target.value as AdvisorRoleValue)}
           value={role}
         >
-          <option value="asesor">{roleLabels.asesor}</option>
-          <option value="admin">{roleLabels.admin}</option>
+          {/*
+            Las opciones salen de la lista de rangos y no escritas a mano: la
+            version anterior tenia solo asesor y admin, asi que cuando entro el
+            rango de supervisora quedo imposible de asignar desde la pantalla.
+          */}
+          {advisorRoles.map((valor) => (
+            <option key={valor} value={valor}>
+              {ROLE_LABELS[valor]}
+            </option>
+          ))}
         </select>
       </td>
 
@@ -100,15 +115,24 @@ export function AdvisorRow({ advisor }: { advisor: AdvisorRowData }) {
         </span>
       </td>
 
-      <td className="px-3 py-3 text-right">
-        <button
-          className="min-h-11 rounded-card border border-border-control px-3 text-sm font-semibold text-fg hover:bg-background disabled:opacity-60"
-          disabled={advisor.isSelf || pending}
-          onClick={toggleStatus}
-          type="button"
-        >
-          {status === "activa" ? "Desactivar" : "Reactivar"}
-        </button>
+      <td className="px-3 py-3">
+        <div className="flex flex-wrap justify-end gap-2">
+          <button
+            className="min-h-11 rounded-card border border-border-control px-3 text-sm font-semibold text-fg hover:bg-background disabled:opacity-60"
+            disabled={advisor.isSelf || pending}
+            onClick={toggleStatus}
+            type="button"
+          >
+            {status === "activa" ? "Desactivar" : "Reactivar"}
+          </button>
+          <DeleteAccountDialog
+            advisorId={advisor.id}
+            disabled={advisor.isSelf || pending}
+            displayName={advisor.displayName}
+            email={advisor.email}
+            onDeleted={() => setBorrada(true)}
+          />
+        </div>
       </td>
     </tr>
   );

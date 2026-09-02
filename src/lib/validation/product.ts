@@ -12,14 +12,13 @@ import {
 import { findEmptyPhrase, isAllGeneric, isOnlyPackaging } from "../vague-claims.ts";
 
 const requiredText = z.string().trim().min(1, "Este campo es obligatorio.");
-const optionalText = z.preprocess(
-  (value) => (value === "" ? undefined : value),
-  z.string().trim().min(1).optional(),
-);
-const optionalUrl = z.preprocess(
-  (value) => (value === "" ? undefined : value),
-  z.url("La URL no es válida.").optional(),
-);
+// `null` entra igual que `""`: una columna vacia en Postgres llega como null,
+// y sin esto una ficha leida de la base no pasa su propio esquema. Lo descubri
+// al revalidar una fila con `image_url` nula, que es el estado normal de una
+// ficha recien creada sin foto.
+const vacio = (value: unknown) => (value === "" || value === null ? undefined : value);
+const optionalText = z.preprocess(vacio, z.string().trim().min(1).optional());
+const optionalUrl = z.preprocess(vacio, z.url("La URL no es válida.").optional());
 
 export const activeIngredientSchema = z
   .object({

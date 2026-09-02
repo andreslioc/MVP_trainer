@@ -6,9 +6,12 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { db } from "../db/client.ts";
 import { advisors } from "../db/schema.ts";
+// La jerarquia vive en `roles.ts`, que no importa nada: la necesita tambien la
+// navegacion, que corre en el navegador.
+import { type AdvisorRole, hasRole } from "./roles.ts";
 import { env, getSupabaseAdminEnv, getSupabasePublicEnv } from "./env.ts";
 
-export type AdvisorRole = "asesor" | "admin";
+export type { AdvisorRole } from "./roles.ts";
 type AuthVerifier = Pick<SupabaseClient["auth"], "getClaims" | "signOut">;
 type AdvisorReader = Pick<typeof db, "select">;
 
@@ -81,7 +84,7 @@ export async function requireRole(requiredRole: AdvisorRole) {
     return session;
   }
 
-  if (requiredRole === "admin" && session.data.role !== "admin") {
+  if (!hasRole(session.data.role, requiredRole)) {
     return {
       ok: false as const,
       error: { code: "FORBIDDEN" as const, message: "No tienes permiso para esta acción." },

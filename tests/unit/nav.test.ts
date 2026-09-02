@@ -4,17 +4,33 @@ import { visibleNavItems } from "../../src/components/layout/nav-items.ts";
 
 // Pre-training va antes de Training a proposito: se estudia la ficha y despues
 // se practica, y el orden del menu es el orden del dia de la asesora.
-const sharedLabels = ["Inicio", "Pre-training", "Training", "Copilot", "Intelligence", "Knowledge"];
+const trabajoDiario = ["Inicio", "Pre-training", "Training", "Copilot", "Intelligence"];
+
+const etiquetas = (role: "asesor" | "supervisor" | "admin") =>
+  visibleNavItems(role).map((item) => item.label);
 
 describe("visibleNavItems", () => {
-  it("shows the working modules and hides Settings for an advisor", () => {
-    expect(visibleNavItems("asesor").map((item) => item.label)).toEqual(sharedLabels);
+  it("la asesora ve solo los cinco modulos de su trabajo", () => {
+    expect(etiquetas("asesor")).toEqual(trabajoDiario);
   });
 
-  it("adds Settings for an admin without changing the shared navigation", () => {
-    expect(visibleNavItems("admin").map((item) => item.label)).toEqual([
-      ...sharedLabels,
-      "Settings",
+  it("la asesora NO ve Knowledge: consume las fichas en Pre-training", () => {
+    // Cambio de permiso: antes lo veia. Editar la fuente de verdad es trabajo
+    // de quien responde por lo que se dice al aire.
+    expect(etiquetas("asesor")).not.toContain("Knowledge");
+  });
+
+  it("la supervisora suma Knowledge y las reglas, sin cuentas ni analiticas", () => {
+    expect(etiquetas("supervisor")).toEqual([...trabajoDiario, "Knowledge", "Reglas"]);
+  });
+
+  it("la administradora suma cuentas y analiticas", () => {
+    expect(etiquetas("admin")).toEqual([
+      ...trabajoDiario,
+      "Knowledge",
+      "Reglas",
+      "Cuentas",
+      "Analíticas",
     ]);
   });
 

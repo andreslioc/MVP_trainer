@@ -1,11 +1,21 @@
-export type NavigationRole = "asesor" | "admin";
+import { type AdvisorRole, hasRole } from "../../lib/roles.ts";
+
+export type NavigationRole = AdvisorRole;
 
 export type NavItem = {
   href: string;
   label: string;
   description: string;
   glyph: string;
-  adminOnly?: boolean;
+  /**
+   * Rango minimo que ve el modulo. Ausente significa que lo ve cualquiera.
+   *
+   * Es un rango y no una bandera de administrador porque hay tres: con
+   * `adminOnly` no se podia expresar "esto lo ve el supervisor y el admin, pero
+   * no la asesora", que es justo lo que separa Knowledge y las reglas de las
+   * cuentas.
+   */
+  minRole?: AdvisorRole;
 };
 
 const navItems = [
@@ -39,16 +49,33 @@ const navItems = [
     label: "Knowledge",
     description: "Fuente de verdad",
     glyph: "KH",
+    // La asesora consume las fichas en Pre-training; editarlas es trabajo de
+    // quien responde por lo que se dice al aire.
+    minRole: "supervisor",
   },
   {
     href: "/app/settings",
-    label: "Settings",
-    description: "Reglas y cuentas",
+    label: "Reglas",
+    description: "Reglas comerciales",
     glyph: "ST",
-    adminOnly: true,
+    minRole: "supervisor",
+  },
+  {
+    href: "/app/cuentas",
+    label: "Cuentas",
+    description: "Personas y accesos",
+    glyph: "CU",
+    minRole: "admin",
+  },
+  {
+    href: "/app/analiticas",
+    label: "Analíticas",
+    description: "Desempeño por persona",
+    glyph: "AN",
+    minRole: "admin",
   },
 ] satisfies NavItem[];
 
 export function visibleNavItems(role: NavigationRole) {
-  return navItems.filter((item) => !item.adminOnly || role === "admin");
+  return navItems.filter((item) => !item.minRole || hasRole(role, item.minRole));
 }

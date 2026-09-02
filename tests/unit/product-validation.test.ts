@@ -69,3 +69,18 @@ describe("product validation", () => {
     expect(result.error.issues[0]?.path).toEqual(["activeIngredients", 0, "amount_per_serving"]);
   });
 });
+
+describe("columnas vacias de la base", () => {
+  it("acepta una ficha con imageUrl nula, como llega de Postgres", () => {
+    const parsed = productInputSchema.safeParse({ ...validProductInput(), imageUrl: null });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("acepta una fuente con url nula", () => {
+    const parsed = productInputSchema.safeParse({
+      ...validProductInput(),
+      sources: [{ label: "Etiqueta fisica del producto", url: null, note: null }],
+    });
+    expect(parsed.success).toBe(true);
+  });
+});

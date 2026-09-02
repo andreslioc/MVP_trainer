@@ -8,6 +8,7 @@ import {
   type AdvisorRoleUpdate,
   type AdvisorStatusUpdate,
   advisorRoleUpdateSchema,
+  advisorRoles,
   advisorStatusUpdateSchema,
   selfLockoutError,
 } from "../lib/validation/advisor.ts";
@@ -16,11 +17,11 @@ const advisorFromAuthSchema = z.object({
   id: z.uuid(),
   email: z.email(),
   displayName: z.string().trim().min(1),
-  role: z.enum(["asesor", "admin"]).default("asesor"),
+  role: z.enum(advisorRoles).default("asesor"),
 });
 
 type AdvisorWriter = Pick<typeof db, "insert">;
-type AdvisorDatabase = Pick<typeof db, "select" | "update">;
+export type AdvisorDatabase = Pick<typeof db, "select" | "update" | "delete">;
 type AuthorizationResult =
   | { ok: true; data: { id: string; role: AdvisorRole } }
   | { ok: false; error: { code: string; message: string } };
@@ -29,7 +30,15 @@ type Authorize = (role: AdvisorRole) => Promise<AuthorizationResult>;
 export type AdvisorDependencies = {
   database?: AdvisorDatabase;
   authorize?: Authorize;
+  adminAuth?: { deleteUser: (id: string) => Promise<{ error: { message: string } | null }> };
 };
+
+export function advisorDependencies(options: AdvisorDependencies) {
+  return {
+    database: options.database ?? db,
+    authorize: options.authorize ?? requireRole,
+  };
+}
 
 function dependencies(options: AdvisorDependencies) {
   return {
@@ -38,7 +47,7 @@ function dependencies(options: AdvisorDependencies) {
   };
 }
 type AdvisorInput = z.input<typeof advisorFromAuthSchema>;
-type AdminAuth = ReturnType<typeof createAdminSupabaseClient>["auth"]["admin"];
+export type AdminAuth = ReturnType<typeof createAdminSupabaseClient>["auth"]["admin"];
 
 const advisorInvitationSchema = advisorFromAuthSchema.omit({ id: true });
 

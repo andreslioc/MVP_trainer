@@ -176,6 +176,20 @@
       "when": 1788208451239,
       "tag": "0024_real_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1788367031969,
+      "tag": "0025_youthful_jasper_sitwell",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1788367951516,
+      "tag": "0026_wandering_quasar",
+      "breakpoints": true
     }
   ]
 }

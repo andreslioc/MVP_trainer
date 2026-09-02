@@ -12,8 +12,8 @@ export function AdvisorDirectory({
         Cuentas
       </h2>
       <p className="mt-2 max-w-2xl text-fg-muted">
-        Una asesora entra a los módulos de trabajo. Una administradora ve además esta página: reglas
-        comerciales y cuentas.
+        Con asesoría se entra a los módulos de trabajo. Con administración se ve además esta página:
+        reglas comerciales y cuentas.
       </p>
 
       <InviteAdvisorForm />

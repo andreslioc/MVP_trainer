@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-import type { AdvisorRoleValue } from "../../../../lib/validation/advisor.ts";
+import { ROLE_LABELS } from "../../../../lib/roles.ts";
+import { type AdvisorRoleValue, advisorRoles } from "../../../../lib/validation/advisor.ts";
 import { inviteAdvisorAction } from "./actions.ts";
 
 type InviteFormValues = {
@@ -77,8 +78,11 @@ export function InviteAdvisorForm() {
             className="mt-1 min-h-11 w-full rounded-card border border-border-control bg-surface px-3"
             {...register("role")}
           >
-            <option value="asesor">Asesora</option>
-            <option value="admin">Administradora</option>
+            {advisorRoles.map((valor) => (
+              <option key={valor} value={valor}>
+                {ROLE_LABELS[valor]}
+              </option>
+            ))}
           </select>
         </label>
       </div>

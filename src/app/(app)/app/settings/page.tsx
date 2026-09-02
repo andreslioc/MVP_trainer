@@ -2,27 +2,24 @@ import { redirect } from "next/navigation";
 
 import { requireRole } from "../../../../lib/auth.ts";
 import { isCommercialRuleKey } from "../../../../lib/validation/commercial-rule.ts";
-import { listAdvisors } from "../../../../server/advisors.ts";
 import { listCommercialRules } from "../../../../server/commercial-rules.ts";
-import { AdvisorDirectory } from "./advisor-directory.tsx";
 import { RuleEditor } from "./rule-editor.tsx";
 
 export default async function SettingsPage() {
-  const authorization = await requireRole("admin");
+  // Supervisora: las reglas comerciales son su herramienta de trabajo. Las
+  // cuentas viven aparte, en /app/cuentas, y esas si son solo de admin.
+  const authorization = await requireRole("supervisor");
   if (!authorization.ok) {
     redirect("/app");
   }
 
-  const [result, advisorsResult] = await Promise.all([
-    listCommercialRules({ authorize: async () => authorization }),
-    listAdvisors({ authorize: async () => authorization }),
-  ]);
+  const result = await listCommercialRules({ authorize: async () => authorization });
 
   return (
     <section aria-labelledby="page-title" className="max-w-5xl">
       <p className="text-sm font-semibold text-primary">Administración</p>
       <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg" id="page-title">
-        Business Brain
+        Reglas comerciales
       </h1>
       <p className="mt-2 max-w-2xl text-fg-muted">
         Estas reglas alimentan las respuestas comerciales. Un cambio guardado aplica desde la
@@ -48,8 +45,6 @@ export default async function SettingsPage() {
           )}
         </div>
       )}
-
-      <AdvisorDirectory result={advisorsResult} />
     </section>
   );
 }
