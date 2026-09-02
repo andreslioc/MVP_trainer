@@ -4,6 +4,8 @@ import { z } from "zod";
 import { db } from "../db/client.ts";
 import { advisors } from "../db/schema.ts";
 import { type AdvisorRole, createAdminSupabaseClient, requireRole } from "../lib/auth.ts";
+import { env } from "../lib/env.ts";
+import { buildConfirmUrl } from "../lib/invite-link.ts";
 import {
   type AdvisorRoleUpdate,
   type AdvisorStatusUpdate,
@@ -86,8 +88,24 @@ export async function createInvitedAdvisor(
     };
   }
 
+  // `redirectTo` NO es opcional en la practica. Sin el, Supabase devuelve a la
+  // Site URL del proyecto —la raiz— y el token viaja en el fragmento de la URL,
+  // que nunca llega al servidor: la invitacion se envia, el correo se recibe, y
+  // aceptarla no hace nada. Falla aqui, en voz alta, antes de gastar el envio.
+  if (!env.APP_BASE_URL) {
+    return {
+      ok: false as const,
+      error: {
+        code: "INVITATION_MISCONFIGURED" as const,
+        message:
+          "Falta APP_BASE_URL: sin ella el enlace de la invitación no sabe a dónde volver. Revisa .env.example.",
+      },
+    };
+  }
+
   const { data, error } = await adminAuth.inviteUserByEmail(parsed.data.email, {
     data: { display_name: parsed.data.displayName },
+    redirectTo: buildConfirmUrl(env.APP_BASE_URL),
   });
 
   if (error || !data.user) {

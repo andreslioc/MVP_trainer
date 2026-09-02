@@ -36,7 +36,16 @@ file_size_limit = "200MiB"
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["http://127.0.0.1:3101"]
+# `localhost` y `127.0.0.1` son origenes DISTINTOS para esta lista: un enlace de
+# invitacion que vuelva a `localhost:3000` con solo `127.0.0.1` declarado se
+# ignora y cae de vuelta a la site_url. Se declaran los dos, y tambien el
+# :3101 que usa Playwright.
+additional_redirect_urls = [
+  "http://127.0.0.1:3000/auth/confirm",
+  "http://localhost:3000/auth/confirm",
+  "http://127.0.0.1:3101",
+  "http://localhost:3101",
+]
 jwt_expiry = 3600
 # Solo por invitacion: no existe registro publico en este producto.
 # Las cuentas las crea un admin desde Configuracion (blueprint.md §8).
@@ -44,3 +53,20 @@ enable_signup = false
 
 [auth.email]
 enable_confirmations = false
+
+# Plantilla propia del correo de invitacion.
+#
+# La de fabrica usa `{{ .ConfirmationURL }}`, que devuelve el token en el
+# FRAGMENTO de la URL (`#access_token=...`). El fragmento no viaja al servidor,
+# asi que esta app —que solo tiene clientes de servidor— no podia leerlo nunca:
+# la invitacion llegaba, se aceptaba, y no pasaba nada. Con `{{ .TokenHash }}`
+# el hash va en el query string, que si llega, y `/auth/confirm` lo canjea.
+#
+# OJO: esto vale en LOCAL. El proyecto hosted no permite editar plantillas sin
+# SMTP propio, asi que alli sigue enviando la de fabrica. La app atiende las dos
+# formas —`/auth/confirm` lee el fragmento y el query string— asi que activar
+# SMTP mas adelante no obliga a cambiar codigo. Lo unico obligatorio en el panel
+# es tener la URL de retorno en Authentication > URL Configuration.
+[auth.email.template.invite]
+subject = "Te invitaron a Super Store Sales OS"
+content_path = "./supabase/templates/invite.html"

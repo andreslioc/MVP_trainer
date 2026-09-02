@@ -7,6 +7,12 @@ type LoginPageProps = {
 const errorMessages: Record<string, string> = {
   FORBIDDEN: "Tu cuenta no está activa. Contacta a una administradora.",
   INVALID_CREDENTIALS: "No pudimos iniciar sesión con esos datos.",
+  // Los devuelve `/auth/confirm` cuando el enlace del correo no sirve. Se
+  // separan porque la salida es la misma pero la causa no: uno se arregla
+  // pidiendo otra invitación, el otro revisando que el enlace llegó completo.
+  INVALID_LINK: "El enlace de la invitación no es válido. Pide una invitación nueva.",
+  LINK_EXPIRED: "El enlace de la invitación ya se usó o venció. Pide una invitación nueva.",
+  UNAUTHENTICATED: "La sesión venció. Inicia sesión otra vez.",
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {

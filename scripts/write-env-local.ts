@@ -40,6 +40,7 @@ const LOCAL_DEFAULTS: Record<string, string> = {
   DEEPGRAM_MODEL: "nova-3",
   DEEPGRAM_LANGUAGE: "es-419",
   PUBLIC_BASE_URL: "http://127.0.0.1:3000",
+  APP_BASE_URL: "http://127.0.0.1:3000",
   RECORDING_RETENTION_DAYS: "90",
 };
 

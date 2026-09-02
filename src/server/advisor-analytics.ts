@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, sql } from "drizzle-orm";
+import { type SQLWrapper, and, count, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../db/client.ts";
@@ -10,7 +10,15 @@ import {
   trainingQuestions,
   trainingSessions,
 } from "../db/schema.ts";
+import {
+  ANALYTICS_PERIODS,
+  type AnalyticsPeriod,
+  BUSINESS_TIMEZONE,
+  periodDayKeys,
+  periodStart,
+} from "../lib/analytics-period.ts";
 import { type AdvisorRole, requireRole } from "../lib/auth.ts";
+import { CALIBRATION_ANSWERS, type DimensionScore, readDimensionScores } from "./advisor-scores.ts";
 
 /**
  * Analiticas de UNA asesora, para que el administrador vea donde ayudarla.
@@ -25,30 +33,36 @@ import { type AdvisorRole, requireRole } from "../lib/auth.ts";
  *    la peor respuesta posible apareciera con 20% de acierto.
  */
 
-/** La rubrica va de 1 a 5. Vive aca porque de esto depende el porcentaje. */
-const RUBRIC_MIN = 1;
-const RUBRIC_MAX = 5;
+const inputSchema = z
+  .object({
+    advisorId: z.uuid("La asesora no es valida."),
+    // Por defecto 30 dias y no "todo": el panel se lee para decidir a quien
+    // acompañar esta semana, y un promedio de toda la historia esconde tanto la
+    // mejora reciente como la caida reciente.
+    period: z.enum(ANALYTICS_PERIODS).default("mes"),
+  })
+  .strict();
 
 /**
- * Cuantas respuestas hacen falta para dejar de calibrar.
+ * El dia calendario EN BOGOTA de una columna de fecha.
  *
- * Con menos, el promedio se mueve entero con una sola respuesta buena o mala,
- * y presentarlo como un puntaje firme es engañar a quien decide con el. El
- * panel lo dice en pantalla en vez de esconderlo.
+ * Sin el `AT TIME ZONE`, Postgres agrupa por dia UTC y una practica de las
+ * siete de la noche en Colombia cae en el dia siguiente. El panel mostraria
+ * actividad en un dia en el que nadie practico.
  */
-export const CALIBRATION_ANSWERS = 12;
+function diaDelNegocio(columna: SQLWrapper) {
+  return sql<string>`to_char(date_trunc('day', ${columna} AT TIME ZONE ${sql.raw(`'${BUSINESS_TIMEZONE}'`)}), 'YYYY-MM-DD')`;
+}
 
-const inputSchema = z.object({ advisorId: z.uuid("La asesora no es valida.") }).strict();
-
-export type DimensionScore = {
-  dimension: string;
-  average: number;
-  percent: number;
-  answers: number;
-};
+export { CALIBRATION_ANSWERS } from "./advisor-scores.ts";
+export type { DimensionScore } from "./advisor-scores.ts";
 
 export type AdvisorAnalytics = {
   advisor: { id: string; displayName: string; role: string; status: string };
+  /** La ventana con la que se calculo todo lo demas. */
+  period: AnalyticsPeriod;
+  /** Los dias que dibuja la grafica de columnas, del mas antiguo al ultimo. */
+  windowDays: string[];
   practiceMinutes: number;
   practicesStarted: number;
   practicesFinished: number;
@@ -86,10 +100,6 @@ type Dependencies = {
   database?: typeof db;
 };
 
-function toPercent(average: number) {
-  return Math.round(((average - RUBRIC_MIN) / (RUBRIC_MAX - RUBRIC_MIN)) * 100);
-}
-
 export async function getAdvisorAnalytics(input: unknown, options: Dependencies = {}) {
   const authorize = options.authorize ?? requireRole;
   const database = options.database ?? db;
@@ -108,7 +118,11 @@ export async function getAdvisorAnalytics(input: unknown, options: Dependencies 
       },
     };
   }
-  const { advisorId } = parsed.data;
+  const { advisorId, period } = parsed.data;
+  // `undefined` cuando la ventana es "todo": `and()` de drizzle lo descarta, asi
+  // que la misma consulta sirve con filtro y sin el.
+  const desde = periodStart(period);
+  const dentro = (columna: Parameters<typeof gte>[0]) => (desde ? gte(columna, desde) : undefined);
 
   const [advisor] = await database
     .select({
@@ -131,8 +145,12 @@ export async function getAdvisorAnalytics(input: unknown, options: Dependencies 
       seconds: sql<number>`coalesce(sum(${trainingSessions.activeSeconds}), 0)::int`,
     })
     .from(trainingSessions)
-    .where(eq(trainingSessions.advisorId, advisorId));
+    .where(and(eq(trainingSessions.advisorId, advisorId), dentro(trainingSessions.startedAt)));
 
+  // CALIFICADAS, no enviadas. La tarjeta dice "Respuestas evaluadas" y esta
+  // justo encima de la tabla que promedia la rubrica: contar tambien las que
+  // quedaron sin nota presentaba dos conjuntos distintos como si fueran uno
+  // —23 arriba, 16 en la tabla— sin que nada en pantalla lo explicara.
   const [respuestas] = await database
     .select({
       total: count(),
@@ -141,68 +159,54 @@ export async function getAdvisorAnalytics(input: unknown, options: Dependencies 
     .from(trainingAnswers)
     .innerJoin(trainingSessions, eq(trainingSessions.id, trainingAnswers.sessionId))
     .innerJoin(trainingQuestions, eq(trainingQuestions.id, trainingAnswers.questionId))
-    .where(eq(trainingSessions.advisorId, advisorId));
+    .where(
+      and(
+        eq(trainingSessions.advisorId, advisorId),
+        isNotNull(trainingAnswers.scores),
+        dentro(trainingAnswers.createdAt),
+      ),
+    );
 
-  // Las dimensiones salen del jsonb de notas: son las mismas nueve que escribe
-  // la rubrica, y se leen de los datos en vez de repetirse aca, para que una
-  // dimension nueva aparezca en el panel sin tocar este archivo.
-  const dimensionRows = await database.execute(sql`
-    SELECT d.key AS dimension,
-           count(*)::int AS answers,
-           avg((d.value->>'score')::numeric) AS average
-    FROM ${trainingAnswers} ta
-    JOIN ${trainingSessions} ts ON ts.id = ta.session_id
-    CROSS JOIN LATERAL jsonb_each(ta.scores) d
-    WHERE ts.advisor_id = ${advisorId} AND ta.scores IS NOT NULL
-    GROUP BY d.key
-    ORDER BY avg((d.value->>'score')::numeric) ASC`);
+  const puntuacion = await readDimensionScores(database, advisorId, desde);
+  const { dimensions, scoredAnswers, accuracyPercent } = puntuacion;
 
-  const dimensions: DimensionScore[] = [...dimensionRows].map((row) => {
-    const average = Number(row.average ?? 0);
-    return {
-      dimension: String(row.dimension),
-      average: Math.round(average * 10) / 10,
-      percent: toPercent(average),
-      answers: Number(row.answers ?? 0),
-    };
-  });
-
-  // Cuantas RESPUESTAS estan calificadas, no cuantos pares dimension-respuesta.
-  // La rubrica califica las nueve dimensiones de cada respuesta, asi que sumar
-  // los conteos por dimension multiplicaba por nueve: con dos respuestas el
-  // panel ya se declaraba calibrado y mostraba el puntaje como firme.
-  const scoredAnswers = dimensions.reduce((mayor, item) => Math.max(mayor, item.answers), 0);
-  const pesoTotal = dimensions.reduce((total, item) => total + item.answers, 0);
-  const accuracyPercent =
-    dimensions.length === 0 || pesoTotal === 0
-      ? null
-      : toPercent(
-          dimensions.reduce((total, item) => total + item.average * item.answers, 0) / pesoTotal,
-        );
-
-  const desde = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
+  // Las columnas cubren la ventana elegida; con "todo" se quedan en 30 dias,
+  // que es lo que cabe legible en una grafica pequeña.
+  const diasVentana = periodDayKeys(period);
+  const desdeColumnas = new Date(`${diasVentana[0]}T00:00:00-05:00`);
   const dias = await database
     .select({
-      day: sql<string>`to_char(date_trunc('day', ${trainingSessions.startedAt}), 'YYYY-MM-DD')`,
+      day: diaDelNegocio(trainingSessions.startedAt),
       practices: count(),
       minutes: sql<number>`round(coalesce(sum(${trainingSessions.activeSeconds}), 0) / 60.0)::int`,
     })
     .from(trainingSessions)
-    .where(and(eq(trainingSessions.advisorId, advisorId), gte(trainingSessions.startedAt, desde)))
-    .groupBy(sql`date_trunc('day', ${trainingSessions.startedAt})`)
-    .orderBy(desc(sql`date_trunc('day', ${trainingSessions.startedAt})`));
+    .where(
+      and(
+        eq(trainingSessions.advisorId, advisorId),
+        gte(trainingSessions.startedAt, desdeColumnas),
+      ),
+    )
+    .groupBy(diaDelNegocio(trainingSessions.startedAt))
+    .orderBy(desc(diaDelNegocio(trainingSessions.startedAt)));
 
   // Doce puntos: los que caben en una linea pequeña sin volverse ruido.
   const historial = await database
     .select({
-      day: sql<string>`to_char(date_trunc('day', ${trainingAnswers.createdAt}), 'YYYY-MM-DD')`,
+      day: diaDelNegocio(trainingAnswers.createdAt),
       answers: count(),
     })
     .from(trainingAnswers)
     .innerJoin(trainingSessions, eq(trainingSessions.id, trainingAnswers.sessionId))
-    .where(eq(trainingSessions.advisorId, advisorId))
-    .groupBy(sql`date_trunc('day', ${trainingAnswers.createdAt})`)
-    .orderBy(sql`date_trunc('day', ${trainingAnswers.createdAt})`);
+    .where(
+      and(
+        eq(trainingSessions.advisorId, advisorId),
+        isNotNull(trainingAnswers.scores),
+        dentro(trainingAnswers.createdAt),
+      ),
+    )
+    .groupBy(diaDelNegocio(trainingAnswers.createdAt))
+    .orderBy(diaDelNegocio(trainingAnswers.createdAt));
 
   let acumulado = 0;
   const answerHistory = historial.slice(-12).map((fila) => {
@@ -218,13 +222,15 @@ export async function getAdvisorAnalytics(input: unknown, options: Dependencies 
     })
     .from(liveSessions)
     .leftJoin(copilotExchanges, eq(copilotExchanges.liveSessionId, liveSessions.id))
-    .where(eq(liveSessions.advisorId, advisorId));
+    .where(and(eq(liveSessions.advisorId, advisorId), dentro(liveSessions.startedAt)));
 
   const answers = Number(respuestas?.total ?? 0);
   return {
     ok: true as const,
     data: {
       advisor,
+      period,
+      windowDays: diasVentana,
       practiceMinutes: Math.round(Number(practica?.seconds ?? 0) / 60),
       practicesStarted: Number(practica?.started ?? 0),
       practicesFinished: Number(practica?.finished ?? 0),

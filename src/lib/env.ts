@@ -59,6 +59,17 @@ const serverEnvSchema = z.object({
   DEEPGRAM_LANGUAGE: optionalString,
   DEEPGRAM_CALLBACK_SECRET: optionalString,
   PUBLIC_BASE_URL: optionalString,
+  /**
+   * La URL con la que el NAVEGADOR abre esta app.
+   *
+   * Separada de `PUBLIC_BASE_URL` a proposito, aunque en produccion valgan lo
+   * mismo. `PUBLIC_BASE_URL` es la que tiene que alcanzar Deepgram desde
+   * fuera, y en local eso es un tunel de ngrok: mandar el enlace de una
+   * invitacion a un tunel manda a la persona a una URL que no es la suya y que
+   * ademas no esta en la lista de URLs permitidas de Supabase. Son dos
+   * conceptos distintos que solo coinciden en produccion.
+   */
+  APP_BASE_URL: optionalString,
   GROQ_API_KEY: optionalString,
   GROQ_BASE_URL: optionalString,
   GROQ_MODEL: optionalString,

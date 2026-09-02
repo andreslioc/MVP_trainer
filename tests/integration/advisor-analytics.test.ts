@@ -84,6 +84,115 @@ beforeAll(async () => {
   sessionId = session.id;
 });
 
+/**
+ * Ventana propia con asesora propia.
+ *
+ * No reutiliza `advisorId`: estas pruebas insertan practicas y respuestas
+ * extra, y hacerlo sobre la asesora compartida cambiaba los conteos que afirma
+ * el bloque de escala mas abajo. Una prueba que depende del orden de ejecucion
+ * es una prueba que va a fallar sola algun dia.
+ */
+describe("ventana de tiempo y respuestas calificadas", () => {
+  const otraId = randomUUID();
+
+  beforeAll(async () => {
+    await connection.db.insert(advisors).values({
+      id: otraId,
+      email: `${otraId}@test.co`,
+      displayName: "Asesora de ventana",
+      role: "asesor",
+    });
+  });
+
+  afterAll(async () => {
+    await connection.db.delete(trainingSessions).where(eq(trainingSessions.advisorId, otraId));
+    await connection.db.delete(advisors).where(eq(advisors.id, otraId));
+  });
+
+  it("cuenta solo las respuestas CON nota, no las enviadas", async () => {
+    const [sesion] = await connection.db
+      .insert(trainingSessions)
+      .values({ advisorId: otraId, productId })
+      .returning();
+    if (!sesion) throw new Error("no se creo la sesion");
+    await connection.db.insert(trainingAnswers).values([
+      {
+        sessionId: sesion.id,
+        questionId: questionIds[0] ?? "",
+        advisorAnswer: "con nota",
+        scores: nota(4),
+      },
+      { sessionId: sesion.id, questionId: questionIds[1] ?? "", advisorAnswer: "sin nota" },
+    ]);
+
+    const result = await getAdvisorAnalytics(
+      { advisorId: otraId, period: "todo" },
+      { authorize: asAdmin, database: connection.db },
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    // El fallo que evita: la tarjeta decia "Respuestas evaluadas" y contaba
+    // tambien las que quedaron sin calificar, asi que mostraba un numero mayor
+    // que el de la tabla de la rubrica justo debajo. Dos enviadas, una con nota.
+    expect(result.data.answers).toBe(1);
+    expect(Math.max(...result.data.dimensions.map((d) => d.answers), 0)).toBe(1);
+  });
+
+  it("deja fuera lo que quedó antes de la ventana", async () => {
+    const viejo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const [sesion] = await connection.db
+      .insert(trainingSessions)
+      .values({ advisorId: otraId, productId, startedAt: viejo })
+      .returning();
+    if (!sesion) throw new Error("no se creo la sesion");
+    await connection.db.insert(trainingAnswers).values({
+      sessionId: sesion.id,
+      questionId: questionIds[0] ?? "",
+      advisorAnswer: "de hace tres meses",
+      scores: nota(5),
+      createdAt: viejo,
+    });
+
+    const [ancho, angosto] = await Promise.all([
+      getAdvisorAnalytics(
+        { advisorId: otraId, period: "todo" },
+        { authorize: asAdmin, database: connection.db },
+      ),
+      getAdvisorAnalytics(
+        { advisorId: otraId, period: "dia" },
+        { authorize: asAdmin, database: connection.db },
+      ),
+    ]);
+    expect(ancho.ok && angosto.ok).toBe(true);
+    if (!ancho.ok || !angosto.ok) return;
+
+    expect(ancho.data.answers).toBeGreaterThan(angosto.data.answers);
+    expect(ancho.data.practicesStarted).toBeGreaterThan(angosto.data.practicesStarted);
+    expect(angosto.data.period).toBe("dia");
+    expect(angosto.data.windowDays).toHaveLength(1);
+  });
+
+  it("cae en treinta días cuando no se pide ventana", async () => {
+    const result = await getAdvisorAnalytics(
+      { advisorId: otraId },
+      { authorize: asAdmin, database: connection.db },
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.period).toBe("mes");
+    expect(result.data.windowDays).toHaveLength(30);
+  });
+
+  it("rechaza una ventana inventada en vez de ignorarla", async () => {
+    const result = await getAdvisorAnalytics(
+      { advisorId: otraId, period: "trimestre" },
+      { authorize: asAdmin, database: connection.db },
+    );
+    expect(result.ok).toBe(false);
+  });
+});
+
 afterAll(async () => {
   await connection.db.delete(trainingSessions).where(eq(trainingSessions.advisorId, advisorId));
   await connection.db.delete(trainingQuestions).where(eq(trainingQuestions.productId, productId));

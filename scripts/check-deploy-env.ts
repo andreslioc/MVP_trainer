@@ -35,6 +35,7 @@ const NEEDED_FOR = {
   GEMINI_API_KEY: "Copilot, análisis y evaluación",
   GROQ_API_KEY: "transcribir y el simulacro",
   PUBLIC_BASE_URL: "el callback de transcripción",
+  APP_BASE_URL: "el enlace de invitación por correo",
   CRON_SECRET: "proteger /api/cron/retention",
 } as const;
 

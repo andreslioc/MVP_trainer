@@ -1,5 +1,5 @@
 /**
- * Los ultimos siete dias como columnas.
+ * Los dias de la ventana elegida, como columnas.
  *
  * HTML plano y no SVG: con siete columnas fijas, un viewBox obliga a elegir
  * entre centrar la fila —queda flotando en medio de la tarjeta— o deformar las
@@ -23,6 +23,11 @@ export function MiniColumns({
 }) {
   if (data.length === 0) return null;
   const maximo = Math.max(...data.map((punto) => punto.value), 1);
+  // Con pocas columnas el aire entre ellas es agradable; con treinta, ese mismo
+  // aire se come el ancho y deja barras de siete pixeles. Pasadas diez columnas
+  // el separador baja a 2px, que es lo justo para que dos barras vecinas se
+  // lean como dos y no como un bloque.
+  const separacion = data.length > 10 ? "gap-0.5" : "gap-2";
 
   return (
     <figure className="mt-3">
@@ -32,7 +37,7 @@ export function MiniColumns({
         aire. Sin el tope, con siete dias en una tarjeta ancha las columnas
         salen de 54px y la fila se ve pesada.
       */}
-      <ul className={`flex items-end gap-2 ${ALTO_CLASE}`}>
+      <ul className={`flex items-end ${separacion} ${ALTO_CLASE}`}>
         {data.map((punto) => {
           // Un minimo visible para el dia que tuvo algo: una fraccion pequeña
           // redondeada a cero se leeria igual que un dia vacio.

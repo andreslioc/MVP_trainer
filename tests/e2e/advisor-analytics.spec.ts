@@ -135,9 +135,33 @@ test("las analiticas de una asesora se ven y solo las abre administracion", asyn
 
     await page.getByRole("link", { name: /Asesora Medida/ }).click();
     await expect(page.getByRole("heading", { name: "Asesora Medida" })).toBeVisible();
-    await expect(page.getByText("Prácticas esta semana")).toBeVisible();
+    await expect(page.getByText("Prácticas", { exact: true })).toBeVisible();
     // 480 segundos son 8 minutos: el tiempo sale del acumulado activo.
-    await expect(page.getByText("8 min en total")).toBeVisible();
+    await expect(page.getByText("8 min en los últimos 30 días")).toBeVisible();
+
+    // El selector de ventana: cuatro opciones y la activa marcada para quien
+    // usa lector de pantalla, no solo por color.
+    const periodos = page.getByRole("navigation", { name: "Periodo de las analíticas" });
+    for (const opcion of ["Hoy", "7 días", "30 días", "Todo"]) {
+      await expect(periodos.getByRole("link", { name: opcion })).toBeVisible();
+    }
+    await expect(periodos.getByRole("link", { name: "30 días" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    // Cambiar de ventana es navegar: la URL lo dice, asi que se puede compartir.
+    await periodos.getByRole("link", { name: "Hoy" }).click();
+    await expect(page).toHaveURL(/periodo=dia$/);
+    await expect(periodos.getByRole("link", { name: "Hoy" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    // La practica sembrada es de hoy, asi que sigue contando dentro de la ventana.
+    await expect(page.getByText("8 min hoy")).toBeVisible();
+
+    await periodos.getByRole("link", { name: "30 días" }).click();
+    await expect(page).toHaveURL(/periodo=mes$/);
     // Tres respuestas calificadas: sigue calibrando, porque el umbral cuenta
     // respuestas y no pares dimension-respuesta.
     await expect(page.getByText("Calibrando")).toBeVisible();
