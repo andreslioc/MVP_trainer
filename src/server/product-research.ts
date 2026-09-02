@@ -10,6 +10,7 @@ import {
 } from "../lib/ai/prompts/research-product.ts";
 import { buildSafetyLayerPrompt } from "../lib/ai/prompts/safety-layer.ts";
 import {
+  type RepairedCard,
   type ResearchedProduct,
   researchedProductSchema,
   type SafetyLayer,
@@ -22,6 +23,7 @@ import {
 } from "../lib/ai/structured.ts";
 import { type AdvisorRole, requireRole } from "../lib/auth.ts";
 import { resolveCitations } from "../lib/research-citations.ts";
+import { repairUntilValid } from "./card-repair.ts";
 import { researchToProductPatch } from "../lib/research-patch.ts";
 import { productInputSchema } from "../lib/validation/product.ts";
 import { writeLlmCall } from "./llm-calls.ts";
@@ -55,6 +57,17 @@ export type ProductResearchDependencies = {
   classifySafety?: (
     input: StructuredOutputInput<SafetyLayer>,
   ) => Promise<StructuredOutputResult<SafetyLayer>>;
+  /**
+   * Paso 4: corrige los campos que el gate rechazo, con el error en la mano.
+   *
+   * Medido: tres corridas del mismo producto fallaron por tres reglas distintas
+   * y cada una de una linea. Sin este paso, cada intento vuelve a investigar
+   * desde cero a ciegas —cuatro pasadas sobre 149 fichas dieron 128, 138, 140 y
+   * 143—; con el error de vuelta, arreglar dos palabras es una llamada corta.
+   */
+  repair?: (
+    input: StructuredOutputInput<RepairedCard>,
+  ) => Promise<StructuredOutputResult<RepairedCard>>;
   /** Sigue el redirect del buscador hasta la pagina real. */
   resolveCitation?: (url: string) => Promise<{ url: string }>;
 };
@@ -85,6 +98,9 @@ function dependencies(options: ProductResearchDependencies) {
     classifySafety:
       options.classifySafety ??
       ((input: StructuredOutputInput<SafetyLayer>) => generateStructured(input, aiGateway)),
+    repair:
+      options.repair ??
+      ((input: StructuredOutputInput<RepairedCard>) => generateStructured(input, aiGateway)),
   };
 }
 
@@ -113,7 +129,7 @@ export async function researchProduct(
   productId: string,
   options: ProductResearchDependencies = {},
 ) {
-  const { authorize, database, search, structure, classifySafety } = dependencies(options);
+  const { authorize, database, search, structure, classifySafety, repair } = dependencies(options);
   const authorization = await authorize("admin");
   if (!authorization.ok) return authorization;
 
@@ -232,24 +248,35 @@ export async function researchProduct(
     effort: "high",
   });
 
-  const patch = researchToProductPatch(
+  let patch = researchToProductPatch(
     structured.data.value,
     citations,
     safety.ok ? safety.data.value : null,
   );
   // Se valida contra el esquema de la ficha antes de escribir: el modelo puede
   // cumplir su contrato y aun asi violar el del producto.
-  const parsed = productInputSchema.safeParse({
-    ...product,
-    ...patch,
-    // La fila trae `null` donde el esquema de entrada espera ausencia: `sku` e
-    // `imageUrl` son opcionales, no nulables. Sin esta traduccion la validacion
-    // falla por una ficha sin SKU, que es la mitad del Hub.
+  // La fila trae `null` donde el esquema de entrada espera ausencia: `sku` e
+  // `imageUrl` son opcionales, no nulables. Sin esta traduccion la validacion
+  // falla por una ficha sin SKU, que es la mitad del Hub.
+  // El precio no lo decide una busqueda: es una decision comercial.
+  const fixed = {
     sku: product.sku ?? undefined,
     imageUrl: product.imageUrl ?? undefined,
-    // El precio no lo decide una busqueda: es una decision comercial.
     priceCop: product.priceCop,
+  };
+  const candidate: Record<string, unknown> = { ...product, ...patch, ...fixed };
+  let parsed = productInputSchema.safeParse(candidate);
+
+  const repaired = await repairUntilValid({
+    patch,
+    base: { ...product, ...fixed },
+    advisorId: authorization.data.id,
+    promptId: await activePromptId(database, "structured_repair"),
+    repair,
   });
+  patch = repaired.patch as typeof patch;
+  parsed = repaired.parsed;
+
   if (!parsed.success) {
     // El mensaje nombra el campo y el motivo: un lote de 149 que solo dice
     // "no cumple el contrato" obliga a reinvestigar para averiguar que fallo.

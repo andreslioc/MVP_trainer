@@ -91,6 +91,44 @@ export type AvoidGuidance = {
   alternative: string;
 };
 
+/**
+ * La Respuesta Completa: como sonaria la respuesta modelo de este producto.
+ *
+ * No es lo que la asesora repite en cada interaccion —eso lo arma el Copilot
+ * segun la pregunta—: es la referencia pedagogica de 45 a 60 segundos que
+ * muestra como suena una respuesta excelente cuando toca todos los puntos.
+ * Sirve para estudiar antes del live y como cantera de bloques: el Copilot y el
+ * Simulador eligen cuales usar segun lo que pregunten.
+ *
+ * Va en bloques nombrados y no en un parrafo suelto por eso mismo. Un texto
+ * corrido obliga a que otro modelo lo recorte, y recortar es donde se pierde la
+ * advertencia. Con bloques, "que es" y "para que sirve" se pueden entregar sin
+ * el cierre comercial, y el limite viaja pegado a lo que lo necesita.
+ *
+ * `warning` es opcional a proposito: solo si aplica. Un producto sin riesgo real
+ * no necesita una advertencia inventada para llenar el campo.
+ */
+export type FullAnswer = {
+  /** Que es el producto. */
+  what_it_is: string;
+  /** Para que sirve. */
+  what_for: string;
+  /** Dos o tres beneficios principales, ya redactados para decirse seguidos. */
+  benefits: string;
+  /** La explicacion sencilla de por que funciona, sin vocabulario de paper. */
+  science: string;
+  /** Que lo hace distinto de lo que se le parece. */
+  different: string;
+  /** El argumento de confianza: por que creerle a este producto. */
+  trust: string;
+  /** La mencion comercial: precio, presentacion, rendimiento. */
+  commercial: string;
+  /** La invitacion a comprar. */
+  cta: string;
+  /** La advertencia o el limite. Solo si aplica. */
+  warning?: string;
+};
+
 /** Como se diferencia de otra referencia de la misma linea, escrito por ficha. */
 export type ProductComparison = {
   reference: string;
@@ -169,6 +207,19 @@ export const products = pgTable(
     avoidGuidance: jsonb("avoid_guidance").$type<AvoidGuidance[]>().notNull().default([]),
     /** Tres a seis frases: lo que la asesora deberia recordar primero. */
     advisorSummary: text("advisor_summary").notNull().default(""),
+    /**
+     * La respuesta modelo de 45 a 60 segundos, en bloques nombrados.
+     *
+     * Nulo cuando la ficha todavia no la tiene: es un campo pedagogico que se
+     * escribe una vez por producto, no un derivado de los demas.
+     *
+     * SIN `.default(null)` a proposito. Drizzle lo traduce a `DEFAULT
+     * 'null'::jsonb`, que guarda el null de JSON y no el NULL de SQL: la
+     * columna deja de responder a `IS NULL` y "¿a que fichas les falta?"
+     * contesta que a ninguna. Medido: 147 filas con null de JSON y cero con
+     * NULL de SQL. Sin default, una fila nueva nace en NULL de verdad.
+     */
+    fullAnswer: jsonb("full_answer").$type<FullAnswer | null>(),
     activeIngredients: jsonb("active_ingredients")
       .$type<ActiveIngredient[]>()
       .notNull()

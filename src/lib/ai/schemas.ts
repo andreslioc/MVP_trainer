@@ -311,3 +311,50 @@ export type CopilotComposition = z.infer<typeof copilotCompositionSchema>;
 export type CopilotIntent = z.infer<typeof copilotIntentSchema>;
 export type TranscriptInsights = z.infer<typeof transcriptInsightsSchema>;
 export type ChatCoverageBatch = z.infer<typeof chatCoverageBatchSchema>;
+
+/**
+ * Correccion dirigida de una ficha rechazada.
+ *
+ * Todos los campos son opcionales porque el modelo devuelve SOLO los que
+ * cambia: reemitir la ficha entera para arreglar una palabra gasta ocho mil
+ * tokens y arriesga perder un dato en el camino. La lista es la de los campos
+ * donde de verdad fallan los gates, medida sobre un lote de 149 fichas —frases
+ * de camara, casos de no uso, beneficios vagos— y no toda la ficha.
+ *
+ * Cinco arreglos, dentro del techo de esquema del proveedor.
+ */
+export const repairedCardSchema = z
+  .object({
+    description: z.string().optional(),
+    purpose: z.string().optional(),
+    audience: z.string().optional(),
+    usage_mode: z.string().optional(),
+    precautions: z.string().optional(),
+    advisor_summary: z.string().optional(),
+    live_ready: z.array(z.string()).optional(),
+    contraindications: z.array(z.string()).optional(),
+    claims_allowed: z.array(z.string()).optional(),
+    keywords: z.array(z.string()).optional(),
+    benefits: z
+      .array(
+        z.object({
+          rank: z.number(),
+          claim: z.string(),
+          science_note: z.string(),
+          technical_note: z.string().optional(),
+          evidence_level: z.enum(["alta", "media", "baja"]),
+        }),
+      )
+      .optional(),
+    // Estos cuatro se leen en camara y por eso los rechaza el registro de
+    // camara, pero al principio no eran reparables: una ficha entera se perdio
+    // por la palabra "via oral" en la evidencia de un diferencial, con el
+    // reparador mirando sin poder tocarla.
+    faqs: z.array(z.object({ question: z.string(), answer: z.string() })).optional(),
+    objections: z.array(z.object({ objection: z.string(), response: z.string() })).optional(),
+    differentiators: z.array(z.object({ claim: z.string(), evidence: z.string() })).optional(),
+    vs_similares: z.array(z.object({ reference: z.string(), difference: z.string() })).optional(),
+  })
+  .strict();
+
+export type RepairedCard = z.infer<typeof repairedCardSchema>;

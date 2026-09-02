@@ -2,7 +2,9 @@ import { redirect } from "next/navigation";
 
 import { requireRole } from "../../../../lib/auth.ts";
 import { isCommercialRuleKey } from "../../../../lib/validation/commercial-rule.ts";
+import { listAdvisors } from "../../../../server/advisors.ts";
 import { listCommercialRules } from "../../../../server/commercial-rules.ts";
+import { AdvisorDirectory } from "./advisor-directory.tsx";
 import { RuleEditor } from "./rule-editor.tsx";
 
 export default async function SettingsPage() {
@@ -11,7 +13,10 @@ export default async function SettingsPage() {
     redirect("/app");
   }
 
-  const result = await listCommercialRules({ authorize: async () => authorization });
+  const [result, advisorsResult] = await Promise.all([
+    listCommercialRules({ authorize: async () => authorization }),
+    listAdvisors({ authorize: async () => authorization }),
+  ]);
 
   return (
     <section aria-labelledby="page-title" className="max-w-5xl">
@@ -43,6 +48,8 @@ export default async function SettingsPage() {
           )}
         </div>
       )}
+
+      <AdvisorDirectory result={advisorsResult} />
     </section>
   );
 }

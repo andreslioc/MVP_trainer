@@ -52,6 +52,33 @@ Reglas obligatorias:
 - Cada dato va acompañado de la URL de donde lo tomaste. Es lo que obliga a abrir la fuente: sin
   esa instruccion el modelo responde de memoria y la busqueda no se dispara — medido contra el
   proveedor, no supuesto.
+- TODOS LOS INGREDIENTES, INCLUIDO EL QUE LO DILUYE. Si la etiqueta declara dos ingredientes, van
+  los dos. El aceite, el agua, la maltodextrina o la gelatina con que viene mezclado NO son envase:
+  son ingredientes, y suelen ser el que provoca una alergia. Un extracto liquido "de oregano" que en
+  realidad es oregano MAS aceite de oliva se reporta con los dos, y el segundo se explica por lo que
+  hace —"es el aceite con el que viene mezclado, lo diluye para poder tomarlo"—. Perder el segundo
+  ingrediente es el fallo mas costoso de esta busqueda: deja la ficha sin poder responderle a quien
+  pregunta si es alergica.
+- "NO ESPECIFICADA" NO ES PARTE DEL NOMBRE DE UN INGREDIENTE. Si la etiqueta no publica la cantidad,
+  el ingrediente va con su nombre limpio y la cantidad va vacia. Escribir "Aceite de oregano — no
+  especificada declarados" produce un nombre roto que la asesora lee al aire.
+- CADA FUENTE TIENE QUE SER DE ESTA REFERENCIA. Una pagina del mismo producto en capsulas, de la
+  version high strength o de otro tamaño NO es fuente de esta: es exactamente la confusion que
+  tienes que evitar. Si la abriste para distinguir, dilo asi y no la cites como respaldo de un dato
+  de esta ficha. Un anuncio de otro pais tampoco sirve de fuente: la presentacion y la etiqueta
+  cambian.
+- BUSCA EL PANEL DE LA ETIQUETA AUNQUE EL FABRICANTE NO LO PUBLIQUE. Cuantas tomas rinde el envase,
+  el tamaño de la toma y la cantidad por toma estan en la foto del panel, y muchas veces el
+  fabricante no la sube pero un comercio que vende la referencia exacta si. Ese dato responde
+  "¿cuanto me dura?", que es de las primeras preguntas en un live, y se calcula: tomas por envase
+  divididas entre las tomas al dia.
+- BUSCA EL REGISTRO SANITARIO EN COLOMBIA. Para un suplemento o un alimento, revisa el registro
+  publico de INVIMA por marca y por producto. Si no aparece, ese es el hallazgo y se reporta: no se
+  afirma que tenga registro, y tampoco se afirma que no exista sin haber buscado.
+- LO QUE QUEDE SIN CONFIRMAR SE ESCRIBE COMO PREGUNTA BUSCABLE. "Falta informacion" no sirve de
+  nada. "¿Que porcentaje de carvacrol declara el fabricante para esta referencia?" si, porque otra
+  pasada puede ir a buscar justo eso. Nombra el dato que falta, para que sirve saberlo y donde ya
+  buscaste sin encontrarlo.
 - Escribe en español neutro y en prosa corta. No inventes precios.
 
 Entrega:
@@ -186,6 +213,28 @@ Reglas obligatorias:
   la referencia durante la busqueda.
 - usage_mode es como se toma —porcion, momento y con que—, en una o dos frases y solo si la
   investigacion lo trae. Vacio si la etiqueta no lo declara: una dosis inventada se toma.
+- claims_caution SON PALABRAS Y TEMAS QUE DISPARAN CAUTELA, NO NOTAS DEL PROCESO. Ahi van los
+  terminos que si aparecen en el chat obligan a medir la respuesta —"infeccion", "antibiotico",
+  "cura", "embarazo"— y las advertencias de encuadre de esta ficha. JAMAS va como se armo la ficha:
+  "ficha armada con busqueda automatica", "sin confirmar en la busqueda", "requiere revision
+  humana" son notas internas del proceso y su sitio son los datos sin confirmar. Mezclarlas ahi
+  ensucia el unico campo que la asesora consulta cuando algo se puso delicado.
+- UN ALERGENO PRESENTE LLEGA A LAS DOS PARTES. Si la investigacion nombra un ingrediente que es
+  alergeno frecuente, tiene que quedar en precautions —explicado— y en contraindications —en corto—.
+  No basta con listarlo en ingredientes: nadie lee la lista de ingredientes en camara, y quien
+  pregunta "soy alergica a X" necesita que la respuesta ya este escrita.
+- LA CANTIDAD POR TOMA Y EL RENDIMIENTO VAN A claims_allowed CUANDO LA ETIQUETA LOS DECLARA. Son las
+  dos cifras que sostienen una venta y son literales de la etiqueta, asi que la asesora las puede
+  decir sin margen: "14 mg por toma de 4 gotas", "el frasco rinde 393 tomas".
+- LAS PREGUNTAS CUBREN LO QUE DE VERDAD SE PREGUNTA, NO DOS DE MUESTRA. Repasa la lista de lo que la
+  tarjeta tiene que poder responder y escribe una pregunta por cada cosa que la investigacion SI
+  puede contestar: para que sirve, que trae exactamente, como se toma, cuanto rinde y cuanto dura,
+  si esta diluido, si lleva tal ingrediente, que sabor tiene, si sirve en la piel, como saber que es
+  de confianza, si se puede en embarazo, y en que se diferencia de la version parecida. Dejar dos
+  preguntas cuando la investigacion alcanza para diez desperdicia el trabajo de la busqueda.
+- LOS DATOS SIN CONFIRMAR SE ESCRIBEN COMO PREGUNTA BUSCABLE, con el dato que falta, para que sirve
+  saberlo y donde ya se busco. Otra pasada va a ir a buscar justo eso: un hueco escrito como "no se
+  ha confirmado si el gotero permite dosificar sin derrames" no se puede buscar en ninguna parte.
 - precautions es un solo parrafo e incluye embarazo, lactancia, medicamentos y condiciones medicas
   cuando la investigacion los mencione.
 - contraindications es la version corta y en lista de esos casos: una entrada por caso, en pocas

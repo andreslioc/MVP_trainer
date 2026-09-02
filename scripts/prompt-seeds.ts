@@ -3,6 +3,8 @@ import { CHAT_COVERAGE_PROMPT } from "../src/lib/ai/prompts/chat-coverage.ts";
 import { COPILOT_CLASSIFY_PROMPT, COPILOT_COMPOSE_PROMPT } from "../src/lib/ai/prompts/copilot.ts";
 import { EVALUATE_ANSWER_PROMPT } from "../src/lib/ai/prompts/evaluate-answer.ts";
 import { GENERATE_QUESTIONS_PROMPT } from "../src/lib/ai/prompts/generate-questions.ts";
+import { PRODUCT_CARD_MASTER_PROMPT } from "../src/lib/ai/prompts/product-card-master.ts";
+import { REPAIR_CARD_PROMPT } from "../src/lib/ai/prompts/repair-card.ts";
 import {
   RESEARCH_PRODUCT_PROMPT,
   STRUCTURE_PRODUCT_PROMPT,
@@ -30,10 +32,11 @@ export const PROMPT_SEEDS: Array<{ name: string; body: string }> = [
   { name: "research_product", body: RESEARCH_PRODUCT_PROMPT },
   { name: "structure_product", body: STRUCTURE_PRODUCT_PROMPT },
   { name: "safety_layer", body: SAFETY_LAYER_PROMPT },
+  { name: "product_card_master", body: PRODUCT_CARD_MASTER_PROMPT },
   { name: "verify_gap", body: VERIFY_GAP_PROMPT },
   { name: "structure_gap", body: STRUCTURE_GAP_PROMPT },
-  // Estos dos no tienen prompt escrito todavia: la fila existe para que una
-  // traza pueda nombrarlos, con la misma plantilla que usaba la semilla.
-  { name: "structured_repair", body: "Plantilla inicial versionada para structured_repair." },
+  { name: "structured_repair", body: REPAIR_CARD_PROMPT },
+  // Sin prompt escrito todavia: la fila existe para que una traza pueda
+  // nombrarlo, con la misma plantilla que usaba la semilla.
   { name: "promote_insight", body: "Plantilla inicial versionada para promote_insight." },
 ];

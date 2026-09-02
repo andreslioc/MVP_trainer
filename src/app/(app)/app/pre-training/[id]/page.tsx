@@ -49,7 +49,14 @@ export default async function PreTrainingProductPage({
           )}
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        {/*
+          `w-full` en movil, no solo `flex-1`. `flex-1` es base 0%, asi que una
+          columna de cero ancho CABE al lado de la foto de 100% y no salta de
+          linea: el titulo quedaba en 0 px, el texto se apilaba letra por letra
+          y la banda crecia hasta empujar la foto fuera de la pantalla. Medido a
+          390 px antes del arreglo: titulo de 0 px de ancho.
+        */}
+        <div className="flex w-full min-w-0 flex-col sm:w-auto sm:flex-1">
           <div className="border-b border-primary-tint-border bg-primary-tint px-6 py-6">
             <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
               {product.brand} · {product.category}

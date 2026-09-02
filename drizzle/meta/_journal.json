@@ -162,6 +162,20 @@
       "when": 1787926871487,
       "tag": "0022_exotic_wolfpack",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1788208039642,
+      "tag": "0023_cool_domino",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1788208451239,
+      "tag": "0024_real_spot",
+      "breakpoints": true
     }
   ]
 }

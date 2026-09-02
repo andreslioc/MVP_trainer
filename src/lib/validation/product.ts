@@ -1,3 +1,5 @@
+import { findAllergensInIngredients, mentionsAllergen } from "../allergens.ts";
+import { findRegistryClaims, gapsDenyRegistry } from "../health-registry.ts";
 import { z } from "zod";
 
 import {
@@ -109,6 +111,56 @@ const sourceSchema = z.object({
   note: optionalText,
 });
 
+/**
+ * La Respuesta Completa: la respuesta modelo de 45 a 60 segundos, en bloques.
+ *
+ * Los ocho primeros son obligatorios porque son lo que hace completa a la
+ * respuesta; `warning` es opcional y va SOLO si el producto tiene un limite
+ * real. Rellenarlo por simetria produce advertencias inventadas, que asustan a
+ * quien si podia comprar.
+ */
+const FULL_ANSWER_MAX_WORDS = 190;
+const FULL_ANSWER_TARGET_WORDS = 170;
+
+const fullAnswerSchema = z
+  .object({
+    what_it_is: requiredText,
+    what_for: requiredText,
+    benefits: requiredText,
+    science: requiredText,
+    different: requiredText,
+    trust: requiredText,
+    commercial: requiredText,
+    cta: requiredText,
+    warning: optionalText,
+  })
+  // El limite es el que hace util la referencia. La primera version escrita a
+  // mano dio 254 palabras —98 segundos— para un campo definido como de 45 a 60:
+  // sin tope, este bloque crece hasta que la asesora deja de leerlo.
+  .superRefine((answer, context) => {
+    const words = countWords(Object.values(answer).filter(Boolean).join(" "));
+    if (words > FULL_ANSWER_MAX_WORDS) {
+      context.addIssue({
+        code: "custom",
+        message: `La Respuesta Completa tiene ${words} palabras y son unos ${Math.round(words / 2.8)} segundos: el campo es de 45 a 60. Recorta a ${FULL_ANSWER_TARGET_WORDS} o menos.`,
+        path: [],
+      });
+    }
+  });
+
+/**
+ * Los bloques de la Respuesta Completa como pares campo/texto, para pasarlos
+ * por los mismos barridos que el resto de lo que se dice al aire.
+ */
+function fullAnswerLines(
+  fullAnswer: z.output<typeof fullAnswerSchema> | null,
+): Array<[string, string]> {
+  if (!fullAnswer) return [];
+  return Object.entries(fullAnswer)
+    .filter(([, value]) => typeof value === "string" && value.trim() !== "")
+    .map(([key, value]) => [`fullAnswer.${key}`, value as string]);
+}
+
 export const productInputSchema = z
   .object({
     sku: optionalText,
@@ -169,6 +221,7 @@ export const productInputSchema = z
       )
       .default([]),
     advisorSummary: z.string().trim().default(""),
+    fullAnswer: fullAnswerSchema.nullable().default(null),
     activeIngredients: z.array(activeIngredientSchema),
     benefits: z
       .array(productBenefitSchema)
@@ -237,6 +290,9 @@ export const productInputSchema = z
       ...product.activeIngredients.map(
         (item, index) => [`activeIngredients.${index}.name`, item.name] as [string, string],
       ),
+      // La Respuesta Completa se lee en voz alta de principio a fin: es el
+      // campo mas expuesto de la ficha, no el menos.
+      ...fullAnswerLines(product.fullAnswer),
     ];
     // La trazabilidad se guarda, no se dice: solo en los campos que describen y
     // venden. Las precauciones y los casos de no uso quedan fuera a proposito,
@@ -251,6 +307,12 @@ export const productInputSchema = z
       ...product.cautionGuidance.map(
         (item, index) => [`cautionGuidance.${index}.safe_form`, item.safe_form] as [string, string],
       ),
+      // Los NUEVE bloques, `trust` incluido. Lo exceptue pensando que ahi
+      // nombrar al fabricante sumaba autoridad, y es al contrario: en una
+      // respuesta de venta "segun el fabricante" se oye como que la asesora no
+      // se la juega. La atribucion solo suma en precauciones y casos de no uso,
+      // donde respalda una prohibicion.
+      ...fullAnswerLines(product.fullAnswer),
     ];
     for (const [path, value] of spokenFields) {
       const provenance = findProvenance(value);
@@ -292,6 +354,68 @@ export const productInputSchema = z
         message: "Carga el precio antes de marcar la ficha como verificada.",
         path: ["priceCop"],
       });
+    }
+
+    // Un alergeno presente llega a precauciones Y a casos de no uso. Listarlo
+    // solo en ingredientes no sirve: nadie lee la lista de ingredientes en
+    // camara. El aceite de oliva del oregano se perdio con la regla ya escrita
+    // tres veces en el prompt, asi que aqui es un limite y no una sugerencia.
+    const allergens = findAllergensInIngredients(
+      product.activeIngredients.map((ingredient) => ingredient.name),
+    );
+    const noUsePhrase = product.contraindications.join(" · ");
+    for (const allergen of allergens) {
+      if (!mentionsAllergen(allergen, product.precautions)) {
+        context.addIssue({
+          code: "custom",
+          message: `La formula lleva ${allergen} y las precauciones no lo advierten. Quien pregunta "soy alergica" necesita que la respuesta ya este escrita.`,
+          path: ["precautions"],
+        });
+      }
+      if (!mentionsAllergen(allergen, noUsePhrase)) {
+        context.addIssue({
+          code: "custom",
+          message: `La formula lleva ${allergen} y no aparece como caso de no uso. En camara se lee la lista corta, no la de ingredientes.`,
+          path: ["contraindications"],
+        });
+      }
+    }
+
+    // La ficha no puede afirmar un registro sanitario que sus propios datos sin
+    // confirmar dicen que no esta publicado. Afirmar una aprobacion del INVIMA
+    // que no existe es inventar el respaldo de una autoridad.
+    if (gapsDenyRegistry(product.verificationGaps)) {
+      const spokenAboutRegistry: Array<[string, string]> = [
+        ["description", product.description],
+        ["purpose", product.purpose],
+        ["audience", product.audience],
+        ...product.liveReady.map((item, index) => [`liveReady.${index}`, item] as [string, string]),
+        ...product.claimsAllowed.map(
+          (item, index) => [`claimsAllowed.${index}`, item] as [string, string],
+        ),
+        ...product.faqs.map(
+          (item, index) => [`faqs.${index}.answer`, item.answer] as [string, string],
+        ),
+        ...product.objections.map(
+          (item, index) => [`objections.${index}.response`, item.response] as [string, string],
+        ),
+        ...product.differentiators.flatMap(
+          (item, index) =>
+            [
+              [`differentiators.${index}.claim`, item.claim],
+              [`differentiators.${index}.evidence`, item.evidence],
+            ] as Array<[string, string]>,
+        ),
+      ];
+      for (const [path, value] of spokenAboutRegistry) {
+        for (const claim of findRegistryClaims(value)) {
+          context.addIssue({
+            code: "custom",
+            message: `Esta ficha dice que el registro sanitario no aparece publicado, y aqui lo afirma: "${claim}". Se vende como importado y eso se dice de frente.`,
+            path: path.split("."),
+          });
+        }
+      }
     }
 
     if (

@@ -1,6 +1,7 @@
 import type { ProductRecord } from "../../../../server/products.ts";
 import { ClaimList } from "./claim-list.tsx";
 import { CollapsibleSection } from "./collapsible-section.tsx";
+import { FullAnswerPanel } from "./full-answer-panel.tsx";
 
 /**
  * La ficha completa para estudiarla, en secciones plegables.
@@ -12,13 +13,18 @@ import { CollapsibleSection } from "./collapsible-section.tsx";
 export function ProductStudy({ product }: { product: ProductRecord }) {
   return (
     <div className="mt-6">
+      {/*
+        La Respuesta Completa va primero y abierta; el resumen, plegado debajo.
+        El orden es la enseñanza: lo primero que la asesora tiene que oir es
+        como suena el producto explicado bien, no una lista de lo que debe
+        recordar. El resumen es repaso, y el repaso viene despues.
+      */}
+      {product.fullAnswer ? <FullAnswerPanel fullAnswer={product.fullAnswer} /> : null}
+
       {product.advisorSummary ? (
-        <div className="mb-4 rounded-card border border-border bg-surface p-4">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-primary">
-            Lo que tienes que recordar
-          </h3>
-          <p className="mt-2 text-fg">{product.advisorSummary}</p>
-        </div>
+        <CollapsibleSection title="Lo que tienes que recordar">
+          <p className="text-fg">{product.advisorSummary}</p>
+        </CollapsibleSection>
       ) : null}
 
       {product.liveReady.length > 0 ? (

@@ -10,6 +10,7 @@ import { BenefitsFields } from "./benefits-fields.tsx";
 import { IngredientFields, SourceFields } from "./ingredient-fields.tsx";
 import { PairListFields } from "./pair-list-fields.tsx";
 import { FormSection } from "./form-section.tsx";
+import { FullAnswerFields } from "./full-answer-fields.tsx";
 import { PositioningFields } from "./positioning-fields.tsx";
 import { PriceFields } from "./price-fields.tsx";
 import {
@@ -143,6 +144,8 @@ export function ProductForm({ product }: { product?: EditableProduct }) {
         </FormSection>
 
         <PositioningFields control={control} errors={errors} register={register} />
+
+        <FullAnswerFields control={control} errors={errors} register={register} />
 
         <BenefitsFields control={control} errors={errors} register={register} />
 

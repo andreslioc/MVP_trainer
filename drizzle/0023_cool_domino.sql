@@ -1,0 +1,1 @@
+ALTER TABLE "products" ADD COLUMN "full_answer" jsonb DEFAULT 'null'::jsonb;

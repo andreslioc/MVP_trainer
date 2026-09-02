@@ -55,6 +55,24 @@ export const productFormSchema = z.object({
   audience: z.string(),
   subcategory: z.string(),
   liveReadyText: z.string(),
+  /**
+   * La Respuesta Completa, un campo por bloque.
+   *
+   * Nueve textos y no un solo textarea: el valor del campo esta en la
+   * estructura, y un cuadro grande produce un parrafo sin orden que nadie puede
+   * recortar despues por bloques.
+   */
+  fullAnswer: z.object({
+    what_it_is: z.string(),
+    what_for: z.string(),
+    benefits: z.string(),
+    science: z.string(),
+    different: z.string(),
+    trust: z.string(),
+    commercial: z.string(),
+    cta: z.string(),
+    warning: z.string(),
+  }),
   keywordsText: z.string(),
   vsSimilares: z.array(z.object({ reference: required, difference: required })),
   verificationGapsText: z.string(),
@@ -122,6 +140,17 @@ export function productFormDefaults(product?: EditableProduct): ProductFormValue
     audience: product?.audience ?? "",
     subcategory: product?.subcategory ?? "",
     liveReadyText: product?.liveReady.join("\n") ?? "",
+    fullAnswer: {
+      what_it_is: product?.fullAnswer?.what_it_is ?? "",
+      what_for: product?.fullAnswer?.what_for ?? "",
+      benefits: product?.fullAnswer?.benefits ?? "",
+      science: product?.fullAnswer?.science ?? "",
+      different: product?.fullAnswer?.different ?? "",
+      trust: product?.fullAnswer?.trust ?? "",
+      commercial: product?.fullAnswer?.commercial ?? "",
+      cta: product?.fullAnswer?.cta ?? "",
+      warning: product?.fullAnswer?.warning ?? "",
+    },
     keywordsText: product?.keywords.join("\n") ?? "",
     vsSimilares:
       product?.vsSimilares.map(({ reference, difference }) => ({ reference, difference })) ?? [],
@@ -141,6 +170,30 @@ export function productFormDefaults(product?: EditableProduct): ProductFormValue
       })) ?? [],
     priceCopText: product?.priceCop == null ? "" : String(product.priceCop),
     verified: Boolean(product?.verifiedAt),
+  };
+}
+
+/**
+ * Los nueve bloques a lo que guarda la ficha, o nulo si estan todos vacios.
+ *
+ * Vacio es NULO y no un objeto de cadenas vacias: la ficha distingue "no tiene
+ * respuesta modelo todavia" de "tiene una y esta en blanco", y el validador
+ * exige los ocho bloques cuando el campo existe.
+ */
+function toFullAnswer(values: ProductFormValues["fullAnswer"]) {
+  const blocks = Object.values(values).map((value) => value.trim());
+  if (blocks.every((value) => value === "")) return null;
+  const warning = values.warning.trim();
+  return {
+    what_it_is: values.what_it_is,
+    what_for: values.what_for,
+    benefits: values.benefits,
+    science: values.science,
+    different: values.different,
+    trust: values.trust,
+    commercial: values.commercial,
+    cta: values.cta,
+    ...(warning === "" ? {} : { warning }),
   };
 }
 
@@ -189,5 +242,17 @@ export function toProductInput(values: ProductFormValues, product?: EditableProd
     })),
     priceCop: values.priceCopText.trim() === "" ? undefined : Number(values.priceCopText),
     verifiedAt: values.verified ? (product?.verifiedAt ?? new Date()) : null,
+    fullAnswer: toFullAnswer(values.fullAnswer),
+    // Campos que la ficha tiene y este formulario NO muestra: se arrastran del
+    // producto que se esta editando.
+    //
+    // Sin estas tres lineas el guardado los pone en su valor por defecto y los
+    // borra en silencio. Paso de verdad: verificar una ficha desde el Hub le
+    // quito el resumen para la asesora, la guia de cautela y los casos de no
+    // uso, sin un solo mensaje de error. Cualquier campo nuevo que se agregue a
+    // la ficha y no al formulario tiene que sumarse aqui.
+    advisorSummary: product?.advisorSummary ?? "",
+    cautionGuidance: product?.cautionGuidance ?? [],
+    avoidGuidance: product?.avoidGuidance ?? [],
   } as ProductInput;
 }

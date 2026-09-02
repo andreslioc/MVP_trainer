@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { findProvenance } from "../../src/lib/camera-register.ts";
+import { findJargon, findProvenance } from "../../src/lib/camera-register.ts";
 import { productInputSchema } from "../../src/lib/validation/product.ts";
 import { validProductInput } from "../fixtures/product.ts";
 
@@ -46,5 +46,39 @@ describe("la trazabilidad se guarda, no se dice", () => {
 
   it("no marca una frase que solo da el dato", () => {
     expect(findProvenance("Contiene 14 mg de aceite de orégano por toma.")).toBeNull();
+  });
+});
+
+describe("una palabra de la lista que significa otra cosa", () => {
+  it("deja pasar la advertencia de no conducir", () => {
+    // "vehiculo" esta en la lista por el aceite portador de una capsula. En
+    // "conducir un vehiculo" significa carro, y es la advertencia mas importante
+    // de un producto con melatonina.
+    expect(
+      findJargon("Puede afectar la capacidad de conducir un vehículo o manejar maquinaria."),
+    ).toBeNull();
+  });
+
+  it("sigue atrapando el aceite portador", () => {
+    expect(findJargon("Aceite de oliva como vehiculo de la formula.")).toBe("vehiculo");
+  });
+});
+
+describe("la jerga se busca como palabra, no como subcadena", () => {
+  it.each([
+    ["para que la fragancia no se degrade con la luz", "degrade contiene grade"],
+    ["el envase es degradable", "degradable contiene grade"],
+    ["viene en grado alimenticio", "grado no es grade"],
+  ])("deja pasar %s", (texto) => {
+    expect(findJargon(texto)).toBeNull();
+  });
+
+  it.each([
+    ["La evidencia GRADE es baja.", "grade"],
+    ["Medido in vitro.", "in vitro"],
+    ["Su biodisponibilidad es alta.", "biodisponibilidad"],
+    ["Aceite de oliva como vehiculo.", "vehiculo"],
+  ])("sigue atrapando la jerga real en %s", (texto, esperado) => {
+    expect(findJargon(texto)).toBe(esperado);
   });
 });

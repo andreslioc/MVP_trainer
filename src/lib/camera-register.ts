@@ -76,6 +76,10 @@ export const PROVENANCE_MARKERS = [
   "el fabricante declara",
   "el fabricante indica",
   "el fabricante lo presenta",
+  "el fabricante lo ofrece",
+  "el fabricante lo describe",
+  "el fabricante dice",
+  "el fabricante afirma",
   "el fabricante no",
   "segun el fabricante",
   "declarado por el fabricante",
@@ -111,7 +115,46 @@ export function countWords(value: string) {
  * puede decir en camara. Se devuelve el termino y no un booleano porque el
  * error tiene que nombrar la palabra que hay que cambiar.
  */
+/**
+ * Frases donde una palabra de la lista significa otra cosa y es correcta.
+ *
+ * "vehiculo" esta en la lista por el aceite portador de una capsula, y en
+ * "conducir un vehiculo" significa carro: es espanol corriente y es justo lo que
+ * hay que decir cuando una etiqueta advierte sobre manejar. Se recortan antes de
+ * buscar, no despues, para que la palabra no llegue al comparador.
+ *
+ * Salio de una ficha con melatonina: el gate rechazaba la advertencia de no
+ * conducir, que es la mas importante de ese producto.
+ */
+const JARGON_EXCEPTIONS = [
+  "conducir un vehiculo",
+  "conducir el vehiculo",
+  "conducir vehiculos",
+  "manejar un vehiculo",
+  "manejar vehiculos",
+  "vehiculo de motor",
+] as const;
+
+/**
+ * Busca el termino como PALABRA, no como subcadena.
+ *
+ * Sin limites de palabra, "grade" —la escala de evidencia— se encontraba dentro
+ * de "degrade" y rechazaba la frase "para que la fragancia no se degrade con la
+ * luz". Es el mismo fallo que tenia el gate de alergenos con "trigo" dentro de
+ * "Trigonella". Los limites se ponen solo en los extremos que son letra, para
+ * que terminos como "doi:" sigan encontrandose.
+ */
+function containsTerm(text: string, term: string): boolean {
+  const termino = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const inicio = /^[a-z0-9]/.test(term) ? "\\b" : "";
+  const fin = /[a-z0-9]$/.test(term) ? "\\b" : "";
+  return new RegExp(`${inicio}${termino}${fin}`).test(text);
+}
+
 export function findJargon(value: string): string | null {
-  const text = normalize(value);
-  return CAMERA_JARGON.find((term) => text.includes(normalize(term))) ?? null;
+  let text = normalize(value);
+  for (const exception of JARGON_EXCEPTIONS) {
+    text = text.split(normalize(exception)).join(" ");
+  }
+  return CAMERA_JARGON.find((term) => containsTerm(text, normalize(term))) ?? null;
 }

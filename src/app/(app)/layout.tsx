@@ -4,18 +4,13 @@ import type { ReactNode } from "react";
 import { AppNavigation } from "../../components/layout/app-navigation.tsx";
 import { MobileNavigation } from "../../components/layout/mobile-navigation.tsx";
 import { getSession } from "../../lib/auth.ts";
+import { SessionMenu } from "./session-menu.tsx";
 
 export default async function AuthenticatedLayout({ children }: { children: ReactNode }) {
   const session = await getSession();
   if (!session.ok) {
     redirect("/login?next=/app");
   }
-
-  const initials = session.data.displayName
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.charAt(0).toUpperCase())
-    .join("");
 
   return (
     <div className="min-h-screen md:grid md:grid-cols-[16rem_minmax(0,1fr)]">
@@ -54,19 +49,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
             </div>
             <p className="hidden text-sm text-fg-muted md:block">Espacio de trabajo comercial</p>
           </div>
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="hidden min-w-0 text-right sm:block">
-              <p className="truncate text-sm font-semibold text-fg">{session.data.displayName}</p>
-              <p className="text-xs capitalize text-fg-muted">{session.data.role}</p>
-            </div>
-            <span
-              aria-label={`Cuenta de ${session.data.displayName}`}
-              className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border-control bg-background text-sm font-semibold text-primary-deep"
-              role="img"
-            >
-              {initials}
-            </span>
-          </div>
+          <SessionMenu advisor={session.data} />
         </header>
 
         <main className="mx-auto w-full max-w-7xl p-4 md:p-6 lg:p-8" id="main-content">
