@@ -1,22 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { evaluationDimensionKeys } from "../../../../../lib/ai/schemas.ts";
+import { trainingDimensionLabels } from "../../../../../lib/training/summary.ts";
 import { evaluateTrainingAnswerAction } from "../actions.ts";
-
-const dimensionLabels = {
-  conocimiento_producto: "Conocimiento del producto",
-  claridad_explicacion: "Claridad de la explicación",
-  naturalidad_cercania: "Naturalidad y cercanía",
-  uso_responsable_evidencia: "Uso responsable de evidencia",
-  manejo_objeciones: "Manejo de objeciones",
-  capacidad_persuasion: "Capacidad de persuasión",
-  uso_cta: "Uso de CTA",
-  duracion: "Duración",
-  cumplimiento_reglas_marca: "Reglas de marca",
-} as const;
 
 type EvaluationView = {
   scores: Record<string, { score: number; reason: string }> | null;
@@ -30,14 +20,17 @@ export function TrainingResponseForm({
   sessionId,
   questionId,
   savedAnswer,
-  nextHref,
+  isLast,
+  summaryHref,
 }: {
   sessionId: string;
   questionId: string;
   savedAnswer?: SavedAnswer;
-  /** `null` en la ultima pregunta de la tanda. */
-  nextHref: string | null;
+  /** Ultima de la tanda: al terminarla lo que sigue es el consolidado. */
+  isLast: boolean;
+  summaryHref: string;
 }) {
+  const router = useRouter();
   const [advisorAnswer, setAdvisorAnswer] = useState(savedAnswer?.advisorAnswer ?? "");
   const [evaluation, setEvaluation] = useState<EvaluationView | undefined>(savedAnswer);
   const [error, setError] = useState<string>();
@@ -65,6 +58,15 @@ export function TrainingResponseForm({
   }
 
   const complete = Boolean(evaluation?.scores && evaluation.feedback && evaluation.improvedAnswer);
+
+  /**
+   * La siguiente pregunta la elige el servidor, no un `?q=` en la URL: refrescar
+   * vuelve a pedir la pantalla y esta trae la primera pendiente. Asi la asesora
+   * no puede saltarse una pregunta ni repetir la que ya contesto.
+   */
+  function advance() {
+    router.refresh();
+  }
 
   return (
     <div className="mt-6 space-y-6">
@@ -127,7 +129,7 @@ export function TrainingResponseForm({
               return (
                 <article className="rounded-card border border-border bg-background p-4" key={key}>
                   <div className="flex items-start justify-between gap-3">
-                    <h4 className="font-semibold text-fg">{dimensionLabels[key]}</h4>
+                    <h4 className="font-semibold text-fg">{trainingDimensionLabels[key]}</h4>
                     <span className="rounded-full bg-primary px-2 py-1 text-sm font-bold text-primary-fg">
                       {dimension.score}/5
                     </span>
@@ -145,17 +147,25 @@ export function TrainingResponseForm({
             <h4 className="font-semibold text-confidence-high-fg">Versión mejorada</h4>
             <p className="mt-2 text-fg">{evaluation.improvedAnswer}</p>
           </article>
-          {nextHref ? (
-            <Link
-              className="inline-flex min-h-11 items-center rounded-card bg-primary px-5 font-semibold text-primary-fg hover:bg-primary-deep"
-              href={nextHref}
+          {isLast ? (
+            <div>
+              <p className="font-semibold text-fg">Era la última pregunta de la tanda.</p>
+              <Link
+                className="mt-3 inline-flex min-h-11 items-center rounded-card bg-primary px-5 font-semibold text-primary-fg hover:bg-primary-deep"
+                href={summaryHref}
+              >
+                Ver mi resumen →
+              </Link>
+            </div>
+          ) : (
+            <button
+              className="inline-flex min-h-11 items-center rounded-card bg-primary px-5 font-semibold text-primary-fg hover:bg-primary-deep disabled:opacity-60"
+              disabled={isSubmitting}
+              onClick={advance}
+              type="button"
             >
               Siguiente pregunta →
-            </Link>
-          ) : (
-            <p className="font-semibold text-fg">
-              Era la última pregunta de la tanda. Vuelve a Training para practicar otro producto.
-            </p>
+            </button>
           )}
         </section>
       ) : null}

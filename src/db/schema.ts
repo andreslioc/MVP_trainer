@@ -364,8 +364,9 @@ export const trainingSessions = pgTable(
      * Cuantas preguntas trae la practica por categoria.
      *
      * Vive en la sesion y no en la URL porque el barajado tiene que ser el
-     * mismo en cada recarga: si el tamano cambiara entre visitas, el `?q=3` de
-     * la asesora apuntaria a otra pregunta. Null en las practicas de una sola
+     * mismo en cada recarga: si el tamano cambiara entre visitas, la practica
+     * retomada caeria en otra pregunta y el consolidado promediaria sobre una
+     * tanda distinta a la que se respondio. Null en las practicas de una sola
      * ficha, que muestran su tanda completa.
      */
     practiceSize: integer("practice_size"),

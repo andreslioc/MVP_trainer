@@ -9,6 +9,7 @@ import {
 import { evaluateTrainingAnswer } from "../../../../server/training/evaluate.ts";
 import {
   finishPracticeIfComplete,
+  finishPracticeNow,
   recordPracticeTime,
 } from "../../../../server/training/practice-time.ts";
 import {
@@ -45,7 +46,17 @@ export async function evaluateTrainingAnswerAction(input: {
   // Se cierra despues de guardar, no antes: si la evaluacion falla, la
   // practica sigue abierta y la asesora puede reintentar esa pregunta.
   if (result.ok) await finishPracticeIfComplete(input.sessionId);
-  revalidatePath(`/app/training/${input.sessionId}`);
+  // A proposito NO se revalida la ruta: la pantalla muestra la primera pregunta
+  // pendiente, y revalidar aqui la cambiaria por la siguiente en el mismo
+  // instante en que llega la evaluacion —borrando de la pantalla el feedback
+  // que la asesora acaba de pedir. El avance lo pide ella con "Siguiente".
+  return result;
+}
+
+/** Cierra la practica con lo respondido hasta ahora y manda al consolidado. */
+export async function finishPracticeNowAction(sessionId: string) {
+  const result = await finishPracticeNow(sessionId);
+  if (result.ok) revalidatePath("/app/training");
   return result;
 }
 

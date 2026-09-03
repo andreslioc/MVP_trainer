@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
@@ -134,7 +134,10 @@ export async function finishPracticeIfComplete(
   const [respondidas] = await database
     .select({ value: sql<number>`count(DISTINCT ${trainingAnswers.questionId})::int` })
     .from(trainingAnswers)
-    .where(eq(trainingAnswers.sessionId, sessionId));
+    // Solo las evaluadas. Una respuesta guardada cuya evaluacion fallo deja la
+    // pregunta pendiente: la pantalla vuelve a caer en ella para reintentar, y
+    // cerrar la practica ahi la mandaria al resumen con un hueco.
+    .where(and(eq(trainingAnswers.sessionId, sessionId), isNotNull(trainingAnswers.scores)));
 
   let tanda = session.practiceSize ?? 0;
   if (!session.practiceSize && session.productId) {
@@ -154,4 +157,57 @@ export async function finishPracticeIfComplete(
     .where(and(eq(trainingSessions.id, sessionId), sql`${trainingSessions.finishedAt} is null`))
     .returning({ finishedAt: trainingSessions.finishedAt });
   return updated?.finishedAt ?? null;
+}
+
+/**
+ * Cierra la practica ahora, con las preguntas que alcanzo a responder.
+ *
+ * Existe porque terminar la tanda completa no siempre es lo que la asesora
+ * quiere: entra un live, se le acaba el tiempo, y sin esto la sesion se queda
+ * abierta para siempre y el resumen no llega nunca. Es idempotente —volver a
+ * cerrarla no corre la fecha— por la misma razon que `finishPracticeIfComplete`:
+ * la fecha de cierre es cuando dejo de practicar, no la ultima vez que abrio la
+ * pantalla.
+ */
+export async function finishPracticeNow(sessionId: string, options: PracticeTimeDependencies = {}) {
+  const authorize = options.authorize ?? requireRole;
+  const database = options.database ?? db;
+  const authorization = await authorize("asesor");
+  if (!authorization.ok) return authorization;
+
+  const parsed = z.uuid().safeParse(sessionId);
+  if (!parsed.success) {
+    return {
+      ok: false as const,
+      error: { code: "VALIDATION", message: "La practica no es valida.", field: "sessionId" },
+    };
+  }
+
+  const [session] = await database
+    .select({ id: trainingSessions.id, finishedAt: trainingSessions.finishedAt })
+    .from(trainingSessions)
+    .where(
+      and(
+        eq(trainingSessions.id, parsed.data),
+        // Tiene que ser suya: el id de una practica ajena no puede cerrarla.
+        eq(trainingSessions.advisorId, authorization.data.id),
+      ),
+    )
+    .limit(1);
+  if (!session) {
+    return {
+      ok: false as const,
+      error: { code: "NOT_FOUND", message: "La practica no existe o no es tuya." },
+    };
+  }
+  if (session.finishedAt) {
+    return { ok: true as const, data: { finishedAt: session.finishedAt } };
+  }
+
+  const [updated] = await database
+    .update(trainingSessions)
+    .set({ finishedAt: new Date() })
+    .where(and(eq(trainingSessions.id, session.id), sql`${trainingSessions.finishedAt} is null`))
+    .returning({ finishedAt: trainingSessions.finishedAt });
+  return { ok: true as const, data: { finishedAt: updated?.finishedAt ?? new Date() } };
 }

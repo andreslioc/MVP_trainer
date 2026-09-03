@@ -2,15 +2,18 @@ import Link from "next/link";
 
 import { getSession } from "../../../../lib/auth.ts";
 import { listTrainingCategories } from "../../../../server/training/categories.ts";
+import { listOpenPractices } from "../../../../server/training/progress.ts";
 import { listTrainingProducts } from "../../../../server/training/questions.ts";
+import { OpenPractices } from "./open-practices.tsx";
 import { TrainingLauncher } from "./training-launcher.tsx";
 
 export default async function TrainingPage() {
   const session = await getSession();
   if (!session.ok) return null;
-  const [result, fichas] = await Promise.all([
+  const [result, fichas, abiertas] = await Promise.all([
     listTrainingCategories({ authorize: async () => session }),
     listTrainingProducts({ authorize: async () => session }),
+    listOpenPractices({ authorize: async () => session }),
   ]);
 
   return (
@@ -23,6 +26,8 @@ export default async function TrainingPage() {
         Elige una categoría y responde preguntas reales de clientas sobre fichas verificadas del
         Knowledge Hub, barajadas al azar como en un live.
       </p>
+
+      {abiertas.ok ? <OpenPractices practices={abiertas.data} /> : null}
 
       {!result.ok ? (
         <div className="mt-8 rounded-card border border-destructive bg-confidence-low-bg p-4">

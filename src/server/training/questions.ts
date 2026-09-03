@@ -452,6 +452,8 @@ export async function getTrainingSession(sessionId: string, options: TrainingDep
         practiceSize: trainingSessions.practiceSize,
         productName: products.name,
         startedAt: trainingSessions.startedAt,
+        finishedAt: trainingSessions.finishedAt,
+        activeSeconds: trainingSessions.activeSeconds,
       })
       .from(trainingSessions)
       // leftJoin y no innerJoin: una practica por categoria no tiene ficha.
@@ -470,8 +472,8 @@ export async function getTrainingSession(sessionId: string, options: TrainingDep
       ? and(eq(products.category, session.category), isNotNull(products.verifiedAt))
       : eq(trainingQuestions.productId, session.productId ?? "");
     // El barajado sale del id de la sesion: aleatorio para la asesora y estable
-    // entre recargas, que es lo que necesita el `?q=` de la URL. Con random()
-    // cada recarga mostraria otra pregunta en la misma posicion.
+    // entre recargas, que es lo que necesita retomar una practica a medias. Con
+    // random() cada recarga correria la tanda y la primera pendiente cambiaria.
     const order = session.category
       ? sql`md5(${session.id} || ${trainingQuestions.id}::text)`
       : asc(trainingQuestions.createdAt);

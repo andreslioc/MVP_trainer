@@ -163,8 +163,8 @@ describe("practica por categoria", () => {
     expect(loaded.data.questions).toHaveLength(4);
     expect(new Set(loaded.data.questions.map((question) => question.productName)).size).toBe(2);
 
-    // El orden es barajado pero estable: el `?q=` de la URL apunta siempre a la
-    // misma pregunta, aunque la asesora recargue.
+    // El orden es barajado pero estable: la practica retomada cae siempre en la
+    // misma pregunta pendiente, aunque la asesora recargue.
     const reloaded = await getTrainingSession(started.data.id, {
       authorize,
       database: connection.db,
