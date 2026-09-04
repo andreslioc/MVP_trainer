@@ -23,6 +23,36 @@ import { confirmarEnlaceAction, establecerSesionAction } from "./actions.ts";
  *
  * Las dos acaban igual, asi que activar SMTP mas adelante no cambia nada aqui.
  */
+type Resultado = { ok: true } | { ok: false; error: { message: string } };
+
+/**
+ * Los canjes EN VUELO, por token.
+ *
+ * Canjear un token es de un solo uso, y React monta este componente dos veces:
+ * en desarrollo StrictMode monta, desmonta y vuelve a montar. Los dos montajes
+ * arrancan en el MISMO milisegundo —medido—, asi que ninguno alcanza a ver el
+ * resultado del otro: recordar el resultado no sirve de nada, ni en una variable
+ * del modulo ni en `sessionStorage`. Los dos llamaban al servidor con el mismo
+ * hash, el primero lo canjeaba y el segundo se encontraba el token quemado; el
+ * que se pintaba era el segundo, asi que una invitacion que acababa de
+ * funcionar mostraba "el enlace ya se uso o vencio".
+ *
+ * Lo que se comparte es la PROMESA, no su resultado: el segundo montaje se
+ * engancha a la llamada que ya esta en curso en vez de hacer otra. Es lo unico
+ * que sirve cuando los dos empiezan a la vez.
+ */
+const enVuelo = new Map<string, Promise<Resultado>>();
+
+function canjearUnaVez(token: string, ejecutar: () => Promise<Resultado>) {
+  const existente = enVuelo.get(token);
+  if (existente) {
+    return existente;
+  }
+  const promesa = ejecutar();
+  enVuelo.set(token, promesa);
+  return promesa;
+}
+
 export function ConfirmClient() {
   const router = useRouter();
   const [error, setError] = useState<string>();
@@ -46,18 +76,20 @@ export function ConfirmClient() {
       const refreshToken = fragmento.get("refresh_token");
       const tokenHash = consulta.get("token_hash");
 
-      const resultado =
+      // El token identifica el canje. Del par del fragmento basta el de acceso:
+      // los dos llegan juntos y no se reparten entre enlaces.
+      const clave = tokenHash ?? accessToken ?? "";
+
+      const resultado = await canjearUnaVez(clave, () =>
         accessToken && refreshToken
-          ? await establecerSesionAction({ accessToken, refreshToken })
+          ? establecerSesionAction({ accessToken, refreshToken })
           : tokenHash
-            ? await confirmarEnlaceAction({
-                token_hash: tokenHash,
-                type: consulta.get("type") ?? "",
-              })
-            : {
+            ? confirmarEnlaceAction({ token_hash: tokenHash, type: consulta.get("type") ?? "" })
+            : Promise.resolve({
                 ok: false as const,
                 error: { message: "El enlace no es válido. Pide una invitación nueva." },
-              };
+              }),
+      );
 
       if (cancelado) return;
 

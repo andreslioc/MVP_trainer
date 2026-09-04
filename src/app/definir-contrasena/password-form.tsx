@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { PASSWORD_MIN_LENGTH, type PasswordInput } from "../../lib/validation/password.ts";
 import { setPasswordAction } from "./actions.ts";
 
-export function PasswordForm() {
+export function PasswordForm({ requiereActual }: { requiereActual: boolean }) {
   const router = useRouter();
   const [error, setError] = useState<string>();
   const {
@@ -15,7 +15,9 @@ export function PasswordForm() {
     handleSubmit,
     setError: setFieldError,
     formState: { errors, isSubmitting, isSubmitSuccessful },
-  } = useForm<PasswordInput>({ defaultValues: { password: "", confirmation: "" } });
+  } = useForm<PasswordInput>({
+    defaultValues: { password: "", confirmation: "", currentPassword: "" },
+  });
 
   const submit = handleSubmit(async (values) => {
     setError(undefined);
@@ -29,8 +31,12 @@ export function PasswordForm() {
       return;
     }
 
-    if (result.error.field === "confirmation" || result.error.field === "password") {
-      setFieldError(result.error.field, { message: result.error.message });
+    // Solo algunos errores traen `field`: los que no, van al aviso general. Se
+    // comprueba con `in` porque el codigo es el discriminante y no todos los
+    // miembros de la union tienen la propiedad.
+    const campo = "field" in result.error ? result.error.field : undefined;
+    if (campo === "confirmation" || campo === "password" || campo === "currentPassword") {
+      setFieldError(campo, { message: result.error.message });
       return;
     }
     setError(result.error.message);
@@ -40,6 +46,24 @@ export function PasswordForm() {
 
   return (
     <form className="mt-6 space-y-4" onSubmit={submit}>
+      {requiereActual ? (
+        <label className="block text-sm font-medium text-fg">
+          Contraseña actual
+          <input
+            aria-invalid={errors.currentPassword ? true : undefined}
+            autoComplete="current-password"
+            className="mt-1 min-h-11 w-full rounded-card border border-border-control bg-surface px-3 text-fg"
+            type="password"
+            {...register("currentPassword", { required: "Escribe la contraseña actual." })}
+          />
+          {errors.currentPassword ? (
+            <span className="mt-1 block text-sm text-destructive" role="alert">
+              {errors.currentPassword.message}
+            </span>
+          ) : null}
+        </label>
+      ) : null}
+
       <label className="block text-sm font-medium text-fg">
         Contraseña nueva
         <input

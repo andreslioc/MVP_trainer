@@ -18,6 +18,15 @@ export const passwordSchema = z
         `La contraseña necesita al menos ${PASSWORD_MIN_LENGTH} caracteres.`,
       ),
     confirmation: z.string().min(1, "Repite la contraseña."),
+    /**
+     * Solo la pide quien NO viene de una invitacion.
+     *
+     * Una cuenta recien invitada no tiene contrasena que escribir aqui, asi que
+     * el campo no puede ser obligatorio en el esquema: quien decide si hace
+     * falta es `setPassword`, que es el unico que sabe si la sesion trae el
+     * marcador del canje.
+     */
+    currentPassword: z.string().optional(),
   })
   // El campo del error es `confirmation` a proposito: es el que la persona
   // acaba de escribir y el que tiene que corregir. Marcar `password` la manda
