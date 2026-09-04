@@ -1,7 +1,3 @@
-import { redirect } from "next/navigation";
-
-import { getSession } from "../../../lib/auth.ts";
-import { PASSWORD_PATH } from "../../../lib/invite-link.ts";
 import { ConfirmClient } from "./confirm-client.tsx";
 
 /**
@@ -14,13 +10,20 @@ import { ConfirmClient } from "./confirm-client.tsx";
  * la cookie de sesion.
  *
  * Se visita SIN sesion, asi que `proxy.ts` la exceptua por nombre.
+ *
+ * NO atajaba hacia `/definir-contrasena` cuando ya habia sesion, y ese atajo
+ * era un secuestro: quien abria el enlace de una invitacion teniendo su propia
+ * sesion abierta —la admin que acaba de crear la cuenta y hace clic para
+ * probar— pasaba de largo sin canjear el token, llegaba al formulario con SU
+ * sesion, y `updateUser({ password })` le cambiaba la contrasena a ELLA en vez
+ * de a la invitada. Su contrasena anterior dejaba de servir en ese instante.
+ *
+ * El token del correo se canjea SIEMPRE. Es lo unico que decide de quien es la
+ * sesion que va a recibir la contrasena, y solo el navegador puede leerlo
+ * cuando viene en el fragmento: por eso la decision es del cliente y no de
+ * aqui.
  */
-export default async function ConfirmarInvitacionPage() {
-  const session = await getSession();
-  if (session.ok) {
-    redirect(PASSWORD_PATH);
-  }
-
+export default function ConfirmarInvitacionPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md items-center px-6">
       <section className="w-full rounded-card border border-border bg-surface p-8">

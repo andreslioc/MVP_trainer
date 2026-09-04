@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { createServerSupabaseClient, resolveVerifiedSession } from "../../lib/auth.ts";
+import { logFailure } from "../../lib/log.ts";
 
 const loginSchema = z.object({
   email: z.email(),
@@ -23,6 +24,7 @@ export async function login(formData: FormData) {
   });
 
   if (!parsed.success) {
+    logFailure("login/entrada", z.prettifyError(parsed.error));
     redirect("/login?error=INVALID_CREDENTIALS");
   }
 
@@ -33,11 +35,21 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
+    // El usuario ve un mensaje generico a proposito —decirle si el correo
+    // existe convierte el login en un enumerador de cuentas—, pero el servidor
+    // tiene que poder distinguir "contrasena mala" de "llave publishable
+    // rotada" o "proyecto equivocado": los tres llegan aqui iguales y en
+    // produccion no dejaban ni una pista.
+    logFailure(
+      "login/supabase",
+      `${error.status ?? "sin status"} ${error.code ?? ""} ${error.message}`,
+    );
     redirect("/login?error=INVALID_CREDENTIALS");
   }
 
   const session = await resolveVerifiedSession(supabase.auth);
   if (!session.ok) {
+    logFailure("login/sesion", session.error.code);
     redirect(`/login?error=${session.error.code}`);
   }
 

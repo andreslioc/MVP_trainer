@@ -28,7 +28,8 @@
     "supabase:check": "bash scripts/check-supabase-cli.sh",
     "supabase:start": "pnpm supabase:check && supabase start",
     "supabase:stop": "supabase stop",
-    "env:check": "tsx scripts/check-deploy-env.ts"
+    "env:check": "tsx scripts/check-deploy-env.ts",
+    "admin:bootstrap": "tsx scripts/bootstrap-admin.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",

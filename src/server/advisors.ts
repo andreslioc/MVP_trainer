@@ -22,7 +22,7 @@ const advisorFromAuthSchema = z.object({
   role: z.enum(advisorRoles).default("asesor"),
 });
 
-type AdvisorWriter = Pick<typeof db, "insert">;
+type AdvisorWriter = Pick<typeof db, "insert" | "select">;
 export type AdvisorDatabase = Pick<typeof db, "select" | "update" | "delete">;
 type AuthorizationResult =
   | { ok: true; data: { id: string; role: AdvisorRole } }
@@ -103,6 +103,32 @@ export async function createInvitedAdvisor(
     };
   }
 
+  // Se revisa ANTES de invitar, y no se deja que el indice unico lo descubra.
+  // `inviteUserByEmail` sobre un correo que ya existe pero esta SIN confirmar no
+  // devuelve error: GoTrue reenvia la invitacion y responde 200 con ESE usuario
+  // ya existente. El insert de abajo chocaba entonces con
+  // `advisors_email_unique`, entraba al catch, y el `deleteUser` de limpieza
+  // borraba la cuenta de auth de alguien que ya trabajaba aqui. La fila de
+  // `advisors` sobrevivia, asi que el directorio seguia mostrando la cuenta
+  // mientras su unico modo de entrar ya no existia: `signInWithPassword`
+  // respondia "Invalid login credentials" para siempre y nada en la pantalla
+  // relacionaba el fallo con haber creado a otra persona.
+  const [existing] = await database
+    .select({ id: advisors.id })
+    .from(advisors)
+    .where(eq(advisors.email, parsed.data.email))
+    .limit(1);
+
+  if (existing) {
+    return {
+      ok: false as const,
+      error: {
+        code: "ADVISOR_EXISTS" as const,
+        message: "Ya existe una cuenta con ese correo.",
+      },
+    };
+  }
+
   const { data, error } = await adminAuth.inviteUserByEmail(parsed.data.email, {
     data: { display_name: parsed.data.displayName },
     redirectTo: buildConfirmUrl(env.APP_BASE_URL),
@@ -118,7 +144,20 @@ export async function createInvitedAdvisor(
   try {
     return await createAdvisorFromAuthUser({ id: data.user.id, ...parsed.data }, database);
   } catch (databaseError) {
-    await adminAuth.deleteUser(data.user.id);
+    // Solo se borra el usuario de auth si esta invitacion lo creo. Si la
+    // invitacion devolvio a alguien que ya tenia fila —un id que ya esta en el
+    // directorio—, borrarlo le quita el acceso a una persona ajena a esta
+    // operacion, y eso es peor que dejar un usuario de auth huerfano.
+    const [ajeno] = await database
+      .select({ id: advisors.id })
+      .from(advisors)
+      .where(eq(advisors.id, data.user.id))
+      .limit(1);
+
+    if (!ajeno) {
+      await adminAuth.deleteUser(data.user.id);
+    }
+
     return {
       ok: false as const,
       error: {

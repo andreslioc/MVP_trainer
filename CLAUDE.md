@@ -22,6 +22,7 @@ verdad: Training Simulator (antes del live), Live Copilot (durante) y Live Intel
 | Aplicar migracion (pruebas) | `pnpm db:migrate:test` |
 | Inspeccionar base | `pnpm db:studio` |
 | Semillas | `pnpm db:seed` |
+| Crear o reparar la cuenta admin | `pnpm admin:bootstrap <correo> <contrasena> ["Nombre"]` |
 | Escribir .env.local | `pnpm env:local` · con llaves de Supabase: `pnpm env:local:supabase` |
 | Version del CLI de Supabase | `pnpm supabase:check` |
 | Stack de Supabase | `pnpm supabase:start` · `pnpm supabase:stop` |
