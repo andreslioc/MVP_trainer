@@ -9,7 +9,12 @@ import {
   findJargon,
   findProvenance,
 } from "../camera-register.ts";
-import { findEmptyPhrase, isAllGeneric, isOnlyPackaging } from "../vague-claims.ts";
+import {
+  findEmptyPhrase,
+  hasDeclaredQuantity,
+  isAllGeneric,
+  isOnlyPackaging,
+} from "../vague-claims.ts";
 
 const requiredText = z.string().trim().min(1, "Este campo es obligatorio.");
 // `null` entra igual que `""`: una columna vacia en Postgres llega como null,
@@ -79,7 +84,7 @@ export const productBenefitSchema = z
       if (emptyPhrase) {
         context.addIssue({
           code: "custom",
-          message: `"${emptyPhrase}" no dice nada. Nombra cual: el ingrediente, la cantidad, la parte del cuerpo o la situacion de uso.`,
+          message: `"${emptyPhrase}" no dice nada. Nombra cual: el ingrediente, la funcion, la parte del cuerpo o la situacion de uso. La cantidad no, que tiene su campo.`,
           path: [field],
         });
       }
@@ -95,6 +100,18 @@ export const productBenefitSchema = z
     // etiqueta ocupando el espacio del beneficio. El rendimiento va en los
     // diferenciales, la cantidad en los ingredientes y el manejo en el modo de
     // uso. Aqui va lo que el producto hace por la persona.
+    // La cantidad declarada es el otro disfraz del mismo error, y el mas dificil
+    // de ver: nombra el ingrediente, asi que pasa la regla de concrecion y pasa
+    // `isOnlyPackaging` —que exige que TODAS las palabras sean de envase—. Solo
+    // se mide en `claim`: en `science_note` la cifra explica por que el beneficio
+    // se sostiene, que es justo su trabajo.
+    if (hasDeclaredQuantity(benefit.claim)) {
+      context.addIssue({
+        code: "custom",
+        message: `Esto declara una cantidad, no un beneficio: "${benefit.claim}". La cantidad va en ingredientes y la dosis en modo de uso; aqui va para que sirve el ingrediente que la ficha declara.`,
+        path: ["claim"],
+      });
+    }
     if (isOnlyPackaging(benefit.claim)) {
       context.addIssue({
         code: "custom",

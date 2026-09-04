@@ -247,6 +247,36 @@ export const researchedProductSchema = z
  * `strict()` como el resto de los contratos: una llave extra es una invencion
  * del modelo, no un extra util.
  */
+/**
+ * Los beneficios de su propia pasada.
+ *
+ * Trae dos campos que `researchedProductSchema` no tiene —`technical_note` y
+ * `evidence_level`—, y es a proposito: cuando los beneficios venian dentro de la
+ * ficha completa no habia donde poner el respaldo de una funcion, asi que la
+ * trazabilidad se perdia o se colaba en un campo que se dice en camara.
+ */
+export const researchedBenefitsSchema = z
+  .object({
+    benefits: z
+      .array(
+        z
+          .object({
+            claim: z.string().trim().min(1).max(200),
+            science_note: z.string().trim().min(1).max(400),
+            technical_note: z.string().trim().max(900),
+            evidence_level: z.enum(["alta", "media", "baja"]),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(3),
+    /** Ingredientes sin funcion documentada. Van a los datos sin confirmar. */
+    sin_funcion_documentada: z.array(z.string().trim().min(1).max(200)).max(10),
+    /** `true` si algun beneficio nace de una enfermedad y exige ruta de cautela. */
+    requiere_cautela: z.boolean(),
+  })
+  .strict();
+
 export const safetyLayerSchema = z
   .object({
     live_ready: z.array(z.string().trim().min(1).max(220)).min(3).max(8),
@@ -304,6 +334,7 @@ export const gapVerificationSchema = z
 
 export type GapVerification = z.infer<typeof gapVerificationSchema>;
 export type SafetyLayer = z.infer<typeof safetyLayerSchema>;
+export type ResearchedBenefits = z.infer<typeof researchedBenefitsSchema>;
 export type ResearchedProduct = z.infer<typeof researchedProductSchema>;
 export type GeneratedQuestions = z.infer<typeof generatedQuestionsSchema>;
 export type Evaluation = z.infer<typeof evaluationSchema>;

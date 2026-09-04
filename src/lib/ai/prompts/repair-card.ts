@@ -34,10 +34,16 @@ Reglas:
   in vitro, metanalisis, doble ciego, placebo -> fuera del campo; ese dato va en el respaldo tecnico
 - SI EL ERROR ES TRAZABILIDAD —el fabricante declara, segun la etiqueta, sin confirmar—, di el dato
   de frente y quita la atribucion. El dato se queda; quien lo dijo se va.
-- SI EL ERROR ES UN BENEFICIO QUE NO DICE NADA, nombra el ingrediente, la cantidad, la parte del
+- SI EL ERROR ES UN BENEFICIO QUE NO DICE NADA, nombra el ingrediente y su funcion, la parte del
   cuerpo o la situacion de uso. Maximo dieciseis palabras. Si el producto no sostiene tres
   beneficios reales, devuelve menos: uno o dos concretos valen mas que tres vagos, y los rangos van
   consecutivos desde 1.
+- SI EL ERROR DICE QUE UN BENEFICIO DECLARA UNA CANTIDAD, no lo reformules: cambialo por PARA QUE
+  SIRVE ese ingrediente —su funcion reconocida o su uso establecido— y manda la cifra a la nota
+  cientifica, que es su sitio. "La toma equivale a 4.500 mg de raiz de ashwagandha" se convierte en
+  "se usa como adaptogeno, para acompañar el manejo del estres del dia a dia", con los 4.500 mg
+  explicando la nota. Si de ese ingrediente no sostienes una funcion, quita el beneficio y deja
+  menos: el hueco se registra, no se rellena.
 - SI EL ERROR DICE QUE LA FICHA AFIRMA UN REGISTRO SANITARIO QUE NO SE ENCONTRO, cambia la frase por
   lo que si es cierto: se vende como suplemento importado y no se puede afirmar que tenga registro.
 - Escribe en español neutro, como le hablarias a una clienta en un live.

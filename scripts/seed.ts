@@ -1,17 +1,7 @@
 import { sql } from "drizzle-orm";
 
-import { COPILOT_CLASSIFY_PROMPT, COPILOT_COMPOSE_PROMPT } from "../src/lib/ai/prompts/copilot.ts";
-import { GENERATE_QUESTIONS_PROMPT } from "../src/lib/ai/prompts/generate-questions.ts";
-import { EVALUATE_ANSWER_PROMPT } from "../src/lib/ai/prompts/evaluate-answer.ts";
-import { ANALYZE_TRANSCRIPT_PROMPT } from "../src/lib/ai/prompts/analyze-transcript.ts";
-import { CHAT_COVERAGE_PROMPT } from "../src/lib/ai/prompts/chat-coverage.ts";
-import {
-  RESEARCH_PRODUCT_PROMPT,
-  STRUCTURE_PRODUCT_PROMPT,
-} from "../src/lib/ai/prompts/research-product.ts";
-import { SAFETY_LAYER_PROMPT } from "../src/lib/ai/prompts/safety-layer.ts";
-import { STRUCTURE_GAP_PROMPT, VERIFY_GAP_PROMPT } from "../src/lib/ai/prompts/verify-gap.ts";
 import { loadEnv } from "../src/lib/load-env.ts";
+import { PROMPT_SEEDS } from "./prompt-seeds.ts";
 
 loadEnv();
 
@@ -57,24 +47,6 @@ const commercialRuleSeeds = [
   },
 ];
 
-const promptNames = [
-  "generate_questions",
-  "evaluate_answer",
-  "copilot_classify",
-  "copilot_compose_express",
-  "copilot_compose_estandar",
-  "copilot_compose_profunda",
-  "structured_repair",
-  "analyze_transcript",
-  "chat_coverage",
-  "promote_insight",
-  "research_product",
-  "structure_product",
-  "safety_layer",
-  "verify_gap",
-  "structure_gap",
-] as const;
-
 async function main(): Promise<void> {
   const [
     { openDirectDatabase },
@@ -98,39 +70,14 @@ async function main(): Promise<void> {
           set: { value: sql`excluded.value`, active: sql`excluded.active`, updatedAt: new Date() },
         });
 
+      // La lista de prompts vive en `prompt-seeds.ts` y en ningun otro sitio.
+      // Aqui habia una copia —un arreglo de nombres mas una escalera de
+      // ternarios para elegir el cuerpo— y se desincronizo en el primer prompt
+      // nuevo: los dos de la pasada de beneficios quedaron fuera, asi que la
+      // semilla no los publicaba y la traza no podia nombrarlos. Un solo lugar.
       await tx
         .insert(prompts)
-        .values(
-          promptNames.map((name) => ({
-            name,
-            version: 1,
-            body:
-              name === "generate_questions"
-                ? GENERATE_QUESTIONS_PROMPT
-                : name === "evaluate_answer"
-                  ? EVALUATE_ANSWER_PROMPT
-                  : name === "copilot_classify"
-                    ? COPILOT_CLASSIFY_PROMPT
-                    : name.startsWith("copilot_compose_")
-                      ? COPILOT_COMPOSE_PROMPT
-                      : name === "analyze_transcript"
-                        ? ANALYZE_TRANSCRIPT_PROMPT
-                        : name === "chat_coverage"
-                          ? CHAT_COVERAGE_PROMPT
-                          : name === "research_product"
-                            ? RESEARCH_PRODUCT_PROMPT
-                            : name === "structure_product"
-                              ? STRUCTURE_PRODUCT_PROMPT
-                              : name === "safety_layer"
-                                ? SAFETY_LAYER_PROMPT
-                                : name === "verify_gap"
-                                  ? VERIFY_GAP_PROMPT
-                                  : name === "structure_gap"
-                                    ? STRUCTURE_GAP_PROMPT
-                                    : `Plantilla inicial versionada para ${name}.`,
-            active: true,
-          })),
-        )
+        .values(PROMPT_SEEDS.map((seed) => ({ ...seed, version: 1, active: true })))
         .onConflictDoUpdate({
           target: [prompts.name, prompts.version],
           set: { body: sql`excluded.body`, active: sql`excluded.active` },

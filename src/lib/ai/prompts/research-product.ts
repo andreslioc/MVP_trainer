@@ -85,9 +85,12 @@ Entrega:
 1. Identidad: nombre exacto, marca, presentacion, formato.
 2. Ingredientes y cantidades tal como los declara la etiqueta.
 3. Modo de uso declarado: porcion, momento del dia, con que se toma.
-4. Tres beneficios principales. Prioriza funciones o beneficios respaldados por fuentes fiables;
-   indica con claridad cuando la evidencia solo es preliminar, preclinica o tradicional. Si no hay
-   evidencia suficiente, usa beneficios verificables de composicion o uso y dilo sin rellenar.
+4. PARA QUE SIRVE CADA INGREDIENTE ACTIVO que declara la etiqueta: su funcion reconocida o su uso
+   establecido, y a que cantidad se usa habitualmente. Este es el insumo de los beneficios, y casi
+   nunca esta impreso en el frasco: se busca DEL INGREDIENTE, no del envase. Un panel dice 450 mg de
+   extracto de raiz de ashwagandha; para que sirve la ashwagandha se busca aparte. Di con claridad
+   cuando el respaldo sea tradicional o preliminar. Si de un ingrediente no encuentras funcion
+   documentada, dilo; NO lo sustituyas por un dato de composicion.
 5. Que declara el empaque, separado de lo que promete el vendedor.
 6. Advertencias y CASOS DE NO USO: en quien y con que la etiqueta dice que no se use. Cada caso en
    pocas palabras y solo si la etiqueta lo dice ("menores de 18 anios", "embarazo", "sensibilidad a
@@ -118,7 +121,7 @@ Reglas obligatorias:
 - claims_allowed solo admite frases que la etiqueta o el fabricante declaren de forma literal.
 - Ninguna frase afirma curar, tratar o prevenir enfermedades, ni garantizar resultados.
 - Las cantidades de ingredientes van en el texto del ingrediente, no como afirmacion de beneficio.
-- Exactamente tres beneficios, del mas al menos relevante para una clienta.
+- De uno a tres beneficios, del mas al menos relevante para una clienta. Ninguno de relleno.
 - LA TRAZABILIDAD SE GUARDA, NO SE DICE. De donde salio cada dato —del panel de la etiqueta, del
   material comercial del fabricante, de un comercio— es informacion que el equipo necesita, y su
   sitio es el respaldo tecnico del beneficio o los datos sin confirmar. En la descripcion, el para
@@ -179,27 +182,53 @@ Reglas obligatorias:
   linea de alergenos. "La etiqueta no declara alergenos" NO es una respuesta cuando el producto
   lleva un ingrediente al que alguien puede ser alergico: quien lo escucha decide con eso.
   Y no lo escondas por prudencia comercial: un ingrediente presente y declarado se dice.
-- UN BENEFICIO ES LO QUE EL PRODUCTO HACE POR LA PERSONA. No es lo que trae, ni cuanto rinde, ni
-  como se toma. El rendimiento va en diferenciales, la cantidad en ingredientes y el manejo en
-  usage_mode. Si la frase se puede leer en el empaque, no es un beneficio: es una caracteristica.
-  NO ES BENEFICIO: "Rinde 393 porciones", "Aporta 14 mg por porcion", "Se toma en gotas o se aplica
-  en la piel". Los tres son ciertos y utiles, y los tres tienen su propio campo.
-  SI ES BENEFICIO: "Aporta carvacrol y timol, los antioxidantes del oregano" —nombra el compuesto y
-  la funcion—. "Se usa tradicionalmente como apoyo digestivo" —nombra el sistema y encuadra la
-  tradicion como lo que es—.
-- DE UNO A TRES BENEFICIOS. Si el producto solo sostiene uno o dos reales, entrega uno o dos.
-  Forzar el tercero es como se llena el hueco con un dato de envase o con una frase vacia.
-- CADA BENEFICIO TIENE QUE PODER SEÑALARSE. La prueba: si al leerlo cabe preguntar "¿como cual?" y
-  la ficha no puede contestar, no es un beneficio, es relleno. Nombra el ingrediente, la cantidad,
-  la parte del cuerpo o la situacion de uso.
+- UN BENEFICIO ES LO QUE GANA QUIEN SE LO TOMA. No es lo que trae, ni cuanto rinde, ni como se
+  toma, ni de que esta hecha la capsula. El rendimiento va en diferenciales, la cantidad en
+  ingredientes, el manejo en usage_mode y el material de la capsula en precautions o diferenciales.
+  Si la frase se puede leer en el panel del frasco, no es un beneficio: es una caracteristica, y ya
+  tiene su campo.
+  NO ES BENEFICIO: "La toma diaria equivale a 4.500 mg de raiz", "Lleva 18 mg de pimienta negra al
+  95% de piperina", "Capsula de origen vegetal", "Rinde 393 porciones". Los cuatro son ciertos y
+  utiles, y ninguno contesta para que sirve el producto.
+- DE DONDE SALE UN BENEFICIO: de la FUNCION RECONOCIDA o del USO ESTABLECIDO del ingrediente activo
+  que esta ficha declara, a la cantidad que lo declara. Eso NO es inventar. Es para que sirve ese
+  ingrediente —informacion establecida sobre el ingrediente, no una promesa sobre esta marca— y es
+  exactamente lo que la clienta esta preguntando. La etiqueta de un frasco casi nunca imprime para
+  que sirve lo que trae, asi que exigirle el beneficio a la etiqueta es lo que deja la ficha
+  hablando de miligramos y de capsulas.
+  Ashwagandha: se usa como adaptogeno, para acompañar el manejo del estres del dia a dia.
+  Pimienta negra en una formula: esta para que el cuerpo aproveche mejor el ingrediente principal.
+  Melatonina: es la señal con la que el cuerpo avisa que es hora de dormir.
+- LA FRONTERA, Y NO SE CRUZA NI UNA VEZ. Se nombra la funcion o el uso; jamas una enfermedad, un
+  sintoma clinico ni un resultado garantizado. La funcion fisiologica reconocida de un ingrediente
+  SI se dice; el efecto terapeutico NO, ni en condicional, ni con matices, ni como "ayuda a".
+  SI: "El magnesio participa en la funcion muscular normal."   NO: "El magnesio quita los calambres."
+  SI: "Se usa como adaptogeno, para acompañar el manejo del estres del dia a dia."
+  NO: "Baja la ansiedad", "regula el cortisol", "cura el insomnio", "ayuda a dormir mejor".
+  Sin porcentajes, estudios, PMID ni cifras de eficacia en un campo que se dice en camara.
+- CADA BENEFICIO SE CUELGA DE UN INGREDIENTE DE ESTA FICHA, nombrandolo. La prueba: si al leerlo
+  cabe preguntar "¿de que ingrediente?" y la ficha no puede contestar, no va.
+- LA FORMA QUE FUNCIONA: el ingrediente, y para que se usa. "La ashwagandha se usa como adaptogeno,
+  para acompañar el manejo del estres del dia a dia." Nombra los dos, y por eso se puede decir en
+  camara y sostener despues.
+  El refugio prudente es escribir el envoltorio sin el contenido: "soporte en la gestion del estres",
+  "complemento para el bienestar general". Empiezan igual y no nombran ni el ingrediente ni la
+  funcion, asi que no se pueden sostener. Si tu frase empieza por soporte, apoyo o complemento,
+  reescribela nombrando el ingrediente y lo que hace.
   MAL: "Soporte al bienestar general — se utiliza tradicionalmente para apoyar diversos objetivos
   de salud, basado en practicas historicas." Tres lineas y cero datos.
-  BIEN: "Rinde 393 porciones por frasco — a tres tomas al dia son unos cuatro meses."
-  BIEN: "Aporta 14 mg de aceite de oregano por porcion de 4 gotas."
   Prohibido: "diversos objetivos", "multiples beneficios", "varias funciones", "propiedades
   beneficiosas", "apoyo integral", "amplia gama". Prometen variedad sin nombrar una sola cosa.
-- Si un producto de verdad no tiene tres beneficios concretos, usa datos verificables de
-  composicion, rendimiento o forma de uso. Un dato aburrido y cierto vale mas que una promesa vaga.
+- EL RESPALDO DE LA FUNCION VA EN science_note, en palabras de la clienta. Esta tubería entrega dos
+  campos por beneficio y no tiene nota tecnica, asi que aqui se dice de donde viene el uso sin jerga:
+  "se usa tradicionalmente como adaptogeno en la medicina ayurvedica" cumple; "estudios doble ciego
+  muestran reduccion de cortisol" no, porque science_note se lee en camara y ademas afirma un
+  resultado. Sin PMID, sin porcentajes, sin nombres de estudio.
+- DE UNO A TRES BENEFICIOS. Si el producto sostiene uno o dos reales, entrega uno o dos. NUNCA
+  rellenes el hueco con un dato del panel: si falta, el hueco va a verification_gaps como pregunta
+  buscable —que funcion documentada tiene este ingrediente a esta cantidad—. Dos beneficios de
+  verdad sirven; tres de los cuales dos son la dosis y el tipo de capsula dejan la ficha sin decir
+  para que sirve el producto, que es la pregunta por la que existe.
 - description dice QUE ES y nada mas: dos a cuatro frases. purpose dice PARA QUE SIRVE —uso
   principal y secundarios— y usage_mode dice COMO SE USA. Son tres campos y no se repiten entre si:
   la porcion no va en purpose, y el para que sirve no va en la descripcion.

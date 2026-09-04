@@ -1,4 +1,4 @@
-import type { ResearchedProduct, SafetyLayer } from "./ai/schemas.ts";
+import type { ResearchedBenefits, ResearchedProduct, SafetyLayer } from "./ai/schemas.ts";
 
 /**
  * Traduce una investigacion con busqueda web al contrato de una ficha.
@@ -27,6 +27,23 @@ function ingredientLabel(ingredient: ResearchedProduct["active_ingredients"][num
     : ingredient.name;
 }
 
+/**
+ * El nivel que va a la ficha, que no es siempre el que reporto el modelo.
+ *
+ * La pasada de beneficios SI califica la evidencia —para eso busca en fuentes de
+ * evidencia—, pero "alta" se baja a "media" igual: nada que no haya pasado por
+ * una revision humana se presenta como evidencia alta en camara, y esa regla no
+ * cambia porque la fuente sea mejor. Un beneficio de la pasada de la etiqueta no
+ * trae nivel y se queda en "baja".
+ */
+function nivelDeEvidencia(benefit: { claim: string; evidence_level?: "alta" | "media" | "baja" }) {
+  // La pasada de la etiqueta no trae el campo, y por eso se lee asi: TypeScript
+  // no lo ve en ese tipo, pero en tiempo de ejecucion la union es real.
+  const nivel = "evidence_level" in benefit ? benefit.evidence_level : undefined;
+  if (!nivel || nivel === "baja") return "baja" as const;
+  return "media" as const;
+}
+
 export function researchToProductPatch(
   research: ResearchedProduct,
   citations: ResearchCitation[],
@@ -38,6 +55,13 @@ export function researchToProductPatch(
    * se llenaran con arreglos vacios pareceria que la capa dijo "no hay riesgo".
    */
   safety: SafetyLayer | null = null,
+  /**
+   * Salida del paso de beneficios, o `null` cuando no corrio.
+   *
+   * Cuando viene, MANDA sobre los beneficios del paso de la ficha: ese paso los
+   * escribe mirando la etiqueta, y de ahi salian la dosis y el tipo de capsula.
+   */
+  benefits: ResearchedBenefits | null = null,
 ) {
   return {
     name: research.name,
@@ -55,11 +79,14 @@ export function researchToProductPatch(
     })),
     // Evidencia "baja" en los tres, siempre. Nada que no haya pasado por una
     // revision humana puede presentarse como evidencia alta en camara.
-    benefits: research.benefits.map((benefit, index) => ({
+    benefits: (benefits?.benefits ?? research.benefits).map((benefit, index) => ({
       rank: index + 1,
       claim: benefit.claim,
       science_note: benefit.science_note,
-      evidence_level: "baja" as const,
+      ...("technical_note" in benefit && benefit.technical_note
+        ? { technical_note: benefit.technical_note }
+        : {}),
+      evidence_level: nivelDeEvidencia(benefit),
     })),
     faqs: research.faqs,
     objections: research.objections,
