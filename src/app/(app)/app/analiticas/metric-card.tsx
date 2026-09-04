@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { Card } from "../../../../components/ui/card.tsx";
+
 /**
  * Una cifra con su nombre y, si aporta, su grafica pequeña.
  *
@@ -21,7 +23,7 @@ export function MetricCard({
   children?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col rounded-card border border-border bg-surface p-4">
+    <Card className="flex flex-col" density="compacta">
       <p className="text-sm text-fg-muted">{label}</p>
       <p className="mt-1 text-3xl font-semibold text-fg">
         {value}
@@ -29,6 +31,6 @@ export function MetricCard({
       </p>
       {note ? <p className="mt-1 text-xs text-fg-muted">{note}</p> : null}
       {children ? <div className="mt-auto">{children}</div> : null}
-    </div>
+    </Card>
   );
 }

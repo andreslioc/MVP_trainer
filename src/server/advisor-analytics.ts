@@ -103,9 +103,9 @@ type Dependencies = {
 export async function getAdvisorAnalytics(input: unknown, options: Dependencies = {}) {
   const authorize = options.authorize ?? requireRole;
   const database = options.database ?? db;
-  // Solo el administrador: las analiticas de una asesora las mira quien la
-  // acompaña, no sus pares.
-  const authorization = await authorize("admin");
+  // Supervision o mas: el seguimiento de una asesora lo hace quien la
+  // acompaña, y ese es el rango de supervision. No sus pares.
+  const authorization = await authorize("supervisor");
   if (!authorization.ok) return authorization;
 
   const parsed = inputSchema.safeParse(input);

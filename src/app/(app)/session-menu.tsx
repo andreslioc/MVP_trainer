@@ -1,5 +1,7 @@
 import { type AdvisorRole, ROLE_LABELS } from "../../lib/roles.ts";
+import type { Theme } from "../../lib/theme.ts";
 import { logout } from "../logout/actions.ts";
+import { ThemeToggle } from "./theme-toggle.tsx";
 
 function initialsOf(displayName: string) {
   return displayName
@@ -9,11 +11,23 @@ function initialsOf(displayName: string) {
     .join("");
 }
 
-export function SessionMenu({ advisor }: { advisor: { displayName: string; role: AdvisorRole } }) {
+export function SessionMenu({
+  advisor,
+  theme,
+}: {
+  advisor: { displayName: string; role: AdvisorRole };
+  theme: Theme;
+}) {
   const isAdmin = advisor.role === "admin";
 
   return (
     <div className="flex min-w-0 items-center gap-3">
+      {/*
+        `md` y no `sm`: hasta 768px el menu movil sigue en pantalla y ahi ya
+        aparece el interruptor. Con `sm:flex` se pintaban los dos a la vez entre
+        640 y 767px y el header se desbordaba de lado.
+      */}
+      <ThemeToggle className="hidden md:flex md:items-center md:gap-0.5" initialTheme={theme} />
       <div className="hidden min-w-0 text-right sm:block">
         <p className="truncate text-sm font-semibold text-fg">{advisor.displayName}</p>
         <span

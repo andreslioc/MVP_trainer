@@ -9,6 +9,8 @@
     "includes": [
       "**",
       "!blueprints",
+      "!.claude",
+      "!.mio-*",
       "!**/node_modules",
       "!.next",
       "!drizzle",

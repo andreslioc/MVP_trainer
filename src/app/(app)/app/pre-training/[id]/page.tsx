@@ -5,6 +5,8 @@ import { getSession } from "../../../../../lib/auth.ts";
 import { formatCop } from "../../../../../lib/pricing.ts";
 import { getProduct } from "../../../../../server/products.ts";
 import { ProductStudy } from "../product-study.tsx";
+import { Card, cardClasses } from "../../../../../components/ui/card.tsx";
+import { PageSection } from "../../../../../components/ui/page-section.tsx";
 
 export default async function PreTrainingProductPage({
   params,
@@ -23,17 +25,25 @@ export default async function PreTrainingProductPage({
   const product = result.data;
 
   return (
-    <section aria-labelledby="page-title" className="max-w-5xl">
-      <Link className="text-sm font-semibold text-primary" href="/app/pre-training">
-        ← Volver a Pre-training
-      </Link>
-
+    <PageSection
+      before={
+        <Link className="text-sm font-semibold text-primary" href="/app/pre-training">
+          ← Volver a Pre-training
+        </Link>
+      }
+      width="panel"
+    >
       {/* Banda de portada en dos columnas: la foto ocupa toda la altura a la
           izquierda y TODO el texto vive a la derecha —identidad arriba, precio y
           descripcion abajo—. Antes el bloque de precio cruzaba el ancho completo
           y partia la banda en dos pisos que no se leian como uno. */}
-      <div className="mt-4 flex flex-wrap items-stretch overflow-hidden rounded-card border border-border bg-surface">
-        <div className="flex w-full flex-none items-center justify-center border-primary-tint-border bg-primary-tint p-6 sm:w-60 sm:border-r">
+      <div
+        className={cardClasses({
+          density: "sin",
+          className: "mt-4 flex flex-wrap items-stretch overflow-hidden",
+        })}
+      >
+        <div className="flex w-full flex-none items-center justify-center border-photo-border bg-photo p-6 sm:w-60 sm:border-r">
           {product.imageUrl ? (
             // biome-ignore lint/performance/noImgElement: las fuentes remotas tienen dimensiones variables; el elemento nativo conserva su proporcion sin ampliarlas
             <img
@@ -91,7 +101,7 @@ export default async function PreTrainingProductPage({
         {/* Columna de apoyo: lo que se dice en camara no se abre, se lee. */}
         <aside className="flex flex-col gap-3">
           {product.usageMode ? (
-            <div className="rounded-card border border-border bg-surface p-4">
+            <Card density="compacta">
               <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
                 En cámara
               </p>
@@ -109,20 +119,18 @@ export default async function PreTrainingProductPage({
                   <dd className="mt-1 font-medium text-fg">{product.presentation}</dd>
                 </div>
               </dl>
-            </div>
+            </Card>
           ) : null}
 
           {product.contraindications.length > 0 ? (
-            <div className="rounded-card border border-warning-border bg-confidence-mid-bg p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-confidence-mid-fg">
-                No lo toman
-              </p>
-              <ul className="mt-2 list-disc pl-5 text-sm text-confidence-mid-fg">
+            <Card density="compacta" tone="atencion">
+              <p className="text-xs font-semibold uppercase tracking-wide">No lo toman</p>
+              <ul className="mt-2 list-disc pl-5 text-sm">
                 {product.contraindications.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
-            </div>
+            </Card>
           ) : null}
 
           <Link
@@ -133,6 +141,6 @@ export default async function PreTrainingProductPage({
           </Link>
         </aside>
       </div>
-    </section>
+    </PageSection>
   );
 }

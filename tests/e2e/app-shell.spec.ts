@@ -63,10 +63,14 @@ test("shows the advisor navigation and collapses it below 768px", async ({ page 
   try {
     await signIn(page, advisor.email, advisor.password);
     const desktopNavigation = page.getByRole("navigation", { name: "Navegación principal" });
-    for (const label of ["Training", "Copilot", "Intelligence", "Knowledge"]) {
+    // Lo que ve una asesora. `Knowledge` ya NO esta aqui: editar fichas paso a
+    // ser trabajo de supervision, y esta prueba se quedo pidiendolo.
+    for (const label of ["Inicio", "Pre-training", "Training", "Copilot", "Intelligence"]) {
       await expect(desktopNavigation.getByRole("link", { name: new RegExp(label) })).toBeVisible();
     }
-    await expect(desktopNavigation.getByRole("link", { name: /Settings/ })).toHaveCount(0);
+    for (const oculto of [/Knowledge/, /Reglas/, /Cuentas/, /Analíticas/]) {
+      await expect(desktopNavigation.getByRole("link", { name: oculto })).toHaveCount(0);
+    }
 
     await page.setViewportSize({ width: 767, height: 900 });
     await expect(desktopNavigation).toBeHidden();
@@ -107,15 +111,17 @@ test("cierra el menu movil al entrar a un modulo", async ({ page }) => {
   }
 });
 
-test("shows Settings to an admin", async ({ page }) => {
+test("shows the administration entries to an admin", async ({ page }) => {
   const admin = await createActiveAdvisor("admin");
   try {
     await signIn(page, admin.email, admin.password);
-    await expect(
-      page
-        .getByRole("navigation", { name: "Navegación principal" })
-        .getByRole("link", { name: /Settings/ }),
-    ).toBeVisible();
+    // La pantalla que se llamaba Settings hoy es Reglas, y administracion suma
+    // Cuentas y Analiticas. Se afirman las tres: son las que separan un rango
+    // del otro, y una sola dejaria pasar media regresion.
+    const navegacion = page.getByRole("navigation", { name: "Navegación principal" });
+    for (const label of [/Reglas/, /Cuentas/, /Analíticas/]) {
+      await expect(navegacion.getByRole("link", { name: label })).toBeVisible();
+    }
   } finally {
     await admin.cleanup();
   }

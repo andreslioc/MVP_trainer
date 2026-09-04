@@ -1,3 +1,5 @@
+import { Card } from "../../../../components/ui/card.tsx";
+import { PageSection } from "../../../../components/ui/page-section.tsx";
 import { getSession } from "../../../../lib/auth.ts";
 import { listInsights, listChatCoverage } from "../../../../server/insights.ts";
 import { listAnalyzableRecordings } from "../../../../server/recordings/analyze.ts";
@@ -39,22 +41,18 @@ export default async function IntelligencePage({
   const chatCoverageResult = selected ? await listChatCoverage(selected.id, { authorize }) : null;
 
   return (
-    <section aria-labelledby="page-title" className="max-w-6xl">
-      <p className="text-sm font-semibold text-primary">Después del live</p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg" id="page-title">
-        Live Intelligence
-      </h1>
-      <p className="mt-2 max-w-2xl text-fg-muted">
-        Analiza las conversaciones del live y convierte patrones reales en nuevos aprendizajes.
-      </p>
-
+    <PageSection
+      eyebrow="Después del live"
+      lead="Analiza las conversaciones del live y convierte patrones reales en nuevos aprendizajes."
+      title="Live Intelligence"
+      width="completo"
+    >
       {!recordings.ok ? (
-        <p
-          className="mt-8 rounded-card border border-destructive bg-confidence-low-bg p-4 font-semibold text-confidence-low-fg"
-          role="alert"
-        >
-          No se pudieron cargar las grabaciones.
-        </p>
+        <Card className="mt-8" density="compacta" tone="alerta">
+          <p className="font-semibold" role="alert">
+            No se pudieron cargar las grabaciones.
+          </p>
+        </Card>
       ) : (
         <>
           <div className="mt-8">
@@ -71,6 +69,6 @@ export default async function IntelligencePage({
           />
         </>
       )}
-    </section>
+    </PageSection>
   );
 }

@@ -179,7 +179,7 @@ export function RecordingIntake({
       <div className="mt-4 flex gap-2" role="tablist">
         <button
           aria-selected={mode === "transcript"}
-          className={`rounded-card border px-3 py-2 text-sm font-semibold ${mode === "transcript" ? "border-primary bg-primary text-white" : "border-border text-fg-muted"}`}
+          className={`rounded-card border px-3 py-2 text-sm font-semibold ${mode === "transcript" ? "border-primary bg-primary text-primary-fg" : "border-border text-fg-muted"}`}
           onClick={() => setMode("transcript")}
           role="tab"
           type="button"
@@ -188,7 +188,7 @@ export function RecordingIntake({
         </button>
         <button
           aria-selected={mode === "audio"}
-          className={`rounded-card border px-3 py-2 text-sm font-semibold ${mode === "audio" ? "border-primary bg-primary text-white" : "border-border text-fg-muted"}`}
+          className={`rounded-card border px-3 py-2 text-sm font-semibold ${mode === "audio" ? "border-primary bg-primary text-primary-fg" : "border-border text-fg-muted"}`}
           onClick={() => setMode("audio")}
           role="tab"
           type="button"
@@ -217,7 +217,7 @@ export function RecordingIntake({
           {nameField("title-transcript")}
           <ChatLogField disabled={pending} id="chat-log" onChange={setChatLog} value={chatLog} />
           <button
-            className="mt-3 min-h-11 rounded-card bg-primary px-5 font-semibold text-white disabled:opacity-60"
+            className="mt-3 min-h-11 rounded-card bg-primary px-5 font-semibold text-primary-fg disabled:opacity-60"
             disabled={pending || transcript.trim().length < 40}
             type="submit"
           >
@@ -261,7 +261,7 @@ export function RecordingIntake({
             value={chatLog}
           />
           <button
-            className="mt-3 min-h-11 rounded-card bg-primary px-5 font-semibold text-white disabled:opacity-60"
+            className="mt-3 min-h-11 rounded-card bg-primary px-5 font-semibold text-primary-fg disabled:opacity-60"
             disabled={pending}
             type="submit"
           >

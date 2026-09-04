@@ -12,7 +12,10 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: false,
-    include: ["tests/**/*.test.ts"],
+    // `.tsx` tambien: una prueba que renderiza componentes se escribe con JSX.
+    // Sin esto habia que usar `createElement` y pasar `children` como prop, que
+    // es justo lo que prohibe la regla noChildrenProp de Biome.
+    include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
     // El bundle del blueprint vive dentro del proyecto: sin esta exclusion
     // vitest recolectaria los archivos de blueprints/*/workspace/tests/.
     exclude: [

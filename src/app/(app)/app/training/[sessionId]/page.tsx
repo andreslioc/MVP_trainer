@@ -7,6 +7,8 @@ import { getTrainingSession } from "../../../../../server/training/questions.ts"
 import { FinishPracticeButton } from "./finish-practice-button.tsx";
 import { PracticeTimer } from "./practice-timer.tsx";
 import { TrainingResponseForm } from "./training-response-form.tsx";
+import { Card, cardClasses } from "../../../../../components/ui/card.tsx";
+import { PageSection } from "../../../../../components/ui/page-section.tsx";
 
 /**
  * La practica es lineal: contestas la que salga y pasa a la siguiente.
@@ -44,23 +46,22 @@ export default async function TrainingSessionPage({
   const question = questions[position - 1];
 
   return (
-    <section aria-labelledby="page-title" className="max-w-4xl">
-      <PracticeTimer sessionId={result.data.id} />
-      <p className="text-sm font-semibold text-primary">Práctica en curso</p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg" id="page-title">
-        {result.data.title}
-      </h1>
-      <p className="mt-2 text-fg-muted">
-        {questions.length} preguntas en esta práctica privada · {answered} respondidas
-        {result.data.category ? " · fichas barajadas al azar" : null}
-      </p>
-
+    <PageSection
+      before={<PracticeTimer sessionId={result.data.id} />}
+      eyebrow="Práctica en curso"
+      lead={
+        <>
+          {questions.length} preguntas en esta práctica privada · {answered} respondidas
+          {result.data.category ? " · fichas barajadas al azar" : null}
+        </>
+      }
+      title={result.data.title}
+      width="lectura"
+    >
       {questions.length === 0 ? (
-        <div className="mt-8 rounded-card border border-warning-border bg-confidence-mid-bg p-6">
-          <h2 className="text-xl font-semibold text-confidence-mid-fg">
-            Esta práctica quedó sin preguntas
-          </h2>
-          <p className="mt-2 text-confidence-mid-fg">
+        <Card className="mt-8" tone="atencion">
+          <h2 className="font-display text-xl font-medium">Esta práctica quedó sin preguntas</h2>
+          <p className="mt-2">
             La tanda se reemplazó después de abrir la práctica. Genera preguntas otra vez y abre una
             nueva.
           </p>
@@ -70,7 +71,7 @@ export default async function TrainingSessionPage({
           >
             Volver a Training
           </Link>
-        </div>
+        </Card>
       ) : null}
 
       {question ? (
@@ -93,7 +94,7 @@ export default async function TrainingSessionPage({
             ))}
           </div>
 
-          <article className="mt-4 rounded-card border border-border bg-surface p-6">
+          <article className={cardClasses({ className: "mt-4" })}>
             <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-wide text-fg-muted">
               <span>
                 Pregunta {position} de {questions.length}
@@ -133,6 +134,6 @@ export default async function TrainingSessionPage({
           </div>
         </>
       ) : null}
-    </section>
+    </PageSection>
   );
 }

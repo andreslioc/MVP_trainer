@@ -119,7 +119,7 @@ export function RecordingCard({
       ) : null}
       {recording.status === "transcribed" ? (
         <button
-          className="mt-3 rounded-card bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className="mt-3 rounded-card bg-primary px-3 py-2 text-sm font-semibold text-primary-fg disabled:opacity-60"
           disabled={pending}
           onClick={() => onAnalyze(recording.id)}
           type="button"

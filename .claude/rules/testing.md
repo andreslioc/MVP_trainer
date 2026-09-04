@@ -28,6 +28,8 @@ paths:
 - Cada archivo de integracion limpia **solo** las tablas que toca, en `beforeEach`, y nunca depende
   del orden de ejecucion.
 - **Sin globals.** Se importa explicito: `import { describe, expect, it } from "vitest";`.
+- Una prueba que **renderiza componentes** se escribe en `.test.tsx` con JSX. Con `createElement`
+  habria que pasar `children` como prop, que es justo lo que prohibe `noChildrenProp` de Biome.
 - **Ningun gate llama a la API de Gemini ni a Deepgram.** El gateway acepta un cliente inyectado y
   las pruebas le pasan uno falso. Un gate que necesita credenciales de un tercero no es un gate.
 - **Se afirman propiedades, no conteos.** "existe una fila con `status='transcribed'`" en vez de "hay

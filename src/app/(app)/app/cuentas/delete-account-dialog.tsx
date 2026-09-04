@@ -69,7 +69,7 @@ export function DeleteAccountDialog({
         // `m-auto` a mano: el navegador centra un <dialog> modal con
         // `margin: auto`, y el reset de Tailwind lo pone en 0, asi que sin esto
         // el aviso sale pegado a la esquina de arriba a la izquierda.
-        className="m-auto max-w-lg rounded-card border border-border bg-surface p-6 text-left backdrop:bg-fg/40"
+        className="m-auto max-w-lg rounded-card border border-border bg-surface p-6 text-left backdrop:bg-scrim/70"
         ref={dialog}
       >
         <h2 className="text-xl font-semibold text-fg">Borrar la cuenta de {displayName}</h2>

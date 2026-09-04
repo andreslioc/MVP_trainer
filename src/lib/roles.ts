@@ -16,8 +16,9 @@ export type AdvisorRole = (typeof ADVISOR_ROLES)[number];
  * `ADVISOR_ROLES`: los tres tienen que contar la misma historia.
  *
  * - `asesor`: los cinco modulos de su trabajo diario.
- * - `supervisor`: todo lo del administrador MENOS las cuentas.
- * - `admin`: todo, incluidas cuentas, invitaciones y analiticas por asesora.
+ * - `supervisor`: todo lo del administrador MENOS las cuentas, incluidas las
+ *   analiticas y las practicas de cada asesora: el seguimiento es su trabajo.
+ * - `admin`: todo, incluidas cuentas e invitaciones.
  */
 const roleRank: Record<AdvisorRole, number> = { asesor: 0, supervisor: 1, admin: 2 };
 

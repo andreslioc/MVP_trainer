@@ -61,17 +61,19 @@ const navItems = [
     minRole: "supervisor",
   },
   {
-    href: "/app/cuentas",
-    label: "Cuentas",
-    description: "Personas y accesos",
-    glyph: "CU",
-    minRole: "admin",
-  },
-  {
     href: "/app/analiticas",
     label: "Analíticas",
     description: "Desempeño por persona",
     glyph: "AN",
+    // Supervision y no administracion: quien lleva el seguimiento del equipo es
+    // la supervision, y sin esta entrada no tenia por donde entrar a verlo.
+    minRole: "supervisor",
+  },
+  {
+    href: "/app/cuentas",
+    label: "Cuentas",
+    description: "Personas y accesos",
+    glyph: "CU",
     minRole: "admin",
   },
 ] satisfies NavItem[];

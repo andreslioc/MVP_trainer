@@ -1,14 +1,8 @@
-import { and, asc, count, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
-import {
-  products,
-  prompts,
-  trainingAnswers,
-  trainingQuestions,
-  trainingSessions,
-} from "../../db/schema.ts";
+import { products, prompts, trainingQuestions, trainingSessions } from "../../db/schema.ts";
 import { createAiGateway } from "../../lib/ai/gateway.ts";
 import { buildGenerateQuestionsPrompt } from "../../lib/ai/prompts/generate-questions.ts";
 import { practiceSizeSchema } from "../../lib/practice-sizes.ts";
@@ -21,6 +15,7 @@ import {
 } from "../../lib/ai/structured.ts";
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { writeLlmCall } from "../llm-calls.ts";
+import { readSessionForOwner } from "./session-read.ts";
 
 type Product = typeof products.$inferSelect;
 type TrainingDatabase = Pick<typeof db, "delete" | "insert" | "select" | "transaction">;
@@ -280,7 +275,6 @@ export async function listTrainingProducts(options: TrainingDependencies = {}) {
  * El chat de un live no da para mas de una decena de preguntas seguidas, y una
  * practica que no se puede terminar no se termina.
  */
-const PRACTICE_QUESTION_LIMIT = 10;
 
 export async function generateTrainingQuestions(
   productId: string,
@@ -442,86 +436,7 @@ export async function getTrainingSession(sessionId: string, options: TrainingDep
   if (!authorization.ok) return authorization;
   const parsedId = parseUuid(sessionId, "sessionId");
   if (!parsedId.ok) return parsedId;
-
-  try {
-    const [session] = await database
-      .select({
-        id: trainingSessions.id,
-        productId: trainingSessions.productId,
-        category: trainingSessions.category,
-        practiceSize: trainingSessions.practiceSize,
-        productName: products.name,
-        startedAt: trainingSessions.startedAt,
-        finishedAt: trainingSessions.finishedAt,
-        activeSeconds: trainingSessions.activeSeconds,
-      })
-      .from(trainingSessions)
-      // leftJoin y no innerJoin: una practica por categoria no tiene ficha.
-      .leftJoin(products, eq(products.id, trainingSessions.productId))
-      .where(
-        and(
-          eq(trainingSessions.id, parsedId.data),
-          eq(trainingSessions.advisorId, authorization.data.id),
-        ),
-      )
-      .limit(1);
-    if (!session) {
-      return { ok: false as const, error: { code: "NOT_FOUND", message: "La sesion no existe." } };
-    }
-    const scope = session.category
-      ? and(eq(products.category, session.category), isNotNull(products.verifiedAt))
-      : eq(trainingQuestions.productId, session.productId ?? "");
-    // El barajado sale del id de la sesion: aleatorio para la asesora y estable
-    // entre recargas, que es lo que necesita retomar una practica a medias. Con
-    // random() cada recarga correria la tanda y la primera pendiente cambiaria.
-    const order = session.category
-      ? sql`md5(${session.id} || ${trainingQuestions.id}::text)`
-      : asc(trainingQuestions.createdAt);
-    const query = database
-      .select({
-        id: trainingQuestions.id,
-        text: trainingQuestions.text,
-        intent: trainingQuestions.intent,
-        difficulty: trainingQuestions.difficulty,
-        productName: products.name,
-      })
-      .from(trainingQuestions)
-      .innerJoin(products, eq(products.id, trainingQuestions.productId))
-      .where(scope)
-      .orderBy(order);
-    // El tope lo pone la asesora, no el alcance: una practica de una sola ficha
-    // con veinte preguntas es igual de valida que una de categoria.
-    const questions = session.practiceSize
-      ? await query.limit(session.practiceSize)
-      : await query.limit(PRACTICE_QUESTION_LIMIT);
-    const answers = await database
-      .select({
-        id: trainingAnswers.id,
-        questionId: trainingAnswers.questionId,
-        advisorAnswer: trainingAnswers.advisorAnswer,
-        scores: trainingAnswers.scores,
-        feedback: trainingAnswers.feedback,
-        improvedAnswer: trainingAnswers.improvedAnswer,
-        createdAt: trainingAnswers.createdAt,
-      })
-      .from(trainingAnswers)
-      .where(eq(trainingAnswers.sessionId, session.id))
-      .orderBy(desc(trainingAnswers.createdAt));
-    return {
-      ok: true as const,
-      // `title` es lo que se muestra como encabezado: la categoria cuando la
-      // practica mezcla fichas, el nombre de la ficha cuando es dirigida.
-      data: {
-        ...session,
-        title: session.category ?? session.productName ?? "Practica",
-        questions,
-        answers,
-      },
-    };
-  } catch {
-    return {
-      ok: false as const,
-      error: { code: "INTERNAL", message: "No se pudo cargar la sesion." },
-    };
-  }
+  // Su propia practica y ninguna otra: el dueño es quien llama. Quien acompaña
+  // entra por `practice-review.ts`, que autoriza por rango.
+  return readSessionForOwner(database, parsedId.data, authorization.data.id);
 }

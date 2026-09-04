@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { Card } from "../../../../components/ui/card.tsx";
+import { PageSection } from "../../../../components/ui/page-section.tsx";
 import { getSession } from "../../../../lib/auth.ts";
 import { listTrainingCategories } from "../../../../server/training/categories.ts";
 import { listOpenPractices } from "../../../../server/training/progress.ts";
@@ -17,21 +19,17 @@ export default async function TrainingPage() {
   ]);
 
   return (
-    <section aria-labelledby="page-title" className="max-w-5xl">
-      <p className="text-sm font-semibold text-primary">Antes del live</p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg" id="page-title">
-        Training Simulator
-      </h1>
-      <p className="mt-2 max-w-2xl text-fg-muted">
-        Elige una categoría y responde preguntas reales de clientas sobre fichas verificadas del
-        Knowledge Hub, barajadas al azar como en un live.
-      </p>
-
+    <PageSection
+      eyebrow="Antes del live"
+      lead="Elige una categoría y responde preguntas reales de clientas sobre fichas verificadas del Knowledge Hub, barajadas al azar como en un live."
+      title="Training Simulator"
+      width="panel"
+    >
       {abiertas.ok ? <OpenPractices practices={abiertas.data} /> : null}
 
       {!result.ok ? (
-        <div className="mt-8 rounded-card border border-destructive bg-confidence-low-bg p-4">
-          <p className="font-semibold text-confidence-low-fg" role="alert">
+        <Card className="mt-8" density="compacta" tone="alerta">
+          <p className="font-semibold" role="alert">
             No se pudieron cargar las categorías de práctica.
           </p>
           <Link
@@ -40,20 +38,24 @@ export default async function TrainingPage() {
           >
             Reintentar
           </Link>
-        </div>
+        </Card>
       ) : result.data.length === 0 ? (
-        <div className="mt-8 rounded-card border border-border bg-surface p-6">
-          <h2 className="text-xl font-semibold text-fg">Todavía no hay fichas verificadas</h2>
+        <Card className="mt-8">
+          <h2 className="font-display text-xl font-medium text-fg">
+            Todavía no hay fichas verificadas
+          </h2>
           <p className="mt-2 max-w-xl text-fg-muted">
             Una administradora debe verificar al menos una ficha antes de generar preguntas o abrir
             una práctica.
           </p>
-        </div>
+        </Card>
       ) : (
         <>
           <TrainingLauncher categories={result.data} products={fichas.ok ? fichas.data : []} />
-          <div className="mt-6 max-w-xl rounded-card border border-border bg-surface p-5">
-            <h2 className="text-xl font-semibold text-fg">O practica con el chat corriendo</h2>
+          <Card className="mt-6 max-w-xl">
+            <h2 className="font-display text-xl font-medium text-fg">
+              O practica con el chat corriendo
+            </h2>
             <p className="mt-1 text-sm text-fg-muted">
               Te ves en cámara, el chat pasa solo con comentarios y preguntas de varias fichas, y
               contestas en voz alta. Se mide qué alcanzaste a responder y cómo lo respondiste.
@@ -64,9 +66,9 @@ export default async function TrainingPage() {
             >
               Abrir simulacro de live
             </Link>
-          </div>
+          </Card>
         </>
       )}
-    </section>
+    </PageSection>
   );
 }

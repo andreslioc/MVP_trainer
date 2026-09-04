@@ -20,17 +20,28 @@ describe("visibleNavItems", () => {
     expect(etiquetas("asesor")).not.toContain("Knowledge");
   });
 
-  it("la supervisora suma Knowledge y las reglas, sin cuentas ni analiticas", () => {
-    expect(etiquetas("supervisor")).toEqual([...trabajoDiario, "Knowledge", "Reglas"]);
+  it("la supervisora suma Knowledge, las reglas y las analiticas, sin cuentas", () => {
+    // Las analiticas bajaron de administracion a supervision: el seguimiento
+    // del equipo es su trabajo, y sin la entrada no tenia por donde entrar.
+    expect(etiquetas("supervisor")).toEqual([
+      ...trabajoDiario,
+      "Knowledge",
+      "Reglas",
+      "Analíticas",
+    ]);
   });
 
-  it("la administradora suma cuentas y analiticas", () => {
+  it("la supervisora NO ve cuentas: los accesos son de administracion", () => {
+    expect(etiquetas("supervisor")).not.toContain("Cuentas");
+  });
+
+  it("la administradora suma cuentas", () => {
     expect(etiquetas("admin")).toEqual([
       ...trabajoDiario,
       "Knowledge",
       "Reglas",
-      "Cuentas",
       "Analíticas",
+      "Cuentas",
     ]);
   });
 

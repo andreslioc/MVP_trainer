@@ -100,7 +100,7 @@ export function TranscriptViewer({
 
       <dialog
         aria-labelledby="visor-title"
-        className="m-auto max-h-[85vh] w-[min(56rem,92vw)] rounded-card border border-border bg-surface p-0 text-fg backdrop:bg-fg/40"
+        className="m-auto max-h-[85vh] w-[min(56rem,92vw)] rounded-card border border-border bg-surface p-0 text-fg backdrop:bg-scrim/70"
         onClose={() => setOpen(false)}
         ref={dialog}
       >
@@ -135,7 +135,7 @@ export function TranscriptViewer({
               aria-pressed={pestana === "transcripcion"}
               className={`min-h-11 rounded-card border px-3 text-sm font-semibold ${
                 pestana === "transcripcion"
-                  ? "border-primary bg-primary text-white"
+                  ? "border-primary bg-primary text-primary-fg"
                   : "border-border text-fg-muted"
               }`}
               onClick={() => setPestana("transcripcion")}
@@ -148,7 +148,7 @@ export function TranscriptViewer({
                 aria-pressed={pestana === "chat"}
                 className={`min-h-11 rounded-card border px-3 text-sm font-semibold ${
                   pestana === "chat"
-                    ? "border-primary bg-primary text-white"
+                    ? "border-primary bg-primary text-primary-fg"
                     : "border-border text-fg-muted"
                 }`}
                 onClick={() => setPestana("chat")}

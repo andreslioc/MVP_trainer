@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { Card, cardClasses } from "../../../../components/ui/card.tsx";
+import { CardGrid } from "../../../../components/ui/card-grid.tsx";
+import { PageSection } from "../../../../components/ui/page-section.tsx";
 import { getSession } from "../../../../lib/auth.ts";
 import { formatCop } from "../../../../lib/pricing.ts";
 import { listProducts } from "../../../../server/products.ts";
@@ -30,12 +33,9 @@ export default async function PreTrainingPage({
 
   if (!result.ok) {
     return (
-      <section aria-labelledby="page-title" className="max-w-5xl">
-        <h1 className="text-3xl font-semibold tracking-tight text-fg" id="page-title">
-          Pre-training
-        </h1>
-        <div className="mt-8 rounded-card border border-destructive bg-confidence-low-bg p-4">
-          <p className="font-semibold text-confidence-low-fg" role="alert">
+      <PageSection title="Pre-training" width="panel">
+        <Card className="mt-8" density="compacta" tone="alerta">
+          <p className="font-semibold" role="alert">
             No se pudieron cargar las fichas.
           </p>
           <Link
@@ -44,8 +44,8 @@ export default async function PreTrainingPage({
           >
             Reintentar
           </Link>
-        </div>
-      </section>
+        </Card>
+      </PageSection>
     );
   }
 
@@ -65,23 +65,21 @@ export default async function PreTrainingPage({
     );
 
   return (
-    <section aria-labelledby="page-title" className="max-w-5xl">
-      <p className="text-sm font-semibold text-primary">Antes de practicar</p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg" id="page-title">
-        Pre-training
-      </h1>
-      <p className="mt-2 max-w-2xl text-fg-muted">
-        Estudia la ficha antes del simulacro: qué contiene, cómo se toma, quién no debe tomarlo y
-        qué se puede afirmar en cámara.
-      </p>
-
+    <PageSection
+      eyebrow="Antes de practicar"
+      lead="Estudia la ficha antes del simulacro: qué contiene, cómo se toma, quién no debe tomarlo y qué se puede afirmar en cámara."
+      title="Pre-training"
+      width="panel"
+    >
       {verified.length === 0 ? (
-        <div className="mt-8 rounded-card border border-border bg-surface p-6">
-          <h2 className="text-xl font-semibold text-fg">Todavía no hay fichas verificadas</h2>
+        <Card className="mt-8">
+          <h2 className="font-display text-xl font-medium text-fg">
+            Todavía no hay fichas verificadas
+          </h2>
           <p className="mt-2 max-w-xl text-fg-muted">
             Una administradora debe revisar al menos una ficha para que se pueda estudiar.
           </p>
-        </div>
+        </Card>
       ) : (
         <>
           {/* Formulario GET y no un input controlado: la busqueda vive en la URL,
@@ -155,16 +153,27 @@ export default async function PreTrainingPage({
           </nav>
 
           {shown.length === 0 ? (
-            <p className="mt-6 rounded-card border border-border bg-surface p-4 text-fg-muted">
-              Ninguna ficha coincide con «{q}»{selected ? ` en ${selected}` : ""}.
-            </p>
+            <Card className="mt-6" density="compacta">
+              <p className="text-fg-muted">
+                Ninguna ficha coincide con «{q}»{selected ? ` en ${selected}` : ""}.
+              </p>
+            </Card>
           ) : null}
 
-          <ul className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          {/* La escalera del sistema y no una propia: antes esta rejilla se
+              quedaba en UNA columna hasta 1024 px, asi que en tableta cada
+              ficha ocupaba el ancho entero y se veian dos por pantalla. */}
+          <CardGrid as="ul" className="mt-6" columns={3}>
             {shown.map((product) => (
               <li key={product.id}>
                 <Link
-                  className="flex h-full flex-col overflow-hidden rounded-card border border-border bg-surface hover:border-primary"
+                  className={cardClasses({
+                    density: "sin",
+                    interactive: true,
+                    // `sin` porque la tarjeta trae su propio aire adentro: la
+                    // placa de la foto pega al borde y el cuerpo lleva su p-4.
+                    className: "flex h-full flex-col overflow-hidden",
+                  })}
                   href={`/app/pre-training/${product.id}`}
                 >
                   {/* La foto es como la asesora reconoce el producto: el nombre
@@ -172,7 +181,7 @@ export default async function PreTrainingPage({
                       Placa de alto fijo con `contain` porque las fotos vienen en
                       proporciones muy distintas —de 181x536 a 512x640— y sin ella
                       la cuadricula queda a los saltos. */}
-                  <div className="flex h-40 items-center justify-center border-b border-border bg-background p-3">
+                  <div className="flex h-40 items-center justify-center border-b border-photo-border bg-photo p-3">
                     {product.imageUrl ? (
                       // biome-ignore lint/performance/noImgElement: las fuentes remotas tienen dimensiones variables; el elemento nativo conserva su proporcion sin ampliarlas
                       <img
@@ -214,9 +223,9 @@ export default async function PreTrainingPage({
                 </Link>
               </li>
             ))}
-          </ul>
+          </CardGrid>
         </>
       )}
-    </section>
+    </PageSection>
   );
 }

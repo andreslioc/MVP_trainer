@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { PageSection } from "../../../../../../components/ui/page-section.tsx";
 import { getSession } from "../../../../../../lib/auth.ts";
 import { getPracticeSummary } from "../../../../../../server/training/progress.ts";
 import { PracticeScorecard } from "./practice-scorecard.tsx";
@@ -28,19 +29,18 @@ export default async function PracticeSummaryPage({
   const { session, summary } = result.data;
 
   return (
-    <section aria-labelledby="page-title" className="max-w-4xl">
-      <p className="text-sm font-semibold text-primary">
-        {session.finishedAt || summary.complete ? "Práctica terminada" : "Práctica a medias"}
-      </p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg" id="page-title">
-        Cómo te fue: {session.title}
-      </h1>
-      <p className="mt-2 text-fg-muted">
-        {summary.answered} de {summary.total} preguntas evaluadas
-        {summary.activeMinutes > 0 ? ` · ${summary.activeMinutes} min de práctica` : null}
-        {session.category ? " · fichas barajadas al azar" : null}
-      </p>
-
+    <PageSection
+      eyebrow={session.finishedAt || summary.complete ? "Práctica terminada" : "Práctica a medias"}
+      lead={
+        <>
+          {summary.answered} de {summary.total} preguntas evaluadas
+          {summary.activeMinutes > 0 ? ` · ${summary.activeMinutes} min de práctica` : null}
+          {session.category ? " · fichas barajadas al azar" : null}
+        </>
+      }
+      title={`Cómo te fue: ${session.title}`}
+      width="lectura"
+    >
       <PracticeScorecard summary={summary} />
 
       <div className="mt-8 flex flex-wrap gap-3">
@@ -59,6 +59,6 @@ export default async function PracticeSummaryPage({
           Abrir otra práctica
         </Link>
       </div>
-    </section>
+    </PageSection>
   );
 }

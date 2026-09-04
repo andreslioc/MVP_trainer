@@ -12,10 +12,12 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
+import { ThemeToggle } from "../../app/(app)/theme-toggle.tsx";
+import type { Theme } from "../../lib/theme.ts";
 import { AppNavigation } from "./app-navigation.tsx";
 import type { NavigationRole } from "./nav-items.ts";
 
-export function MobileNavigation({ role }: { role: NavigationRole }) {
+export function MobileNavigation({ role, theme }: { role: NavigationRole; theme: Theme }) {
   const pathname = usePathname();
   const menu = useRef<HTMLDetailsElement>(null);
 
@@ -40,6 +42,9 @@ export function MobileNavigation({ role }: { role: NavigationRole }) {
       </summary>
       <div className="mobile-navigation-panel absolute left-0 top-full z-40 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-card border border-border bg-surface p-2">
         <AppNavigation label="Navegación móvil" role={role} />
+        <div className="mt-2 border-t border-border pt-2">
+          <ThemeToggle className="flex items-center gap-0.5" initialTheme={theme} />
+        </div>
       </div>
     </details>
   );

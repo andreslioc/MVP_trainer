@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { cardClasses } from "../../../components/ui/card.tsx";
+import { CardGrid } from "../../../components/ui/card-grid.tsx";
+import { PageSection } from "../../../components/ui/page-section.tsx";
 import { getSession } from "../../../lib/auth.ts";
 import { getDashboardMetrics } from "../../../server/dashboard.ts";
 
@@ -11,10 +14,9 @@ const currency = new Intl.NumberFormat("es-CO", {
 
 function Metric({ href, label, value }: { href: string; label: string; value: string }) {
   return (
-    <Link
-      className="rounded-card border border-border bg-surface p-5 transition hover:border-primary"
-      href={href}
-    >
+    // La tarjeta ES el enlace: `cardClasses` la viste sin envolverla en un div,
+    // que dejaria el area de clic mas chica que la tarjeta.
+    <Link className={cardClasses({ interactive: true })} href={href}>
       <p className="text-sm text-fg-muted">{label}</p>
       <p className="mt-2 text-3xl font-semibold tracking-tight text-fg">{value}</p>
     </Link>
@@ -27,12 +29,7 @@ export default async function AppPage() {
   const result = await getDashboardMetrics({ authorize: async () => session });
 
   return (
-    <section aria-labelledby="page-title" className="max-w-5xl">
-      <p className="text-sm font-semibold text-primary">Inicio</p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg" id="page-title">
-        Tu centro de trabajo
-      </h1>
-
+    <PageSection eyebrow="Inicio" title="Tu centro de trabajo" width="panel">
       {!result.ok ? (
         <p
           className="mt-8 rounded-card border border-destructive bg-confidence-low-bg p-4 font-semibold text-confidence-low-fg"
@@ -47,7 +44,7 @@ export default async function AppPage() {
               ? "Agregados de toda la organización."
               : "Solo tus números: nadie más los ve, y tú no ves los de las demás."}
           </p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <CardGrid className="mt-8" columns={3}>
             <Metric
               href="/app/training"
               label="Prácticas realizadas"
@@ -85,9 +82,9 @@ export default async function AppPage() {
                 value={currency.format(result.data.costUsd)}
               />
             )}
-          </div>
+          </CardGrid>
         </>
       )}
-    </section>
+    </PageSection>
   );
 }

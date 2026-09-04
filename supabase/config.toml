@@ -43,6 +43,10 @@ site_url = "http://127.0.0.1:3000"
 additional_redirect_urls = [
   "http://127.0.0.1:3000/auth/confirm",
   "http://localhost:3000/auth/confirm",
+  # El dev server corre en :3200. Sin declararlo, Supabase descarta el
+  # `redirectTo` y devuelve a la site_url, que es donde el enlace moria.
+  "http://127.0.0.1:3200/auth/confirm",
+  "http://localhost:3200/auth/confirm",
   "http://127.0.0.1:3101",
   "http://localhost:3101",
 ]

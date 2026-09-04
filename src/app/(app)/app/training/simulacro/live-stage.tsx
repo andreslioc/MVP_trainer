@@ -48,7 +48,7 @@ export function LiveStage({
   const visible = lines.filter((line) => line.atMs <= elapsedMs).slice(-VISIBLE_LINES);
 
   return (
-    <div className="relative aspect-[9/16] w-full max-w-sm overflow-hidden rounded-card bg-fg">
+    <div className="relative aspect-[9/16] w-full max-w-sm overflow-hidden rounded-card bg-stage">
       <video
         aria-label="Vista previa de tu cámara"
         autoPlay
@@ -81,7 +81,7 @@ export function LiveStage({
           // regalaba el ejercicio: lo que se entrena es detectarlas entre el
           // ruido, y en un live real ninguna viene marcada.
           <li
-            className="w-fit max-w-full rounded-card bg-fg/45 px-2 py-1 text-sm text-white"
+            className="w-fit max-w-full rounded-card bg-stage/45 px-2 py-1 text-sm text-stage-fg"
             key={`${line.atMs}-${line.text}`}
           >
             <span className="opacity-70">{line.author}</span> {line.text}

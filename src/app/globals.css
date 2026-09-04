@@ -1,39 +1,36 @@
 @import "tailwindcss";
 
-@theme {
-  --primary: #5b21b6;
-  --primary-deep: #4c1d95;
-  --primary-fg: #ffffff;
-  --support-blue: #1e3a8a;
-  --background: #f8fafc;
-  --surface: #ffffff;
-  /*
-   * Tinte del morado de marca: violeta-50 y violeta-200 sobre la misma familia
-   * de #5b21b6. Existe para dar aire sin sombras — la elevacion del sistema es
-   * plana y solo usa bordes — y por eso es un token y no un hex suelto en una
-   * pagina.
-   */
-  --primary-tint: #f5f3ff;
-  --primary-tint-border: #ddd6fe;
-  --border: #e2e8f0;
-  --border-control: #64748b;
-  --fg: #0f172a;
-  --fg-muted: #475569;
-  --destructive: #dc2626;
-  --success: #16a34a;
-  --warning: #ca8a04;
-  --warning-border: #a16207;
-  --confidence-high-bg: #dcfce7;
-  --confidence-high-fg: #14532d;
-  --confidence-high-border: #16a34a;
-  --confidence-mid-bg: #fef9c3;
-  --confidence-mid-fg: #713f12;
-  --confidence-low-bg: #fee2e2;
-  --confidence-low-fg: #7f1d1d;
-  --confidence-low-border: #dc2626;
-  --radius: 0.75rem;
-  --shadow-popover: 0 4px 12px rgb(15 23 42 / 0.08);
+/*
+ * El variante `dark:`, atado a los TRES estados del tema.
+ *
+ * El de Tailwind por defecto solo mira `prefers-color-scheme`, asi que ignoraria
+ * la eleccion explicita: quien fuerza claro en un dispositivo oscuro veria los
+ * assets del tema equivocado. Este repite la misma logica que la paleta —sin
+ * atributo manda el sistema, `light` lo cancela, `dark` lo fuerza— y por eso
+ * sirve para lo unico que el color no resuelve solo: cambiar de ARCHIVO, como el
+ * logo, que existe en version para fondo claro y para fondo oscuro.
+ */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
 
+  &:where(:root[data-theme="dark"], :root[data-theme="dark"] *) {
+    @slot;
+  }
+}
+
+/*
+ * Los tokens de Galleon 7, en dos capas.
+ *
+ * `@theme` solo MAPEA: cada `--color-x` apunta a una variable, nunca a un hex.
+ * Los hex viven en `:root` mas abajo, y el bloque oscuro los reescribe. Si los
+ * valores estuvieran aqui dentro, el tema oscuro tendria que redefinir los
+ * `--color-*` de Tailwind y las utilidades dejarian de resolver.
+ */
+@theme {
   --color-primary: var(--primary);
   --color-primary-deep: var(--primary-deep);
   --color-primary-fg: var(--primary-fg);
@@ -46,20 +43,218 @@
   --color-border-control: var(--border-control);
   --color-fg: var(--fg);
   --color-fg-muted: var(--fg-muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-tint: var(--accent-tint);
+  --color-mint: var(--mint);
+  --color-mint-ink: var(--mint-ink);
+  --color-mint-tint: var(--mint-tint);
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-warning-border: var(--warning-border);
   --color-confidence-high-bg: var(--confidence-high-bg);
   --color-confidence-high-fg: var(--confidence-high-fg);
-  --color-confidence-mid-bg: var(--confidence-mid-bg);
-  --color-confidence-mid-fg: var(--confidence-mid-fg);
   --color-confidence-low-bg: var(--confidence-low-bg);
   --color-confidence-low-fg: var(--confidence-low-fg);
-  --font-sans:
-    var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-confidence-mid-bg: var(--confidence-mid-bg);
+  --color-confidence-mid-fg: var(--confidence-mid-fg);
+  /*
+   * El panel de marca del login NO cambia con el tema: lleva el isotipo blanco
+   * encima, y en claro el azul profundo se aclara para poder escribir sobre el.
+   * Un panel que se aclara con el logo blanco deja el logo invisible.
+   */
+  --color-brand-panel: #022f40;
+  --color-brand-panel-fg: #ffffff;
+  /* 10.60:1 sobre el panel. Antes este texto usaba --border, que en oscuro
+   * daba 1.61:1: el parrafo desaparecia. */
+  --color-brand-panel-muted: #d9e0e3;
+  /* Los dos circulos decorativos. Fijos como el panel: si siguieran a --primary
+   * se aclararian con el tema y el panel dejaria de ser el mismo. */
+  --color-brand-panel-glow: #0a5589;
+  --color-brand-panel-glow-soft: #0c7492;
+  /*
+   * El escenario del simulacro imita la pantalla de un celular en vivo, y el
+   * velo de los dialogos oscurece lo que hay detras. Los dos son fijos: usaban
+   * --fg, que en oscuro es casi blanco — el escenario se volvia blanco con
+   * subtitulos blancos, y el velo aclaraba en vez de oscurecer.
+   */
+  --color-stage: #1c1c1c;
+  --color-stage-fg: #ffffff;
+  --color-scrim: #022f40;
+  /*
+   * La placa donde se muestra una foto de producto. Fija y CLARA en los dos
+   * temas: las fotos del catalogo vienen con fondo blanco opaco —se verifico
+   * contra las de R2— asi que sobre una placa oscura cada producto quedaria
+   * dentro de un recuadro blanco. La placa clara no es una excepcion al tema,
+   * es la unica forma de que la foto se lea como foto.
+   */
+  --color-photo: #ffffff;
+  --color-photo-border: #d9e0e3;
+  --radius: 0.375rem;
   --radius-card: var(--radius);
+  --shadow-popover: var(--popover-shadow);
+  /*
+   * Roboto para cuerpo e interfaz, Metropolis para titulares: las dos que fija
+   * el manual de marca. Metropolis no esta en Google Fonts, asi que hasta tener
+   * la licenciada se sirve Jost, la geometrica mas cercana, y el nombre real va
+   * primero para que entre sola el dia que se cargue.
+   */
+  --font-sans: var(--font-roboto), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display:
+    Metropolis, var(--font-jost), "Century Gothic", "Avenir Next", ui-sans-serif, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/*
+ * Tema claro: el del manual de marca, y el que se pinta cuando no hay señal de
+ * lo contrario. Cada valor se midio contra su fondo — las razones estan en la
+ * tabla de CLAUDE.md y las afirma tests/unit/design-tokens.test.ts.
+ */
+:root {
+  /* Que los controles nativos y la barra de scroll sigan el tema. */
+  color-scheme: light;
+  /* Azul base: enlaces, botones secundarios, encabezados. */
+  --primary: #0a5589;
+  /* El paso mas fuerte: estado activo, anillo de foco, relleno. */
+  --primary-deep: #022f40;
+  /* La tinta que se escribe SOBRE un relleno primary. */
+  --primary-fg: #ffffff;
+  /* Acentos informativos y graficas. */
+  --support-blue: #0c7492;
+  /* Fondo de pagina. */
+  --background: #f5f5f5;
+  /* Tarjetas, paneles, popovers. */
+  --surface: #ffffff;
+  /* Aire sin sombras: la elevacion es plana y solo usa bordes. */
+  --primary-tint: #eef4f8;
+  --primary-tint-border: #c5d9e6;
+  /* Divisores decorativos. */
+  --border: #d9e0e3;
+  /* Contorno de inputs y controles. */
+  --border-control: #5f7078;
+  /* Cuerpo. */
+  --fg: #1c1c1c;
+  /* Leyendas. */
+  --fg-muted: #5f7078;
+  /* Naranja de marca: SOLO relleno, con --accent-fg encima. */
+  --accent: #e6861c;
+  /* La tinta que va sobre el naranja y sobre la menta. */
+  --accent-fg: #1c1c1c;
+  /* El naranja cuando toca escribir o bordear. */
+  --accent-ink: #96540c;
+  --accent-tint: #fdf0dc;
+  /* Menta de marca: SOLO relleno. */
+  --mint: #2ec4b6;
+  /* La menta cuando toca escribir o bordear. */
+  --mint-ink: #116e67;
+  --mint-tint: #e8f4f3;
+  --destructive: #dc2626;
+  --success: #16a34a;
+  /* Solo relleno: 2.94:1 sobre blanco. */
+  --warning: #ca8a04;
+  /* El amarillo accesible para bordes y texto. */
+  --warning-border: #a16207;
+  --confidence-high-bg: #dcfce7;
+  --confidence-high-fg: #14532d;
+  --confidence-high-border: #16a34a;
+  --confidence-mid-bg: #fef9c3;
+  --confidence-mid-fg: #713f12;
+  --confidence-low-bg: #fee2e2;
+  --confidence-low-fg: #7f1d1d;
+  --confidence-low-border: #dc2626;
+  --popover-shadow: 0 4px 12px rgb(2 47 64 / 0.1);
+}
+
+/*
+ * Tema oscuro sobre el azul profundo de la marca — el mismo #022f40 del panel
+ * del login, asi que no es una paleta prestada: es el lado oscuro del manual.
+ *
+ * Dos tokens INVIERTEN su papel y por eso todo el sistema sigue funcionando sin
+ * tocar una sola clase: `--primary-deep` pasa de ser el paso mas oscuro a ser el
+ * mas claro, y `--primary-fg` —la tinta que va sobre el— pasa de blanco a azul
+ * profundo. Cada `bg-primary-deep` del repo va con `text-primary-fg`, asi que el
+ * par se invierte entero y el hover de los botones sigue leyendose como un paso
+ * mas de intensidad.
+ *
+ * Va DOS VECES a proposito: el bloque de abajo atiende a quien no eligio nada y
+ * tiene el sistema en oscuro, y el de mas abajo a quien lo eligio a mano. CSS no
+ * permite fusionar un selector condicionado por @media con uno que no lo esta.
+ * Que no se desvien lo cuida la prueba de paridad en design-tokens.test.ts.
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --primary: #7cc4e8;
+    --primary-deep: #a8d8ef;
+    --primary-fg: #022f40;
+    --support-blue: #4bb3d4;
+    --background: #022f40;
+    --surface: #073e52;
+    --primary-tint: #05374a;
+    --primary-tint-border: #14536d;
+    --border: #17506a;
+    --border-control: #8aa5b0;
+    --fg: #f4f7f8;
+    --fg-muted: #a7bcc5;
+    --accent: #e6861c;
+    --accent-fg: #1c1c1c;
+    --accent-ink: #f4a94a;
+    --accent-tint: #3a2a10;
+    --mint: #2ec4b6;
+    --mint-ink: #5fdccf;
+    --mint-tint: #0d3b38;
+    --destructive: #fb8a8a;
+    --success: #4ade80;
+    --warning: #eab308;
+    --warning-border: #d1a03a;
+    --confidence-high-bg: #0e3a26;
+    --confidence-high-fg: #b3f0cb;
+    --confidence-high-border: #34d399;
+    --confidence-mid-bg: #3d3212;
+    --confidence-mid-fg: #fce68f;
+    --confidence-low-bg: #401619;
+    --confidence-low-fg: #fecdd0;
+    --confidence-low-border: #fb8a8a;
+    --popover-shadow: 0 4px 16px rgb(0 0 0 / 0.55);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --primary: #7cc4e8;
+  --primary-deep: #a8d8ef;
+  --primary-fg: #022f40;
+  --support-blue: #4bb3d4;
+  --background: #022f40;
+  --surface: #073e52;
+  --primary-tint: #05374a;
+  --primary-tint-border: #14536d;
+  --border: #17506a;
+  --border-control: #8aa5b0;
+  --fg: #f4f7f8;
+  --fg-muted: #a7bcc5;
+  --accent: #e6861c;
+  --accent-fg: #1c1c1c;
+  --accent-ink: #f4a94a;
+  --accent-tint: #3a2a10;
+  --mint: #2ec4b6;
+  --mint-ink: #5fdccf;
+  --mint-tint: #0d3b38;
+  --destructive: #fb8a8a;
+  --success: #4ade80;
+  --warning: #eab308;
+  --warning-border: #d1a03a;
+  --confidence-high-bg: #0e3a26;
+  --confidence-high-fg: #b3f0cb;
+  --confidence-high-border: #34d399;
+  --confidence-mid-bg: #3d3212;
+  --confidence-mid-fg: #fce68f;
+  --confidence-low-bg: #401619;
+  --confidence-low-fg: #fecdd0;
+  --confidence-low-border: #fb8a8a;
+  --popover-shadow: 0 4px 16px rgb(0 0 0 / 0.55);
 }
 
 * {

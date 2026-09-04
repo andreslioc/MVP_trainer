@@ -10,9 +10,18 @@ paths:
 
 ## Tailwind v4 se configura en CSS
 
-- Los tokens viven en el bloque `@theme` de `src/app/globals.css`, despues de
-  `@import "tailwindcss";`. **No hay `tailwind.config.js`.** Si aparece uno es basura de v3 que se
-  esta ignorando: borralo y porta los tokens a `@theme`.
+- `@theme` en `src/app/globals.css` solo **mapea**: `--color-x: var(--x)`, nunca un hex. Los hex
+  viven en `:root` (tema claro) y el bloque oscuro los reescribe. **No hay `tailwind.config.js`.** Si
+  aparece uno es basura de v3 que se esta ignorando: borralo y porta los tokens a `@theme`.
+- Las unicas excepciones con hex dentro de `@theme` son las cuatro superficies que NO siguen al
+  tema: `--color-brand-panel*`, `--color-photo*`, `--color-stage*` y `--color-scrim`. Agregar una
+  quinta rompe una prueba.
+- Una foto de producto va siempre sobre `bg-photo`: vienen con fondo blanco opaco y sobre una placa
+  oscura quedan como un recuadro.
+- Para un asset que cambia de ARCHIVO segun el tema —el logo— esta el `@custom-variant dark`, que
+  respeta los tres estados. El `dark:` de Tailwind por defecto solo mira `prefers-color-scheme`.
+- **Nunca `text-white` encima de un relleno de token.** La tinta de un relleno es su propio token.
+  En oscuro el relleno se aclara y el blanco queda en 1.92:1.
 - Se conecta con `@tailwindcss/postcss` (Next/PostCSS), nunca con la entrada vieja del plugin
   `tailwindcss`.
 - Biome necesita `"css": { "parser": { "tailwindDirectives": true } }` para parsear `@theme`. Ya esta
@@ -21,6 +30,9 @@ paths:
 ## Componentes
 
 - Sin hex ni px sueltos. Solo nombres de token.
+- **Una tarjeta se hace con `Card` o `cardClasses()`, una rejilla con `CardGrid` y una pantalla con
+  `PageSection`** (`src/components/ui/`). Escribir `rounded-card border border-border bg-surface` a
+  mano rompe una prueba en las pantallas ya convertidas.
 - Server Component por defecto. `"use client"` en la hoja mas pequena que necesite estado o un
   handler — nunca en un layout ni en una page.
 - Maximo 300 lineas por archivo.
@@ -33,7 +45,7 @@ paths:
 - Landmarks (`header`/`nav`/`main`/`footer`), un solo `h1` por pagina, encabezados en orden.
 - Todo interactivo alcanzable y operable por teclado. Enlace de salto al contenido. Sin trampas de
   foco.
-- Foco visible en todo elemento enfocable, ≥3:1 contra su fondo. El anillo usa `#4C1D95` (10.96:1).
+- Foco visible en todo elemento enfocable, ≥3:1 contra su fondo. El anillo usa `var(--primary-deep)`: 12.99:1 en claro, 9.26:1 en oscuro.
 - Blancos de puntero ≥24×24 CSS px.
 - Todo input con etiqueta programatica. Los errores son texto, nunca solo color, y se anuncian.
 - Cambios asincronos de estado se anuncian con `aria-live` — incluida la respuesta del Copilot

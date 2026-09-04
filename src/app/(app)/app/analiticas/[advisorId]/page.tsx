@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import { Card } from "../../../../../components/ui/card.tsx";
+import { CardGrid } from "../../../../../components/ui/card-grid.tsx";
+import { PageSection } from "../../../../../components/ui/page-section.tsx";
 import { PERIOD_LABELS, PERIOD_SPAN, parsePeriod } from "../../../../../lib/analytics-period.ts";
 import { requireRole } from "../../../../../lib/auth.ts";
 import { ROLE_LABELS } from "../../../../../lib/roles.ts";
@@ -22,7 +25,7 @@ export default async function AdvisorAnalyticsPage({
 }) {
   const { advisorId } = await params;
   const period = parsePeriod((await searchParams).periodo);
-  const authorization = await requireRole("admin");
+  const authorization = await requireRole("supervisor");
   if (!authorization.ok) redirect("/app");
 
   const result = await getAdvisorAnalytics(
@@ -54,20 +57,23 @@ export default async function AdvisorAnalyticsPage({
   const notaColumnas = data.period === "todo" ? "Últimos 30 días" : ventana;
 
   return (
-    <section aria-labelledby="page-title" className="max-w-5xl">
-      <Link className="text-sm text-primary underline" href="/app/analiticas">
-        Volver a la lista
-      </Link>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-fg" id="page-title">
-        {data.advisor.displayName}
-      </h1>
-      <p className="mt-2 text-fg-muted">
-        {ROLE_LABELS[data.advisor.role] ?? data.advisor.role} · cuenta {data.advisor.status}
-      </p>
-
+    <PageSection
+      before={
+        <Link className="text-sm text-primary underline" href="/app/analiticas">
+          Volver a la lista
+        </Link>
+      }
+      lead={
+        <>
+          {ROLE_LABELS[data.advisor.role] ?? data.advisor.role} · cuenta {data.advisor.status}
+        </>
+      }
+      title={data.advisor.displayName}
+      width="panel"
+    >
       <PeriodTabs advisorId={advisorId} period={data.period} />
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <CardGrid className="mt-4" columns={2}>
         <MetricCard label="Prácticas" note={notaColumnas} value={String(practicasVentana)}>
           <MiniColumns
             data={dias.map((dia) => ({ key: dia.key, value: dia.practices, label: dia.label }))}
@@ -87,7 +93,7 @@ export default async function AdvisorAnalyticsPage({
             unit="minutos"
           />
         </MetricCard>
-      </div>
+      </CardGrid>
 
       <div className="mt-4">
         <ScoreMeter
@@ -97,7 +103,7 @@ export default async function AdvisorAnalyticsPage({
         />
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <CardGrid className="mt-4" columns={4}>
         <MetricCard
           label="Respuestas evaluadas"
           note={`Con nota · ${ventana}`}
@@ -123,26 +129,39 @@ export default async function AdvisorAnalyticsPage({
           note={`en ${data.copilotAnswers} respuestas del Copilot`}
           value={String(data.copilotAlerts)}
         />
-      </div>
+      </CardGrid>
 
-      <h2 className="mt-10 text-xl font-semibold text-fg">Qué conviene entrenar</h2>
+      <h2 className="mt-10 font-display text-xl font-medium text-fg">Qué conviene entrenar</h2>
       <p className="mt-1 max-w-2xl text-sm text-fg-muted">
         De lo más flojo a lo más sólido, sobre la rúbrica de 1 a 5 que califica cada respuesta,{" "}
         {enLaVentana}. Lo primero de la lista es donde más rinde una sesión de acompañamiento.
       </p>
       {data.dimensions.length === 0 ? (
-        <p className="mt-4 rounded-card border border-border bg-surface p-4 text-fg-muted">
-          Sin respuestas calificadas en esta ventana. Prueba con una más amplia.
-        </p>
+        <Card className="mt-4" density="compacta">
+          <p className="text-fg-muted">
+            Sin respuestas calificadas en esta ventana. Prueba con una más amplia.
+          </p>
+        </Card>
       ) : (
         <DimensionTable dimensions={data.dimensions} />
       )}
+      <p className="mt-4">
+        <Link
+          className="inline-flex min-h-11 items-center rounded-card border border-primary px-5 font-semibold text-primary"
+          href={`/app/analiticas/${advisorId}/practicas`}
+        >
+          Ver sus prácticas una por una →
+        </Link>
+      </p>
+      <p className="mt-2 max-w-2xl text-sm text-fg-muted">
+        La tabla dice en qué dimensión está floja; las prácticas dicen qué contestó.
+      </p>
 
-      <h2 className="mt-10 text-xl font-semibold text-fg">En vivo</h2>
-      <div className="mt-3 grid gap-4 sm:grid-cols-2">
+      <h2 className="mt-10 font-display text-xl font-medium text-fg">En vivo</h2>
+      <CardGrid className="mt-3" columns={2}>
         <MetricCard label="Lives" value={String(data.liveSessions)} />
         <MetricCard label="Respuestas del Copilot" value={String(data.copilotAnswers)} />
-      </div>
-    </section>
+      </CardGrid>
+    </PageSection>
   );
 }

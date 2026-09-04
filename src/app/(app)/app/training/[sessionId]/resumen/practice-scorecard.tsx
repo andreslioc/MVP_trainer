@@ -37,7 +37,39 @@ function ScoreBar({ score }: { score: number }) {
   );
 }
 
-export function PracticeScorecard({ summary }: { summary: PracticeSummary }) {
+/**
+ * A quien le habla el consolidado.
+ *
+ * El mismo scorecard lo abre la asesora y lo abre quien la acompaña, y las dos
+ * lecturas no pueden usar la misma persona gramatical: "Lo que respondiste" en
+ * la pantalla de supervision suena a que respondio el supervisor. Es un cambio
+ * de VOZ, no de contenido —los numeros, el feedback y la version mejorada son
+ * identicos—, y por eso es una prop y no una copia de la pantalla.
+ */
+export type ScorecardVoice = "propia" | "supervision";
+
+const voiceCopy: Record<ScorecardVoice, { strengths: string; answered: string; missing: string }> =
+  {
+    propia: {
+      strengths: "Lo que ya te sale",
+      answered: "Lo que respondiste",
+      missing: "No la respondiste. Sigue la práctica para contestarla.",
+    },
+    supervision: {
+      strengths: "Lo que ya le sale",
+      answered: "Lo que respondió",
+      missing: "No la respondió: la práctica quedó a medias.",
+    },
+  };
+
+export function PracticeScorecard({
+  summary,
+  voice = "propia",
+}: {
+  summary: PracticeSummary;
+  voice?: ScorecardVoice;
+}) {
+  const copy = voiceCopy[voice];
   if (summary.answered === 0) {
     return (
       <div className="mt-8 rounded-card border border-warning-border bg-confidence-mid-bg p-6">
@@ -64,7 +96,7 @@ export function PracticeScorecard({ summary }: { summary: PracticeSummary }) {
           <p className="mt-1 font-semibold">{summary.level ? levelLabel[summary.level] : null}</p>
         </div>
         <div className="rounded-card border border-border bg-surface p-5">
-          <h2 className="font-semibold text-fg">Lo que ya te sale</h2>
+          <h2 className="font-semibold text-fg">{copy.strengths}</h2>
           <ul className="mt-2 space-y-1 text-sm text-fg-muted">
             {summary.strengths.map((dimension) => (
               <li key={dimension.key}>
@@ -130,7 +162,7 @@ export function PracticeScorecard({ summary }: { summary: PracticeSummary }) {
                 {row.answer ? (
                   <div className="mt-4 space-y-3">
                     <div>
-                      <h4 className="text-sm font-semibold text-fg">Lo que respondiste</h4>
+                      <h4 className="text-sm font-semibold text-fg">{copy.answered}</h4>
                       <p className="mt-1 text-fg-muted">{row.answer.advisorAnswer}</p>
                     </div>
                     {row.answer.feedback ? (
@@ -166,9 +198,7 @@ export function PracticeScorecard({ summary }: { summary: PracticeSummary }) {
                     ) : null}
                   </div>
                 ) : (
-                  <p className="mt-3 text-fg-muted">
-                    No la respondiste. Sigue la práctica para contestarla.
-                  </p>
+                  <p className="mt-3 text-fg-muted">{copy.missing}</p>
                 )}
               </details>
             </li>
