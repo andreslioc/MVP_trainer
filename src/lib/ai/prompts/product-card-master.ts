@@ -126,17 +126,33 @@ purpose: PARA QUE SIRVE. Que compuesto o caracteristica aporta, que hace ese com
   que NO sirve. Es un complemento de bienestar general no contesta nada.
 usage_mode: COMO SE USA. Cantidad por toma, cuantas veces, con que, y cuanto rinde el envase.
   Vacio si la etiqueta no lo declara: una dosis inventada se toma.
-benefits: DE UNO A TRES, y un beneficio es LO QUE EL PRODUCTO HACE POR LA PERSONA. No lo que trae,
-  no cuanto rinde, no como se toma —el rendimiento va en diferenciales, la cantidad en ingredientes
-  y el manejo en modo de uso—. Prueba: si al leerlo cabe preguntar como cual y la ficha no puede
-  contestar, es relleno. Maximo dieciseis palabras, apunta a doce.
-  NO ES BENEFICIO: Rinde 393 porciones · Aporta 14 mg por toma · Soporte al bienestar general.
-  SI ES BENEFICIO: Aporta carvacrol y timol, los antioxidantes del oregano · En la piel, apoyo para
-  que se vea saludable · Se usa tradicionalmente junto a las comidas.
+benefits: DE UNO A TRES, y un beneficio es LO QUE GANA QUIEN SE LO TOMA. No lo que trae, no cuanto
+  rinde, no como se toma, no de que es la capsula —el rendimiento va en diferenciales, la cantidad en
+  ingredientes y el manejo en modo de uso—. Maximo dieciseis palabras, apunta a doce.
+  NO ES BENEFICIO: La toma equivale a 4.500 mg de raiz · Lleva 18 mg de pimienta negra · Capsula
+  vegetal · Rinde 393 porciones · Soporte al bienestar general. Ninguno dice para que sirve.
+  DE DONDE SALE: de la FUNCION RECONOCIDA o del USO ESTABLECIDO del ingrediente activo que esta
+  ficha declara, a la cantidad que lo declara. No es inventar: es para que sirve ese ingrediente,
+  informacion establecida sobre el ingrediente y no una promesa sobre esta marca. El panel de un
+  frasco casi nunca imprime para que sirve lo que trae, y exigirle el beneficio a la etiqueta es lo
+  que deja la ficha hablando de miligramos.
+  SI ES BENEFICIO: Se usa como adaptogeno, para acompañar el manejo del estres del dia a dia ·
+  Aporta carvacrol y timol, los antioxidantes del oregano · La pimienta negra esta para que el cuerpo
+  aproveche mejor el ingrediente principal.
+  LA FRONTERA: se nombra la funcion o el uso, jamas una enfermedad, un sintoma ni un resultado
+  garantizado. La funcion fisiologica reconocida SI se dice; el efecto terapeutico NO, ni con
+  matices ni como ayuda a. SI el magnesio participa en la funcion muscular normal; NO el magnesio
+  quita los calambres. SI se usa como adaptogeno; NO baja la ansiedad, regula el cortisol, ayuda a
+  dormir mejor.
+  Cada beneficio se cuelga de un ingrediente de esta ficha, nombrandolo.
   Prohibido: diversos objetivos, multiples beneficios, varias funciones, propiedades beneficiosas,
   apoyo integral, amplia gama. Prometen variedad sin nombrar una sola cosa.
-  Forzar el tercer beneficio es como se llena el hueco con un dato de envase. Dos reales valen mas.
+  Forzar el tercer beneficio es como se llena el hueco con un dato de envase. Dos reales valen mas,
+  y el hueco se va a datos sin confirmar como pregunta buscable.
 science_note: por que se sostiene ese beneficio, en el idioma de la clienta.
+evidence_level del beneficio: CALIFICA LA FUNCION, no que el ingrediente este ahi. Que el panel
+  declare 18 mg de pimienta negra es evidencia de la cantidad, nunca del beneficio. alta: funcion
+  reconocida y documentada. media: uso tradicional o evidencia preliminar. baja: señales sueltas.
 technical_note: el respaldo con nombres, cifras, estudios y de donde salio el dato. Es el UNICO
   campo donde la jerga y la trazabilidad estan bien, porque no se lee en camara. Si el beneficio
   afirma un mecanismo, esta nota es obligatoria.
@@ -162,12 +178,21 @@ keywords: como escribe una clienta en el chat, faltas de ortografia incluidas. N
   catalogo.
 vs_similares: LA REFERENCIA CON LA QUE DE VERDAD SE CONFUNDE: misma marca, mismo tamaño, distinta
   concentracion o version. Si la marca tiene una version high strength del mismo tamaño, esa va
-  primero. Se dice en camara, asi que sin tecnicismos y con la cifra. Nada de es mejor ni superior.
+  primero. Sin tecnicismos y con la cifra. Nada de es mejor ni superior.
+  ESTE CAMPO ES PARA CUANDO LA CLIENTA PREGUNTA, NO PARA EL GUION. Nombrar otra referencia en un
+  bloque que la asesora lee de corrido provoca la pregunta por esa otra referencia, y si no esta en
+  el live se queda sin respuesta: pierde credibilidad por un dato que ella misma trajo. Peor si la
+  otra tiene algo que esta no —un extracto con nombre propio, un activo mas—, porque entonces el
+  guion esta vendiendo la otra. La comparacion la abre la clienta; el guion, nunca.
 verification_gaps: CADA HUECO COMO PREGUNTA BUSCABLE, con el dato que falta, para que sirve saberlo
   y donde ya buscaste. Falta informacion no sirve de nada; que porcentaje de carvacrol declara el
   fabricante para esta referencia si, porque otra pasada puede ir a buscar justo eso.
 
 === 6. CAPA DE SEGURIDAD ===
+
+El bloque de diferencia de la Respuesta Completa dice que hace distinto a ESTE producto, en
+positivo y sobre si mismo. Nunca nombra otra referencia, por lo mismo que vs_similares: la
+comparacion la abre la clienta.
 
 live_ready: de TRES A OCHO frases que la asesora lee tal cual, sin editar. La PRIMERA responde para
   que sirve. Si el producto tiene dos vias, cada una tiene su frase. Si lleva un alergeno, tiene su

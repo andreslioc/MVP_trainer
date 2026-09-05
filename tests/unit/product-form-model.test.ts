@@ -69,7 +69,10 @@ describe("el formulario ya no pide JSON a mano", () => {
           technical_note: "",
         },
         {
-          claim: "Aporta 5 g de creatina por porción",
+          // Era "Aporta 5 g de creatina por porción", y el validador ahora lo
+          // rechaza: una cantidad declarada no es un beneficio, y este fixture
+          // afirmaba lo contrario. La cifra se queda en la nota, que es su sitio.
+          claim: "La creatina participa en la producción de energía del músculo",
           science_note: "Una porción diaria de 5 g, como declara la etiqueta.",
           evidence_level: "media" as const,
           technical_note: "",

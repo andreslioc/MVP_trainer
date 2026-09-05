@@ -6,6 +6,10 @@ import { GENERATE_QUESTIONS_PROMPT } from "../src/lib/ai/prompts/generate-questi
 import { PRODUCT_CARD_MASTER_PROMPT } from "../src/lib/ai/prompts/product-card-master.ts";
 import { REPAIR_CARD_PROMPT } from "../src/lib/ai/prompts/repair-card.ts";
 import {
+  RESEARCH_BENEFITS_PROMPT,
+  STRUCTURE_BENEFITS_PROMPT,
+} from "../src/lib/ai/prompts/research-benefits.ts";
+import {
   RESEARCH_PRODUCT_PROMPT,
   STRUCTURE_PRODUCT_PROMPT,
 } from "../src/lib/ai/prompts/research-product.ts";
@@ -31,6 +35,8 @@ export const PROMPT_SEEDS: Array<{ name: string; body: string }> = [
   { name: "chat_coverage", body: CHAT_COVERAGE_PROMPT },
   { name: "research_product", body: RESEARCH_PRODUCT_PROMPT },
   { name: "structure_product", body: STRUCTURE_PRODUCT_PROMPT },
+  { name: "research_benefits", body: RESEARCH_BENEFITS_PROMPT },
+  { name: "structure_benefits", body: STRUCTURE_BENEFITS_PROMPT },
   { name: "safety_layer", body: SAFETY_LAYER_PROMPT },
   { name: "product_card_master", body: PRODUCT_CARD_MASTER_PROMPT },
   { name: "verify_gap", body: VERIFY_GAP_PROMPT },

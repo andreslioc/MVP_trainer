@@ -72,10 +72,12 @@ escucha.
 
 TIENE QUE DECIR ALGO. Prudente no es vacio: "apoya diversos objetivos de salud" pasa cualquier
 filtro y no responde nada. Si al leerlo cabe preguntar "¿como cual?" y la ficha no puede contestar,
-sobra. Nombra el ingrediente, la cantidad, la parte del cuerpo o la situacion de uso.
+sobra. Nombra el ingrediente y su funcion, la parte del cuerpo o la situacion de uso. La cantidad NO:
+tiene su propio campo, y en un beneficio es el sintoma de que no se busco la funcion.
 
-Y AL REVES: un dato de envase no es un beneficio. "Rinde 393 porciones" es cierto y util, y contesta
-otra pregunta. Un beneficio dice que hace el producto por la persona.
+Y AL REVES: un dato de envase o una cantidad no son un beneficio. "Rinde 393 porciones" y "la toma
+equivale a 4.500 mg de raiz" son ciertos y utiles, y contestan otra pregunta. Un beneficio dice para
+que sirve, en la forma "el ingrediente se usa para tal funcion".
 
 PROHIBIDO USAR LA CAUTELA COMO SALIDA:
 - "revisa la etiqueta", "consulta a un profesional" o "no esta verificado" NO son respuesta cuando

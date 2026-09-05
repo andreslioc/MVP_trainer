@@ -29,7 +29,8 @@
     "supabase:start": "pnpm supabase:check && supabase start",
     "supabase:stop": "supabase stop",
     "env:check": "tsx scripts/check-deploy-env.ts",
-    "admin:bootstrap": "tsx scripts/bootstrap-admin.ts"
+    "admin:bootstrap": "tsx scripts/bootstrap-admin.ts",
+    "db:backup:remote": "tsx scripts/backup-remote-products.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "5.9.1",
