@@ -456,7 +456,16 @@ export async function researchProduct(
       ok: true as const,
       data: { product: updated, sources: citations.length, safetyApplied: safety.ok },
     };
-  } catch {
+  } catch (error) {
+    // La causa se registra o el fallo es irrepetible: una ficha que falla al
+    // guardar lo hace por algo concreto —una restriccion, un tipo, un dato
+    // demasiado largo— y sin el detalle solo queda reinvestigarla para volver a
+    // ver el mismo "INTERNAL". Medido: una ficha del catalogo fallo asi en dos
+    // lotes seguidos sin decir por que.
+    logFailure(
+      "investigacion/guardado",
+      `${product.name}: ${error instanceof Error ? error.message : String(error)}`,
+    );
     return {
       ok: false as const,
       error: { code: "INTERNAL", message: "No se pudo guardar la ficha investigada." },

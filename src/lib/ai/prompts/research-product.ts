@@ -156,9 +156,11 @@ Reglas obligatorias:
   mitad del producto sin explicar —y es justo la mitad que lo diferencia—. Lo mismo con un polvo que
   se bebe o se hornea, una crema para cara y cuerpo, o un dispositivo con varios modos.
   Escribe cada forma con su finalidad: "tomado, para X; en la piel, para Y".
-  Y si el fabricante declara la forma de uso pero NO dice para que sirve por esa via, se dice tal
-  cual —"el fabricante indica como aplicarlo pero no declara para que"— y ese hueco va a los datos
-  sin confirmar. Inventar la finalidad de la segunda via es el error mas facil aqui, porque la
+  Y si el fabricante declara la forma de uso pero NO dice para que sirve por esa via, el campo lo
+  dice sin atribuir: "se aplica en la piel, y para que sirve por ahi no esta documentado". La
+  atribucion —quien lo dijo o dejo de decirlo— NO va en un campo que se lee en camara: va al hueco,
+  en los datos sin confirmar. "El fabricante indica" y "la etiqueta declara" son trazabilidad y el
+  registro de camara los rechaza. Inventar la finalidad de la segunda via es el error mas facil aqui, porque la
   primera si esta documentada y arrastra.
 - purpose ES LO QUE HACE, NO COMO SE USA NI QUE TRAE. Tiene que contestar "para que me sirve a mi":
   que compuesto o caracteristica aporta, que hace ese compuesto, y en que situacion se usa. "Es un
@@ -166,9 +168,13 @@ Reglas obligatorias:
   lo unico que se puede decir del producto, di ademas que compuesto aporta y para que se usa
   tradicionalmente, y cierra diciendo para que NO sirve. La descripcion dice que es y usage_mode
   dice como se toma: aqui no se repiten.
-- ESCRIBE COMO HABLA UNA CLIENTA, NO COMO UNA ETIQUETA. Todo lo que pongas en la ficha —descripcion,
-  para que sirve, modo de uso, precauciones, casos de no uso, preguntas, objeciones, diferenciales—
-  lo va a leer una asesora EN VOZ ALTA delante de una clienta. Una palabra de farmacia ahi sale al
+- ESCRIBE COMO HABLA UNA CLIENTA, NO COMO UNA ETIQUETA. Aplica a CADA campo de la ficha menos el
+  respaldo tecnico: descripcion, para que sirve, modo de uso, precauciones, casos de no uso,
+  preguntas, objeciones, diferenciales, LOS NOMBRES DE LOS INGREDIENTES, la frase y la nota de cada
+  beneficio, las frases del live y las formas seguras de decir un tema delicado. Todo eso lo va a
+  leer una asesora EN VOZ ALTA delante de una clienta.
+  El nombre de un ingrediente tambien se dice al aire: "vehiculo: aceite de oliva" se rechaza igual
+  que en cualquier otro campo, y se escribe "aceite de oliva, con el que viene mezclado". Una palabra de farmacia ahi sale al
   aire tal cual y nadie la entiende.
   "vehiculo" o "excipiente" -> "el aceite con el que viene mezclado", "con lo que viene mezclado".
   "via topica" -> "en la piel". "via oral" -> "tomado", "por boca".
