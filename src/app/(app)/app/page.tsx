@@ -4,6 +4,8 @@ import { cardClasses } from "../../../components/ui/card.tsx";
 import { CardGrid } from "../../../components/ui/card-grid.tsx";
 import { PageSection } from "../../../components/ui/page-section.tsx";
 import { getSession } from "../../../lib/auth.ts";
+import { AiCostCard } from "../../../components/analytics/ai-cost-card.tsx";
+import { readAiCostByDay } from "../../../server/ai-cost.ts";
 import { getDashboardMetrics } from "../../../server/dashboard.ts";
 
 const currency = new Intl.NumberFormat("es-CO", {
@@ -27,6 +29,13 @@ export default async function AppPage() {
   const session = await getSession();
   if (!session.ok) return null;
   const result = await getDashboardMetrics({ authorize: async () => session });
+  // Solo para admin, igual que el acumulado: el costo es de la organizacion. Se
+  // pide en paralelo con las metricas porque son dos lecturas independientes y
+  // encadenarlas suma su latencia sin ninguna razon.
+  const cost =
+    result.ok && result.data.costUsd !== null
+      ? await readAiCostByDay({ period: "semana" }, { authorize: async () => session })
+      : null;
 
   return (
     <PageSection eyebrow="Inicio" title="Tu centro de trabajo" width="panel">
@@ -83,6 +92,12 @@ export default async function AppPage() {
               />
             )}
           </CardGrid>
+
+          {cost?.ok ? (
+            <div className="mt-4">
+              <AiCostCard report={cost.data} spanLabel="últimos 7 días" />
+            </div>
+          ) : null}
         </>
       )}
     </PageSection>

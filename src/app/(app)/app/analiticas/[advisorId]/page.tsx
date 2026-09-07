@@ -10,7 +10,7 @@ import { ROLE_LABELS } from "../../../../../lib/roles.ts";
 import { getAdvisorAnalytics } from "../../../../../server/advisor-analytics.ts";
 import { DimensionTable } from "../dimension-table.tsx";
 import { MetricCard } from "../metric-card.tsx";
-import { MiniColumns } from "../mini-columns.tsx";
+import { MiniColumns } from "../../../../../components/analytics/mini-columns.tsx";
 import { PeriodTabs } from "../period-tabs.tsx";
 import { ScoreMeter } from "../score-meter.tsx";
 import { Sparkline } from "../sparkline.tsx";

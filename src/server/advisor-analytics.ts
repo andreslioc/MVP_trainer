@@ -1,4 +1,4 @@
-import { type SQLWrapper, and, count, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../db/client.ts";
@@ -13,11 +13,11 @@ import {
 import {
   ANALYTICS_PERIODS,
   type AnalyticsPeriod,
-  BUSINESS_TIMEZONE,
   periodDayKeys,
   periodStart,
 } from "../lib/analytics-period.ts";
 import { type AdvisorRole, requireRole } from "../lib/auth.ts";
+import { businessDayColumn as diaDelNegocio } from "./business-day.ts";
 import { CALIBRATION_ANSWERS, type DimensionScore, readDimensionScores } from "./advisor-scores.ts";
 
 /**
@@ -42,17 +42,6 @@ const inputSchema = z
     period: z.enum(ANALYTICS_PERIODS).default("mes"),
   })
   .strict();
-
-/**
- * El dia calendario EN BOGOTA de una columna de fecha.
- *
- * Sin el `AT TIME ZONE`, Postgres agrupa por dia UTC y una practica de las
- * siete de la noche en Colombia cae en el dia siguiente. El panel mostraria
- * actividad en un dia en el que nadie practico.
- */
-function diaDelNegocio(columna: SQLWrapper) {
-  return sql<string>`to_char(date_trunc('day', ${columna} AT TIME ZONE ${sql.raw(`'${BUSINESS_TIMEZONE}'`)}), 'YYYY-MM-DD')`;
-}
 
 export { CALIBRATION_ANSWERS } from "./advisor-scores.ts";
 export type { DimensionScore } from "./advisor-scores.ts";
