@@ -11,6 +11,15 @@ type EvaluationPromptInput = {
     criteria: string[];
   };
   advisorAnswer: string;
+  /**
+   * Rango de precios que cuentan como correctos, ya escrito.
+   *
+   * Llega hecho desde `pricing.ts` por lo mismo que los precios del Copilot: la
+   * resta la falla el modelo de vez en cuando, y aqui una resta mal hecha
+   * penaliza a una asesora por un numero que si era valido. Nulo cuando la ficha
+   * no tiene precio, y entonces el bloque no se escribe.
+   */
+  priceRange?: { min: string; max: string } | null;
 };
 
 export const EVALUATE_ANSWER_PROMPT = `
@@ -86,6 +95,22 @@ Penaliza si:
 IMPORTANTE:
 
 Si el dato está en la ficha, no responderlo NO es prudencia: es falta de conocimiento.
+
+EL PRECIO ES LA EXCEPCION, Y NO SE PENALIZA POR MOVERSE.
+
+En un live de TikTok el precio no se queda quieto: baja cuando se enciende una oferta a mitad de
+transmision y sube cuando se acaba. La asesora dice el que tiene en pantalla, que es el correcto para
+esa clienta en ese momento, y puede no ser el de la ficha.
+
+Cuando el bloque RANGO DE PRECIO ACEPTABLE viene en la ficha, cualquier cifra dentro de ese rango es
+un dato CORRECTO. No es inventar, no es mezclar referencias y no es un error de conocimiento: es un
+precio valido para ese producto que se movio por una promocion. No lo menciones en el feedback ni
+bajes la nota por eso.
+
+Fuera del rango si es un error, y ahi se dice cual era el precio.
+
+Y una cifra de precio nunca se juzga por no coincidir con la ficha al peso: se juzga por estar dentro
+o fuera del rango. El rango viene ya calculado; no lo recalcules.
 
 ---
 
@@ -497,11 +522,14 @@ ${ANSWER_FRAMEWORK}
 `.trim();
 
 export function buildEvaluateAnswerPrompt(input: EvaluationPromptInput) {
+  const rango = input.priceRange
+    ? `\n\nRANGO DE PRECIO ACEPTABLE: entre ${input.priceRange.min} y ${input.priceRange.max}. Cualquier cifra de precio dentro de este rango es correcta.`
+    : "";
   return {
     system: `${EVALUATE_ANSWER_PROMPT}
 
 FICHA SELECCIONADA:
-${JSON.stringify(productKnowledgeForPrompt(input.product))}`,
+${JSON.stringify(productKnowledgeForPrompt(input.product))}${rango}`,
     messages: [
       {
         role: "user" as const,

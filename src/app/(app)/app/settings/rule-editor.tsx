@@ -18,6 +18,7 @@ const presentation = {
     description: "Valor mínimo de compra expresado en pesos colombianos.",
     fieldLabel: "Umbral en COP",
     valueKey: "threshold_cop",
+    numeric: true,
   },
   promo_live: {
     title: "Promoción del live",
@@ -43,9 +44,24 @@ const presentation = {
     fieldLabel: "Mensaje del cupón",
     valueKey: "message",
   },
+  margen_precio: {
+    title: "Margen del precio en el live",
+    description:
+      "Cuánto puede moverse el precio en una transmisión sin que contar otra cifra sea un error. El simulacro acepta como correcto cualquier precio dentro de este margen, y el envío gratuito solo se promete si el producto alcanza el umbral incluso en su precio más bajo. En cero, solo el precio de la ficha es válido.",
+    fieldLabel: "Margen en COP",
+    valueKey: "margin_cop",
+    numeric: true,
+  },
 } as const satisfies Record<
   CommercialRuleKey,
-  { title: string; description: string; fieldLabel: string; valueKey: string }
+  {
+    title: string;
+    description: string;
+    fieldLabel: string;
+    valueKey: string;
+    /** El campo se edita como numero y se guarda como numero, no como texto. */
+    numeric?: boolean;
+  }
 >;
 
 type RuleFormValues = { content: string; active: boolean };
@@ -67,13 +83,12 @@ export function RuleEditor({
     defaultValues: { content: String(initialValue ?? ""), active: rule.active },
   });
   const active = watch("active");
+  const esNumerico = "numeric" in copy && copy.numeric === true;
 
   const submit = handleSubmit(async (values) => {
     setFeedback(undefined);
-    const value =
-      rule.key === "envio_gratis"
-        ? { threshold_cop: Number(values.content) }
-        : { [copy.valueKey]: values.content };
+    const numeric = "numeric" in copy && copy.numeric === true;
+    const value = { [copy.valueKey]: numeric ? Number(values.content) : values.content };
     const result = await updateCommercialRuleAction({
       key: rule.key,
       value,
@@ -108,8 +123,8 @@ export function RuleEditor({
         {copy.fieldLabel}
         <input
           className="mt-1 w-full rounded-card border bg-surface px-3 py-2"
-          inputMode={rule.key === "envio_gratis" ? "numeric" : "text"}
-          type={rule.key === "envio_gratis" ? "number" : "text"}
+          inputMode={esNumerico ? "numeric" : "text"}
+          type={esNumerico ? "number" : "text"}
           {...register("content", { required: "Este campo es obligatorio." })}
         />
         {errors.content ? (

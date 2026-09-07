@@ -15,6 +15,16 @@ const commercialRuleSeeds = [
   },
   { key: "envio_gratis", value: { threshold_cop: 120000 }, active: true },
   {
+    key: "margen_precio",
+    // Cuanto se puede mover el precio en un live sin que contar otro numero sea
+    // un error. En TikTok baja por una oferta a mitad de transmision y sube
+    // cuando se acaba: la asesora dice el de pantalla, y el evaluador la
+    // penalizaba por no decir el de la ficha. Es un valor de negocio y por eso
+    // vive aqui: se cambia sin desplegar.
+    value: { margin_cop: 20000 },
+    active: true,
+  },
+  {
     key: "promo_live",
     value: { message: "Configura la promocion vigente del live" },
     active: false,

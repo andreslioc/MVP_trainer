@@ -5,6 +5,18 @@ const thresholdSchema = z
   .number()
   .int("El umbral debe ser un número entero.")
   .positive("El umbral debe ser mayor que cero.");
+/**
+ * El margen SI admite cero, a diferencia del umbral.
+ *
+ * Poner el margen en cero es una decision valida —"el precio de la ficha es el
+ * unico correcto"— y no un campo sin llenar. Con `.positive()` esa eleccion
+ * seria imposible de guardar.
+ */
+const marginSchema = z
+  .number()
+  .int("El margen debe ser un número entero.")
+  .min(0, "El margen no puede ser negativo.")
+  .max(1_000_000, "Un margen mayor que un millón de pesos no distingue nada.");
 
 export const commercialRuleKeys = [
   "originalidad",
@@ -13,6 +25,7 @@ export const commercialRuleKeys = [
   "seguir_tiktok",
   "canal_whatsapp",
   "cupon_por_seguir",
+  "margen_precio",
 ] as const;
 
 export type CommercialRuleKey = (typeof commercialRuleKeys)[number];
@@ -28,6 +41,7 @@ const valueSchemas = {
   seguir_tiktok: z.object({ cta: requiredText }).strict(),
   canal_whatsapp: z.object({ cta: requiredText }).strict(),
   cupon_por_seguir: z.object({ message: requiredText }).strict(),
+  margen_precio: z.object({ margin_cop: marginSchema }).strict(),
 } satisfies Record<CommercialRuleKey, z.ZodType>;
 
 const ruleUpdateBaseSchema = z.object({

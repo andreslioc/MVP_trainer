@@ -19,6 +19,7 @@ import {
   type StructuredOutputResult,
 } from "../../lib/ai/structured.ts";
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
+import { formatAcceptedPriceRange, readPriceMargin } from "./price-margin.ts";
 import { writeLlmCall } from "../llm-calls.ts";
 
 const evaluationInputSchema = z
@@ -127,6 +128,10 @@ export async function evaluateTrainingAnswer(input: unknown, options: Evaluation
       product: context.product,
       question: context.question,
       advisorAnswer: answer.advisorAnswer,
+      priceRange: formatAcceptedPriceRange(
+        context.product.priceCop,
+        await readPriceMargin(database),
+      ),
     });
     const generated = await generate({
       advisorId: authorization.data.id,

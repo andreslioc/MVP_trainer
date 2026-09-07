@@ -54,3 +54,75 @@ describe("commercial rule validation", () => {
     expect(result.success).toBe(false);
   });
 });
+
+/**
+ * El margen del precio del live, editable desde Ajustes.
+ *
+ * Su esquema se separa del umbral del envio por un caso concreto: el cero. En el
+ * umbral, cero no significa nada —un envio gratis "desde $0" es un campo sin
+ * llenar—; en el margen es una decision deliberada: solo el precio de la ficha
+ * cuenta como correcto.
+ */
+describe("margen del precio", () => {
+  it("acepta el margen en pesos", () => {
+    const result = parseCommercialRuleUpdate({
+      key: "margen_precio",
+      value: { margin_cop: 20_000 },
+      active: true,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("acepta CERO, que es distinto de vacio", () => {
+    const result = parseCommercialRuleUpdate({
+      key: "margen_precio",
+      value: { margin_cop: 0 },
+      active: true,
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rechaza un margen negativo", () => {
+    const result = parseCommercialRuleUpdate({
+      key: "margen_precio",
+      value: { margin_cop: -1000 },
+      active: true,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rechaza un margen que no distingue nada", () => {
+    const result = parseCommercialRuleUpdate({
+      key: "margen_precio",
+      value: { margin_cop: 5_000_000 },
+      active: true,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rechaza el numero escrito como texto", () => {
+    // El editor lo convierte con Number() antes de guardar; si eso se rompe, el
+    // borde tiene que atraparlo y no guardar un margen que nadie puede leer.
+    const result = parseCommercialRuleUpdate({
+      key: "margen_precio",
+      value: { margin_cop: "20000" },
+      active: true,
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rechaza una llave que el esquema del margen no declara", () => {
+    const result = parseCommercialRuleUpdate({
+      key: "margen_precio",
+      value: { margin_cop: 20_000, message: "de contrabando" },
+      active: true,
+    });
+
+    expect(result.success).toBe(false);
+  });
+});

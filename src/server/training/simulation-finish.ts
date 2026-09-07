@@ -18,6 +18,7 @@ import { buildEvaluateAnswerPrompt } from "../../lib/ai/prompts/evaluate-answer.
 import { type Evaluation, evaluationSchema } from "../../lib/ai/schemas.ts";
 import { generateStructured } from "../../lib/ai/structured.ts";
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
+import { formatAcceptedPriceRange, readPriceMargin } from "./price-margin.ts";
 import { mapWithConcurrency } from "../../lib/concurrency.ts";
 import { logFailure } from "../../lib/log.ts";
 import { AI_PROVIDER } from "../../lib/ai/config.ts";
@@ -168,6 +169,10 @@ export async function finishSimulation(
       .where(and(eq(prompts.name, "evaluate_answer"), eq(prompts.active, true)))
       .limit(1);
 
+    // El margen se lee UNA vez, fuera del mapa: adentro se evalua en paralelo y
+    // una consulta por entrada seria una por respuesta del guion.
+    const priceMargin = await readPriceMargin(database);
+
     // Solo se evalua lo que si contesto. Puntuar una respuesta vacia produce
     // nueve ceros que no le dicen nada a nadie; que no la vio ya lo dice la
     // metrica de atencion.
@@ -193,6 +198,7 @@ export async function finishSimulation(
               criteria: question.criteria,
             },
             advisorAnswer: row.evidenceQuote,
+            priceRange: formatAcceptedPriceRange(product.priceCop, priceMargin),
           });
           const evaluated = await generate(
             {

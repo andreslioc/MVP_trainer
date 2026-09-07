@@ -17,6 +17,22 @@
  */
 export const DEFAULT_PROMO_PERCENT = 10;
 
+/**
+ * Cuanto se puede mover el precio en un live sin que sea un dato equivocado.
+ *
+ * En TikTok Live el precio NO se queda quieto: baja por una oferta que se
+ * enciende a mitad de transmision, sube cuando se acaba. La asesora dice el que
+ * ve en pantalla, y el evaluador del simulacro lo comparaba contra la ficha y lo
+ * marcaba como dato inventado. Dentro de este margen es un precio VALIDO para
+ * ese producto, no un error: bajo por una promocion, que es lo normal.
+ *
+ * El valor por defecto existe para que el evaluador no se quede sin margen si la
+ * regla no esta cargada. El que manda es `commercial_rules`, key `margen_precio`,
+ * porque cuanto se mueve un precio en un live lo decide el negocio y cambia sin
+ * que nadie despliegue nada.
+ */
+export const DEFAULT_PRICE_MARGIN_COP = 20_000;
+
 export type PricingInput = {
   priceCop: number | null;
   promoActive: boolean;
@@ -53,6 +69,35 @@ export function resolvePricing(product: PricingInput): Pricing {
   };
 }
 
+/**
+ * El rango de precios que cuentan como correctos para este producto.
+ *
+ * Se resuelve aqui y no en el prompt por lo mismo que el descuento: una resta
+ * de 87.000 menos 20.000 el modelo la falla de vez en cuando, y el evaluador
+ * penalizaria a la asesora por un numero que si era valido. Al prompt le llegan
+ * los dos extremos ya escritos.
+ *
+ * Se mide contra el precio VIGENTE —el especial cuando esta activo—, que es el
+ * que la asesora tiene en pantalla y por tanto el que va a decir.
+ */
+export function priceToleranceRange(
+  pricing: Pricing,
+  marginCop: number = DEFAULT_PRICE_MARGIN_COP,
+) {
+  const current = pricing.promoPriceCop ?? pricing.priceCop;
+  if (current === null) return null;
+  // El piso es cero: un margen mayor que el precio no convierte el rango en
+  // negativo, que es una frase absurda en camara.
+  const minCop = Math.max(0, current - marginCop);
+  return { minCop, maxCop: current + marginCop, marginCop, currentCop: current };
+}
+
+/** Lee el margen de la regla comercial. Sin regla, el de por defecto. */
+export function priceMarginFromRule(ruleValue: Record<string, unknown> | null) {
+  const margin = ruleValue?.margin_cop;
+  return typeof margin === "number" && margin >= 0 ? margin : DEFAULT_PRICE_MARGIN_COP;
+}
+
 /** `135000` → `"$135.000"`, en el formato que se lee en Colombia. */
 export function formatCop(value: number | null) {
   if (value === null) return null;
@@ -73,9 +118,21 @@ export function formatCop(value: number | null) {
 export function coversIncentiveThreshold(
   pricing: Pricing,
   incentiveValue: Record<string, unknown> | null,
+  /**
+   * Margen del live. Se descuenta del precio ANTES de comparar, asi que el
+   * envio gratis solo se afirma cuando el producto alcanza el umbral incluso en
+   * su precio mas bajo.
+   *
+   * Un producto de $130.000 contra un umbral de $120.000 lo alcanza hoy, y deja
+   * de alcanzarlo si en el live baja a $110.000 — pero la asesora ya lo dijo en
+   * camara. Prometer envio gratis y no cumplirlo cuesta mas que no prometerlo:
+   * la clienta ya decidio comprar con esa cuenta hecha.
+   */
+  marginCop = 0,
 ) {
   const threshold = incentiveValue?.threshold_cop;
   if (typeof threshold !== "number") return false;
   const current = pricing.promoPriceCop ?? pricing.priceCop;
-  return current !== null && current >= threshold;
+  if (current === null) return false;
+  return Math.max(0, current - marginCop) >= threshold;
 }
