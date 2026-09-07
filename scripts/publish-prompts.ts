@@ -58,6 +58,25 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : "Error desconocido al publicar prompts.");
+  // La CAUSA, no el envoltorio. Drizzle envuelve el fallo en un "Failed query"
+  // que repite el SQL y adjunta TODOS los parametros —los cuerpos completos de
+  // los diecisiete prompts—, asi que el mensaje real se pierde arriba de miles
+  // de lineas y el fallo parece una publicacion exitosa. Aqui va lo unico que
+  // sirve, al final y en dos lineas.
+  if (error instanceof Error) {
+    const causa = (error as { cause?: unknown }).cause;
+    if (causa instanceof Error) {
+      console.error(`CAUSA: ${causa.message}`);
+      const detalles = causa as unknown as Record<string, unknown>;
+      for (const campo of ["code", "detail", "hint", "constraint_name", "table_name"] as const) {
+        const valor = detalles[campo];
+        if (typeof valor === "string" && valor) console.error(`${campo.toUpperCase()}: ${valor}`);
+      }
+    } else {
+      console.error(error.message.split("\n")[0]);
+    }
+  } else {
+    console.error("Error desconocido al publicar prompts.");
+  }
   process.exitCode = 1;
 });
