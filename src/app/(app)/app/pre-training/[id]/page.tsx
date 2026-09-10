@@ -77,6 +77,10 @@ export default async function PreTrainingProductPage({
             >
               {product.name}
             </h1>
+            {/* El nombre en español, para quien no reconoce el rotulo. */}
+            {product.nameEs ? (
+              <p className="mt-1 text-base text-fg-muted">{product.nameEs}</p>
+            ) : null}
             <p className="mt-2 text-sm text-fg-muted">
               {product.presentation} · {product.format}
             </p>

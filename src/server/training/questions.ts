@@ -252,7 +252,9 @@ export async function listTrainingProducts(options: TrainingDependencies = {}) {
       .select({
         id: products.id,
         name: products.name,
+        nameEs: products.nameEs,
         brand: products.brand,
+        presentation: products.presentation,
         questionCount: count(trainingQuestions.id),
       })
       .from(products)

@@ -177,7 +177,7 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
 
   try {
     const catalog = await database
-      .select({ id: products.id, name: products.name })
+      .select({ id: products.id, name: products.name, presentation: products.presentation })
       .from(products)
       .where(isNotNull(products.verifiedAt))
       .orderBy(asc(products.name));

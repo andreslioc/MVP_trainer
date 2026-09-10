@@ -33,6 +33,10 @@ paths:
 - **Una tarjeta se hace con `Card` o `cardClasses()`, una rejilla con `CardGrid` y una pantalla con
   `PageSection`** (`src/components/ui/`). Escribir `rounded-card border border-border bg-surface` a
   mano rompe una prueba en las pantallas ya convertidas.
+- **Un `<option>` de ficha se arma con `productOptionLabel()`** (`src/lib/product-label.ts`), nunca
+  con `{name} · {brand}` a mano: dos empaques del mismo producto comparten nombre y la presentacion
+  es lo unico que los separa. Toda consulta que alimente un selector de fichas tiene que traer
+  `presentation`.
 - Server Component por defecto. `"use client"` en la hoja mas pequena que necesite estado o un
   handler — nunca en un layout ni en una page.
 - Maximo 300 lineas por archivo.

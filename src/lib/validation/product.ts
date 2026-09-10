@@ -181,6 +181,13 @@ export const productInputSchema = z
   .object({
     sku: optionalText,
     name: requiredText,
+    /**
+     * El nombre en español. Opcional: las fichas cuyo rotulo ya viene en
+     * español no tienen nada que traducir, y repetirlo seria ruido debajo del
+     * nombre. Se guarda como cadena vacia, no como null, para que la pantalla
+     * no tenga que distinguir "sin traducir" de "no hace falta".
+     */
+    nameEs: z.string().trim().default(""),
     brand: requiredText,
     category: requiredText,
     presentation: requiredText,

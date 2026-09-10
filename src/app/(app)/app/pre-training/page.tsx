@@ -202,6 +202,12 @@ export default async function PreTrainingPage({
                       {product.brand} · {product.format}
                     </p>
                     <p className="mt-1 font-semibold text-fg">{product.name}</p>
+                    {/* El nombre en español, para quien no reconoce el rotulo
+                        en ingles. Vacio en las fichas cuyo rotulo ya viene en
+                        español, y entonces no pinta nada. */}
+                    {product.nameEs ? (
+                      <p className="text-sm text-fg-muted">{product.nameEs}</p>
+                    ) : null}
                     <p className="mt-1 text-sm text-fg-muted">{product.presentation}</p>
                     <p className="mt-2 text-lg font-semibold tabular-nums text-fg">
                       {formatCop(product.priceCop) ?? "Sin precio"}

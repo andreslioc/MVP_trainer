@@ -190,6 +190,13 @@
       "when": 1788367951516,
       "tag": "0026_wandering_quasar",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1789060959468,
+      "tag": "0027_smart_electro",
+      "breakpoints": true
     }
   ]
 }

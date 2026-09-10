@@ -112,11 +112,18 @@ Reglas obligatorias para insights:
 export type AnalyzeTranscriptInput = {
   transcript: string;
   durationS: number | null;
-  products: Array<{ id: string; name: string }>;
+  products: Array<{ id: string; name: string; presentation: string }>;
 };
 
 export function buildAnalyzeTranscriptPrompt(input: AnalyzeTranscriptInput) {
-  const catalog = input.products.map((product) => ({ id: product.id, name: product.name }));
+  // El nombre CON el empaque: el modelo devuelve un id eligiendo por nombre, y
+  // dos empaques del mismo producto se leian identicos — el hallazgo caia en
+  // uno de los dos al azar.
+  const catalog = input.products.map((product) => ({
+    id: product.id,
+    name: product.name,
+    presentation: product.presentation,
+  }));
   const systemParts = [
     ANALYZE_TRANSCRIPT_PROMPT,
     `\n\nPRODUCTOS DISPONIBLES:\n${JSON.stringify(catalog)}`,

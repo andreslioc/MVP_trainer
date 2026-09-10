@@ -67,7 +67,13 @@ describe("buildAnalyzeTranscriptPrompt", () => {
     const built = buildAnalyzeTranscriptPrompt({
       transcript: "[Speaker 0] hola, me llamo Paula y mi numero es 3001234567",
       durationS: 3600,
-      products: [{ id: "11111111-1111-4111-8111-111111111111", name: "Colageno" }],
+      products: [
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Colageno",
+          presentation: "264 g",
+        },
+      ],
     });
     const body = built.messages[0]?.content ?? "";
     expect(body).not.toContain("Paula");
@@ -81,11 +87,41 @@ describe("buildAnalyzeTranscriptPrompt", () => {
     const built = buildAnalyzeTranscriptPrompt({
       transcript: "sin datos personales",
       durationS: null,
-      products: [{ id: "22222222-2222-4222-8222-222222222222", name: "Biotina" }],
+      products: [
+        {
+          id: "22222222-2222-4222-8222-222222222222",
+          name: "Biotina",
+          presentation: "100 gomitas",
+        },
+      ],
     });
     expect(built.system).toContain(ANALYZE_TRANSCRIPT_PROMPT);
     expect(built.system).toContain("22222222-2222-4222-8222-222222222222");
     expect(built.messages[0]?.content).toContain("DURACION_SEGUNDOS: desconocida");
+  });
+
+  it("el catalogo lleva el empaque, no solo el nombre", () => {
+    // El modelo devuelve un id eligiendo por nombre. Dos empaques del mismo
+    // producto —150 y 250 capsulas— se leian identicos, y el hallazgo caia en
+    // uno de los dos al azar.
+    const built = buildAnalyzeTranscriptPrompt({
+      transcript: "sin datos personales",
+      durationS: null,
+      products: [
+        {
+          id: "33333333-3333-4333-8333-333333333333",
+          name: "Cabello, Piel y Uñas",
+          presentation: "150 cápsulas",
+        },
+        {
+          id: "44444444-4444-4444-8444-444444444444",
+          name: "Cabello, Piel y Uñas",
+          presentation: "250 cápsulas",
+        },
+      ],
+    });
+    expect(built.system).toContain("150 cápsulas");
+    expect(built.system).toContain("250 cápsulas");
   });
 });
 

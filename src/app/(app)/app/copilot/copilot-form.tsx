@@ -14,6 +14,7 @@ import {
 } from "../../../../components/copilot/answer-panel.tsx";
 import { COPILOT_VIEW_DEFAULTS } from "../../../../lib/copilot/view-defaults.ts";
 import { endLiveSessionAction, startLiveSessionAction } from "./actions.ts";
+import { productOptionLabel } from "../../../../lib/product-label.ts";
 
 type CopilotFormValues = {
   productId: string;
@@ -46,7 +47,14 @@ export function CopilotForm({
   activeRules,
   initialSessionId,
 }: {
-  products: Array<{ id: string; name: string; brand: string; priceCop: number | null }>;
+  products: Array<{
+    id: string;
+    name: string;
+    nameEs: string;
+    brand: string;
+    presentation: string;
+    priceCop: number | null;
+  }>;
   productPromos: Array<{ product_id: string; percent: number }>;
   activeRules: Array<{ key: string }>;
   initialSessionId: string | null;
@@ -183,7 +191,7 @@ export function CopilotForm({
           <option value="">Selecciona una ficha</option>
           {products.map((product) => (
             <option key={product.id} value={product.id}>
-              {product.name} · {product.brand}
+              {productOptionLabel(product)}
             </option>
           ))}
         </select>

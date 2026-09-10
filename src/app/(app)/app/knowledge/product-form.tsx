@@ -96,7 +96,11 @@ export function ProductForm({ product }: { product?: EditableProduct }) {
           <div className="grid gap-4 md:grid-cols-2">
             {(
               [
-                ["name", "Nombre comercial"],
+                ["name", "Nombre en la etiqueta"],
+                // El nombre en español va JUNTO al de la etiqueta y no al final
+                // del formulario: se escriben en el mismo momento, mirando el
+                // mismo frasco.
+                ["nameEs", "Nombre en español (opcional)"],
                 ["brand", "Marca"],
                 ["category", "Categoría"],
                 ["presentation", "Presentación"],

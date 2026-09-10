@@ -183,6 +183,46 @@ oscuro del manual.
 en verde estan `--confidence-high-fg` con su fondo. Una prueba afirma que `text-success` no aparece
 en el repo.
 
+### Como se nombra una ficha
+
+El nombre viaja SOLO —sin la tarjeta— a tres lugares: el selector del Copilot, el del Training y el
+catalogo que recibe el analizador de transcripciones. Ahi es lo unico que la asesora ve para elegir,
+asi que tiene que distinguir por si mismo.
+
+**Son DOS campos**, no uno con parentesis:
+
+| Campo | Que es | Ejemplo |
+|---|---|---|
+| `name` | El nombre como esta ROTULADO en el frasco. Casi siempre en ingles. Es la identidad y lo que va grande. | `Oil of Oregano 4000 mg · 150 cápsulas` |
+| `name_es` | El mismo producto dicho en español. Va pequeño debajo. Vacio cuando no aporta. | `Aceite de orégano` |
+
+Vivieron un rato dentro del mismo campo con el ingles en parentesis, y daban nombres de cien
+caracteres que ningun selector alcanzaba a mostrar. Separados, cada uno tiene un trabajo: `name`
+empareja la ficha con el frasco que la asesora tiene en la mano —y con la caja que la clienta ve—
+mientras que `name_es` contesta "¿y eso qué es?" a quien no lee ingles.
+
+1. **`name` sin la marca.** La tarjeta y el selector ya la muestran al lado. Repetirla empuja la
+   parte que distingue fuera del ancho visible de un `<select>`: cinco referencias de Kirkland
+   empezaban con "Kirkland Signature" y gastaban medio renglon en algo que no separa nada.
+2. **La potencia es parte de `name`** (`4000 mg`, `5,000 UI`): distingue PRODUCTOS, no empaques.
+3. **`name` es unico dentro de la marca.** Cuando dos referencias solo se diferencian por el
+   tamaño del empaque, el tamaño entra al nombre: `· 150 cápsulas`. No es redundar con
+   `presentation` — es que el nombre viaja solo a los tres lugares de arriba.
+4. **`name_es` es el nombre del producto, sin potencia y sin tamaño**: eso ya va en `name`. Sale de
+   lo que la ficha dice; queda **vacio** cuando el rotulo ya viene en español —no hay nada que
+   traducir y repetirlo seria ruido— y **no se inventa el rotulo en ingles** de una ficha que solo
+   tiene nombre en español: ese texto esta en el frasco, no en la ficha.
+
+La otra mitad la pone `productOptionLabel()` (`src/lib/product-label.ts`), que arma el renglon de un
+`<option>`: `rotulo — español · marca · presentacion corta`. El español va pegado al rotulo porque
+es su traduccion; con la marca en medio se desemparejarian. Quita la palabra del envase para que la cifra
+quede primero, le pone tope de 44 caracteres a la presentacion, y **no repite el empaque cuando el
+nombre ya lo trae** — comparando por la cifra y no por el texto, porque el nombre dice `264 g` y la
+presentacion "264 gramos".
+
+`vsSimilares` sigue siendo donde se explica la diferencia entre hermanos. El nombre dice CUAL es;
+`vsSimilares` dice por que elegir ese.
+
 ### Primitivas de acomodo
 
 Tres componentes en `src/components/ui/`. Antes cada pantalla armaba la tarjeta a mano en 67

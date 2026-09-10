@@ -23,7 +23,7 @@ try {
   await cx.db.insert(schema.advisors).values({ id, email, displayName: "Vista Oscura", role: "admin" });
 
   const navegador = await chromium.launch();
-  for (const [nombre, esquema] of [["claro", "light"], ["oscuro", "dark"]]) {
+  for (const [nombre, esquema] of [["claro", "light"]]) {
     const ctx = await navegador.newContext({ viewport: { width: 1280, height: 1000 }, colorScheme: esquema });
     const page = await ctx.newPage();
     const problemas = [];
@@ -41,7 +41,7 @@ try {
       console.log("texto:", (await page.locator("body").innerText()).slice(0, 400));
       throw new Error("login fallo");
     }
-    for (const [ruta, archivo] of [["/app/copilot", "copilot"], ["/app/intelligence", "intelligence"]]) {
+    for (const [ruta, archivo] of [["/app/training", "training"], ["/app/pre-training", "pre-training"]]) {
       await page.goto(`http://localhost:3200${ruta}`, { waitUntil: "networkidle" });
       await page.screenshot({ path: `${dir}/${archivo}-${nombre}.png` });
     }

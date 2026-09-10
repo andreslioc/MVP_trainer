@@ -160,6 +160,9 @@ export default async function KnowledgePage({
                     <h2 className="mt-1 text-xl font-semibold text-fg" id={`product-${product.id}`}>
                       {product.name}
                     </h2>
+                    {product.nameEs ? (
+                      <p className="text-sm text-fg-muted">{product.nameEs}</p>
+                    ) : null}
                     <p className="mt-1 text-sm text-fg-muted">
                       {product.presentation} · {product.format}
                     </p>

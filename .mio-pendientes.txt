@@ -1,0 +1,413 @@
+
+## Sin precio  (3)
+   Sin precio la ficha no puede verificarse, asi que el Copilot y el Training no la ven.
+   BebMed-383  Medela — Bolsas para almacenar leche materna  ·  Caja con 100 unidades
+   BebMed-230  Medela — Harmony — Extractor de leche manual  ·  Unidad individual que incluye extractor manual, embudo PersonalFit Flex de 24 mm y biberón de 150 mL
+   BebMed-394  Medela — Set Medela Harmony (Extractor manual + Recolector de silicona)  ·  Set que incluye un extractor de leche manual Harmony y un recolector de leche materna de silicona de 100 mL
+
+## Desactivadas (no verificadas)  (5)
+   La fila existe pero esta fuera del Copilot y del Training.
+   BebMed-383  Medela — Bolsas para almacenar leche materna  ·  sin precio
+   BebMed-230  Medela — Harmony — Extractor de leche manual  ·  sin precio
+   BebMed-394  Medela — Set Medela Harmony (Extractor manual + Recolector de silicona)  ·  sin precio
+   SalPip-323-CLA  Piping Rock — Oil of Oregano (Organic)  ·  $61500
+   SalPip-323-ESP  Piping Rock — Oil of Oregano (Organic)  ·  $61500
+
+## Ingredientes activos sin cantidad declarada  (37)
+   «¿Cuántos mg trae?» es de las primeras preguntas de un live y aqui la ficha no puede contestarla. Es lo que hacia indistinguibles las dos curcumas de Carlyle.
+   HogAff-001  Affresh® — Washing Machine Cleaner Tablets
+        Percarbonato de sodio — No especificado declarados
+        Carbonato de sodio — No especificado declarados
+        Glucono-delta-lactona — No especificado declarados
+   SalCar-361  Carlyle — Glucosamine Chondroitin MSM Turmeric
+        Glucosamina — Cantidad por confirmar declarados
+        Condroitina — Cantidad por confirmar declarados
+        MSM (Metilsulfonilmetano) — Cantidad por confirmar declarados
+   SalCar-335  Carlyle — Lion's Mane
+        Extracto de Pimienta Negra (Piper nigrum) — No especificada declarados
+   SalCar-299  Carlyle — Oil of Oregano 4000 mg
+        Aceite de oliva virgen extra — Cantidad no especificada declarados
+   SalCar-363  Carlyle — Turmeric Curcumin Complex 3000 mg
+        Mezcla patentada de Cúrcuma (Polvo de raíz, extracto de raíz y extracto estandarizado) — No especificado declarados
+        BioPerine® (Extracto de pimienta negra) — No especificado declarados
+   SalCar-301  Carlyle — Turmeric Curcumin Complex with Black Pepper 1000 mg
+        Mezcla patentada de Cúrcuma (Raíz de Curcuma longa, extracto de raíz 10:1, extracto estandarizado) — Cantidad no especificada declarados
+        Extracto de pimienta negra (Piper nigrum) — Cantidad no especificada declarados
+   SalCel-292  Cellucor — C4 Sport Pre-Workout
+        Cafeína Anhidra — Verificar etiqueta física (puede variar entre 135mg y 200mg) declarados
+        CarnoSyn® Beta-Alanine — No especificado declarados
+        Creatina — No especificado declarados
+   AliCel-281  Celsius — Sparkling Lemon Lime
+        Cafeína (té verde y guaraná) — No especificada declarados
+        Taurina — No especificada declarados
+        Complejo de vitaminas B — No especificada declarados
+   SalCel-290  Celsius — Sparkling Wild Berry
+        Mezcla MetaPlus (Taurina, Extracto de Guaraná, Glucuronolactona, Jengibre, Extracto de Té Verde) — Cantidad no especificada declarados
+   AliCel-280  CELSIUS — On-The-Go Powder Stick (Orange)
+        Extracto de Té Verde — No especificado declarados
+        Extracto de semilla de guaraná — No especificado declarados
+        Extracto de raíz de jengibre — No especificado declarados
+   SalCen-369  Centrum — MultiGummies for Women · 170 gomitas
+        Antioxidantes (Vitamina C, Vitamina E, Zinc) — Cantidad variable según lote declarados
+        Vitamina A — Cantidad variable según lote declarados
+   BelCoe-331  Coera — Niacinamide Serum with Zinc
+        Niacinamida — No especificada declarados
+        Zinc PCA — No especificada declarados
+        Hialuronato de Sodio (Ácido Hialurónico) — No especificada declarados
+   SalDoc-398  Doctor's Way — Collagen Complex
+        Colágeno Tipo I y III (Fuente bovina) — No especificado declarados
+        Vitamina C — No especificado declarados
+        Biotina — No especificado declarados
+   SalDrv-160  Dr. Vitamin Solutions — Thermogenic Fat Burner
+        Fruta de Acai — No especificada declarados
+        Extracto de té verde — No especificada declarados
+        Polvo de algas (Kelp) — No especificada declarados
+   SalHor-298  Horbäach — DHT Advanced Hair Formula
+        Zinc — No especificado declarados
+        Selenio — No especificado declarados
+   BelJus-001  Just For Men (Combe Incorporated) — Mustache & Beard (Color Gel)
+        p-Phenylenediamine (PPD) — No especificado declarados
+        Resorcinol — No especificado declarados
+        Peróxido de Hidrógeno — No especificado declarados
+   BelLis-001  LISTERINE — Pocketmist Cool Mint
+        Mentol — No declarada declarados
+        Eucaliptol — No declarada declarados
+        Timol — No declarada declarados
+   AniMil-002  Milk-Bone — Original Biscuits · Large
+        Harina de carne y huesos — No especificado declarados
+   SalNat-227  Natural Vitality — CALM (Línea de suplementos)
+        Magnesio (Citrato) — Variable según versión declarados
+        Magnesio (Glicinato) — Variable según versión declarados
+   SalNat-170  Nature's Bounty — Hair, Skin & Nails Gummies
+        Vitamina C — No especificado declarados
+        Vitamina E — No especificado declarados
+   SalNay-001  Naypiny — Shilajit Pure Himalayan Organic Resin
+        Ácido fúlvico — No especificado declarados
+        Minerales traza (85+) — No especificado declarados
+   SalNcd-317  NCDUYDE — NAD+ Resveratrol Liposomal 1500 mg
+        Nicotinamida Ribósido (NAD+) — No especificado declarados
+        Resveratrol — No especificado declarados
+   SalNew-302  NewRhythm — 50 Billion Probiotics
+        Fibra prebiótica — No especificada declarados
+   SalNOW-319  NOW Foods — Ultra Omega-3 (Fish Oil)
+        Vitamina E (d-alfa tocoferol) — Cantidad no especificada declarados
+   SalPip-322  Piping Rock — B-Complex Liquid Plus B-12 Sublingual
+        Riboflavina (Vitamina B-2) — No especificado declarados
+        Niacina (Vitamina B-3) — No especificado declarados
+        Vitamina B-6 — No especificado declarados
+   SalPip-345  Piping Rock — Mega Multiple for Men
+        Mezclas patentadas (Ultra Antioxidant Plus y Special Men's Super Blend) — Cantidad no especificada declarados
+   SalPip-323-ESP  Piping Rock — Oil of Oregano (Organic)
+        Aceite de oliva virgen extra orgánico — No especificado declarados
+   SalPip-456  Piping Rock — Oil of Oregano 4000 mg · 150 cápsulas
+        Aceite de oliva orgánico — no especificado declarados
+   BelPip-297  Piping Rock — Oil of Oregano 4000 mg · 200 cápsulas
+        Aceite de oliva virgen extra — no especificado declarados
+   SalNat-150  Rainbow Light — Probiolicious Probiotic Gummies, Berry Flavor
+        Mezcla prebiótica (FOS, Inulina, Xilitol) — Cantidad no especificada por el fabricante declarados
+   BelSch-304  Schwarzkopf (got2b) — Got2b Glued Blasting Freeze Spray
+        Polímeros fijadores (Octylacrylamide/Acrylates/Butylaminoethyl Methacrylate Copolymer) — No especificado declarados
+        Alcohol Denat — No especificado declarados
+        Proteína de trigo hidrolizada — No especificado declarados
+   SalSpr-339  Spring Valley — Extra Strength Biotin Plus Keratin
+        Queratina — Cantidad no especificada declarados
+   BelOrd-58  The Ordinary — Glycolic Acid 7% Toning Solution
+        Derivado de pimienta de Tasmania — No especificada declarados
+        Aloe Vera — No especificada declarados
+        Extracto de Ginseng — No especificada declarados
+   BelOrd-217  The Ordinary (DECIEM) — Salicylic Acid 2% Solution
+        Saccharide Isomerate — Cantidad no especificada declarados
+   BelVic-457  Victoria's Secret — Bare Vanilla Fragrance Mist
+        Fragancia (Parfum) — No especificado declarados
+        Alcohol (Alcohol Denat.) — No especificado declarados
+        Glicerina — No especificado declarados
+   BelVic-459  Victoria's Secret — Love Spell Fragrance Mist
+        Fragancia (Parfum) — No especificado declarados
+        Alcohol Desnaturalizado — No especificado declarados
+        Glicerina y Propilenglicol — No especificado declarados
+   BelVic-458  Victoria's Secret — Pure Seduction Fragrance Mist
+        Fragancia (Parfum) — No especificado declarados
+        Alcohol Denat. — No especificado declarados
+
+## Ingredientes sin verificar contra la etiqueta  (152)
+   Marcados `verified: false` en la ficha: el dato esta escrito pero nadie lo confirmo contra el frasco.
+   Beba+D-406  A+D — Prevent & Heal Original Ointment  ·  2 de 2
+   HogAff-001  Affresh® — Washing Machine Cleaner Tablets  ·  5 de 5
+   BebAqu-163  Aquaphor — Baby 3-in-1 Diaper Rash Cream  ·  1 de 1
+   BelLum-001  Bausch + Lomb — LUMIFY Redness Reliever Eye Drops  ·  1 de 1
+   SalBen-266  Bengay (Kenvue Brands LLC) — Ultra Strength Non-Greasy Topical Pain Relief Cream  ·  3 de 3
+   SalCar-334  Carlyle — Alpha Lipoic Acid 600 mg plus Biotin  ·  2 de 2
+   SalCar-365  Carlyle — Astaxanthin with Coconut Oil  ·  2 de 2
+   SalCar-362  Carlyle — Berberine HCL  ·  1 de 1
+   SalCar-364  Carlyle — Bitter Melon Complex  ·  1 de 1
+   SalCar-361  Carlyle — Glucosamine Chondroitin MSM Turmeric  ·  4 de 4
+   SalCar-360  Carlyle — KSM-66 Ashwagandha + Melatonin  ·  2 de 2
+   SalCar-335  Carlyle — Lion's Mane  ·  2 de 2
+   SalCar-327  Carlyle — Magnesium Glycinate + Ashwagandha Complex  ·  1 de 1
+   SalCar-299  Carlyle — Oil of Oregano 4000 mg  ·  2 de 2
+   SalCar-363  Carlyle — Turmeric Curcumin Complex 3000 mg  ·  2 de 2
+   SalCar-301  Carlyle — Turmeric Curcumin Complex with Black Pepper 1000 mg  ·  2 de 2
+   SalCel-292  Cellucor — C4 Sport Pre-Workout  ·  6 de 6
+   AliCel-281  Celsius — Sparkling Lemon Lime  ·  5 de 5
+   SalCel-290  Celsius — Sparkling Wild Berry  ·  2 de 2
+   AliCel-280  CELSIUS — On-The-Go Powder Stick (Orange)  ·  6 de 6
+   SalCen-371  Centrum — MultiGummies for Women · 100 gomitas  ·  11 de 11
+   SalCen-369  Centrum — MultiGummies for Women · 170 gomitas  ·  4 de 4
+   SalCen-370  Centrum — MultiGummies Multi + Beauty  ·  11 de 11
+   SalCen-368  Centrum — Silver Adults 50+  ·  6 de 6
+   BelCoe-331  Coera — Niacinamide Serum with Zinc  ·  4 de 4
+   SalDea-195  Deal Supplement — Magnesium Glycinate 1000 mg Plus Vitamin C  ·  2 de 2
+   Bebdes-407  Desitin (Kenvue Brands LLC) — Multi-Purpose Healing Ointment  ·  1 de 1
+   SalDoc-398  Doctor's Way — Collagen Complex  ·  3 de 3
+   SalDoc-397  Doctor's Way — Glucosamina Condroitina MSM Cúrcuma  ·  6 de 6
+   BebDrb-001  Dr. Brown's — Anti-colic Options+ Bottle to Sippy — Kit de Inicio  ·  3 de 3
+   SalDrv-130  Dr. Vitamin Solutions — Nighttime Weight Loss  ·  3 de 3
+   SalDrv-160  Dr. Vitamin Solutions — Thermogenic Fat Burner  ·  6 de 6
+   SalEqu-385  Equate — Extra Strength Acetaminophen  ·  1 de 1
+   BebEuc-388  Eucerin — Baby Eczema Relief Cream Body Wash  ·  1 de 1
+   SalFit-518  Fitness Labs — Nitric Oxide Max  ·  2 de 2
+   SalFix-369  Fixodent — Complete Original Denture Adhesive Cream  ·  4 de 4
+   BelFix-001  Fixodent (Procter & Gamble) — Extra Hold Denture Adhesive Powder  ·  4 de 4
+   BelDif-001  Galderma — Differin Adapalene Gel 0.1% Acne Treatment  ·  1 de 1
+   Salhor-403  Horbaach — Astaxantina 10 mg  ·  1 de 1
+   SalHor-337  Horbäach — Ashwagandha Root Extract (Max Strength)  ·  2 de 2
+   SalHor-300  Horbäach — Cranberry Concentrate Extract + Vitamin C  ·  2 de 2
+   SalHor-298  Horbäach — DHT Advanced Hair Formula  ·  3 de 3
+   SalHor-332  Horbäach — L-Theanine 400 mg  ·  1 de 1
+   SalHor-404  Horbäach — Maca Root  ·  1 de 1
+   SalHor-396  Horbäach — Magnesium Bisglycinate 750mg  ·  1 de 1
+   SalHor-200  Horbäach — Magnesium Glycinate Buffered 1330 mg  ·  1 de 1
+   SalHor-328  Horbäach — Magnesium Malate 1800 mg  ·  1 de 1
+   SalHor-294  Horbäach — Vitamin B-12 Methylcobalamin 5000 mcg  ·  1 de 1
+   SalHor-330  Horbäach — Vitamin K2 MK-7 + D3 Complex  ·  2 de 2
+   SalHor-405  Horbäach — Zinc Picolinate 100 mg  ·  2 de 2
+   JueHot-372  Hot Wheels (Mattel) — Lil’ Roar – Safari Mode  ·  2 de 2
+   BelJus-001  Just For Men (Combe Incorporated) — Mustache & Beard (Color Gel)  ·  6 de 6
+   SalBen-265  Kenvue Brands LLC — BENGAY® Ultra Strength Non-Greasy Topical Pain Relief Cream  ·  3 de 3
+   SalKir-125  Kirkland Signature — Acid Controller  ·  1 de 1
+   SalKir-366  Kirkland Signature — CoQ10 300 mg  ·  1 de 1
+   SalKir-283  Kirkland Signature — Extra Strength Acetaminophen  ·  1 de 1
+   SalKir-367  Kirkland Signature — Extra Strength D3  ·  1 de 1
+   SalKir-282  Kirkland Signature — Low Dose Aspirin  ·  1 de 1
+   SalKir-84  Kirkland Signature — Sleep Aid  ·  6 de 6
+   SalLac-001  LACTAID® — Fast Act Lactase Enzyme Supplement Caplets  ·  1 de 1
+   BelLis-001  LISTERINE — Pocketmist Cool Mint  ·  4 de 4
+   BelMaj-001  Majestic Pure Cosmeceuticals — Majestic Pure USDA Organic Castor Oil  ·  1 de 1
+   BebMed-383  Medela — Bolsas para almacenar leche materna  ·  1 de 1
+   BebMed-393  Medela — Recolector de leche materna de silicona  ·  1 de 1
+   BebMed-394  Medela — Set Medela Harmony (Extractor manual + Recolector de silicona)  ·  2 de 2
+   AniMil-002  Milk-Bone — Original Biscuits · Large  ·  2 de 2
+   AniMil-001  Milk-Bone — Original Biscuits · Medium  ·  4 de 4
+   BebMom-001  Momcozy — Extractor de Leche Eléctrico Manos Libres Momcozy M5  ·  3 de 3
+   BebMom-003  Momcozy — Juego de colector de repuesto para extractor Momcozy M5  ·  4 de 4
+   BebMom-002  Momcozy — Kit de limpieza de biberones 7 en 1  ·  4 de 4
+   SalNat-227  Natural Vitality — CALM (Línea de suplementos)  ·  2 de 2
+   SalNat-325  Natural Vitality — CALM Magnesium Glycinate · 120 cápsulas  ·  1 de 1
+   SalNat-439  Natural Vitality — CALM Magnesium Orange · 16 oz  ·  1 de 1
+   SalNat-445  Natural Vitality — CALM Magnesium Orange · 8 oz  ·  1 de 1
+   SalNat-442  Natural Vitality — CALM Magnesium Watermelon · 16 oz  ·  1 de 1
+   SalNat-438  Natural Vitality — CALM Plus Calcium Original  ·  6 de 6
+   SalNat-440  Natural Vitality — CALM Plus Calcium Unflavored  ·  5 de 5
+   SalNat-453  Natural Vitality — MaxCalm Magnesium Glycinate Drink Mix  ·  1 de 1
+   SalNat-454  Natural Vitality — MaxCalm Powder Unflavored  ·  1 de 1
+   SalNat-436  NaturalSlim — MagicMag  ·  3 de 3
+   SalNat-441  Nature's Bounty — Biotin 10,000 mcg  ·  1 de 1
+   SalNat-207  Nature's Bounty — Calcium Plus Vitamin D3  ·  2 de 2
+   Belnat-408  Nature's Bounty — Extra Strength Hair, Skin & Nails · 150 cápsulas  ·  11 de 11
+   SalNat-279  Nature's Bounty — Extra Strength Hair, Skin & Nails · 250 cápsulas  ·  5 de 5
+   SalNat-170  Nature's Bounty — Hair, Skin & Nails Gummies  ·  3 de 3
+   SalNat-446  Nature's Products — Cleanse Overnight Herbal & Mineral Formula  ·  1 de 1
+   SalNat-443  Nature's Truth — Organic Apple Cider Vinegar Gummies  ·  1 de 1
+   SalNay-001  Naypiny — Shilajit Pure Himalayan Organic Resin  ·  3 de 3
+   SalNcd-317  NCDUYDE — NAD+ Resveratrol Liposomal 1500 mg  ·  2 de 2
+   SalNeo-321  NeoCell — Super Collagen Peptides  ·  1 de 1
+   SalNew-302  NewRhythm — 50 Billion Probiotics  ·  2 de 2
+   SalNOW-333  NOW Foods — Candida Support  ·  6 de 6
+   SalNow-79  NOW Foods — Magnesium 400 mg  ·  1 de 1
+   Salnow-442  NOW Foods — NOW GABA 500 mg with Vitamin B-6  ·  2 de 2
+   Salnow-405  NOW Foods — NOW Inositol 500 mg  ·  1 de 1
+   SalNOW-319  NOW Foods — Ultra Omega-3 (Fish Oil)  ·  4 de 4
+   SalNow-123  NOW Foods — Vitamin D-3 & K-2  ·  2 de 2
+   SalNow-329  NOW Foods — Vitamin D-3 High Potency 5,000 IU  ·  1 de 1
+   AniCos-141  Nutramax Laboratories, Veterinary Sciences, Inc. — Cosequin® Maximum Strength Plus MSM  ·  4 de 4
+   BelOgx-001  OGX — Renewing + Argan Oil of Morocco Penetrating Oil  ·  2 de 2
+   SalOpt-105  Optimum Nutrition — Micronized Creatine Powder  ·  1 de 1
+   SalPip-322  Piping Rock — B-Complex Liquid Plus B-12 Sublingual  ·  5 de 5
+   SalPip-458  Piping Rock — Colon Care Probiotic 80 Billion CFU  ·  3 de 3
+   SalPip-459  Piping Rock — Creatine Monohydrate 3500 mg  ·  1 de 1
+   SalPip-268  Piping Rock — DHT Blocker for Men & Women  ·  6 de 6
+   AniPip-316  Piping Rock — Digestive Aid Probiotics for Dogs & Cats  ·  1 de 1
+   Salpip-412  Piping Rock — Fenugreek 2000 mg  ·  1 de 1
+   SalPip-460  Piping Rock — Fenugreek Tea  ·  1 de 1
+   SalPip-457  Piping Rock — Folic Acid 400 mcg  ·  1 de 1
+   Salpip-410  Piping Rock — GABA 750 mg  ·  1 de 1
+   Salpip-416  Piping Rock — Max Biotin 10,000 mcg  ·  1 de 1
+   SalPip-345  Piping Rock — Mega Multiple for Men  ·  6 de 6
+   SalPip-461  Piping Rock — Melatonin Plus Ashwagandha 10 mg  ·  2 de 2
+   Salpip-411  Piping Rock — Methylcobalamin B-12 Sublingual 1000 mcg  ·  1 de 1
+   SalPip-323-CLA  Piping Rock — Oil of Oregano (Organic)  ·  1 de 3
+   SalPip-323  Piping Rock — Oil of Oregano (Organic)  ·  2 de 2
+   SalPip-323-ESP  Piping Rock — Oil of Oregano (Organic)  ·  2 de 2
+   SalPip-456  Piping Rock — Oil of Oregano 4000 mg · 150 cápsulas  ·  2 de 2
+   BelPip-297  Piping Rock — Oil of Oregano 4000 mg · 200 cápsulas  ·  3 de 3
+   SalPip-316  Piping Rock — Organic Spirulina 1000 mg  ·  1 de 1
+   SalCom-188  Piping Rock — Resveratrol Complex  ·  1 de 1
+   SalPip-321  Piping Rock — Ultra Pet Vitamins  ·  10 de 10
+   SalPur-242  Puritan's Pride — Ultra Mega Biotin 10,000 mcg  ·  1 de 1
+   SalPur-452  Puritan's Pride — Zinc for Acne  ·  6 de 6
+   SalNat-150  Rainbow Light — Probiolicious Probiotic Gummies, Berry Flavor  ·  2 de 2
+   Belrem-421  Remington — Plancha Alisadora Remington S5500  ·  2 de 2
+   BelRev-117  Revlon — One-Step Volumizer PLUS  ·  3 de 3
+   SalSal-001  SaltStick — Electrolyte Capsules  ·  5 de 5
+   BelSch-304  Schwarzkopf (got2b) — Got2b Glued Blasting Freeze Spray  ·  3 de 3
+   SalSpr-393  Spring Valley — Astaxanthin Dietary Supplement Softgels  ·  1 de 1
+   SalSpr-339  Spring Valley — Extra Strength Biotin Plus Keratin  ·  2 de 2
+   SalSpr-199  Spring Valley — L-Lysine 1000 mg  ·  1 de 1
+   SalSpr-395  Spring Valley — Shilajit 50% Fulvic Acid  ·  1 de 1
+   SalSpr-389  Spring Valley — Ultra Strength Vitamin C 2,000 mg  ·  1 de 1
+   SalSpr-238  Spring Valley — Vitamina E 400 IU  ·  1 de 1
+   DEMO-CREATINA-001  Super Store Demo — Creatina monohidratada  ·  1 de 1
+   BelOrd-194  The Ordinary — Azelaic Acid Suspension 10%  ·  1 de 1
+   BelOrd-58  The Ordinary — Glycolic Acid 7% Toning Solution  ·  4 de 4
+   BelOrd-210  The Ordinary — Multi-Peptide Lash and Brow Serum  ·  4 de 4
+   BelOrd-55  The Ordinary — Niacinamide 10% + Zinc 1% High Strength Vitamin and Mineral Blemish Formula  ·  2 de 2
+   BelOrd-217  The Ordinary (DECIEM) — Salicylic Acid 2% Solution  ·  2 de 2
+   BelVic-462  Victoria's Secret — Bare Vanilla Fragrance Lotion  ·  4 de 4
+   BelVic-457  Victoria's Secret — Bare Vanilla Fragrance Mist  ·  4 de 4
+   BelVic-459  Victoria's Secret — Love Spell Fragrance Mist  ·  3 de 3
+   BelVic-458  Victoria's Secret — Pure Seduction Fragrance Mist  ·  2 de 2
+   BelVic-461  Victoria's Secret — Velvet Petals Fragrance Mist  ·  4 de 4
+   SalNat-447  Vitafusion — Hair, Skin & Nails Multivitamin Gummy  ·  10 de 10
+   SalVit-208  Vitafusion — PreNatal Raspberry Lemonade  ·  13 de 13
+   AniVit-001  Vital Essentials — Freeze-Dried Raw Minnows Cat Treats  ·  1 de 1
+   SalVit-280  Vital Proteins — Collagen Peptides Unflavored · 264 g  ·  1 de 1
+   SalVit-48-24  Vital Proteins — Collagen Peptides Unflavored · 680 g  ·  1 de 1
+   SalWho-001  Wholesome Story — Myo-Inositol & D-Chiro Inositol  ·  2 de 2
+
+## Con huecos de verificacion abiertos  (118)
+   Preguntas que la ficha declara sin responder. Hoy NO bajan la confianza que muestra el Copilot.
+   Beba+D-406  A+D — Prevent & Heal Original Ointment  ·  2 hueco(s)
+   BelLum-001  Bausch + Lomb — LUMIFY Redness Reliever Eye Drops  ·  2 hueco(s)
+   SalCar-334  Carlyle — Alpha Lipoic Acid 600 mg plus Biotin  ·  3 hueco(s)
+   SalCar-365  Carlyle — Astaxanthin with Coconut Oil  ·  4 hueco(s)
+   SalCar-362  Carlyle — Berberine HCL  ·  1 hueco(s)
+   SalCar-364  Carlyle — Bitter Melon Complex  ·  1 hueco(s)
+   SalCar-361  Carlyle — Glucosamine Chondroitin MSM Turmeric  ·  3 hueco(s)
+   SalCar-360  Carlyle — KSM-66 Ashwagandha + Melatonin  ·  3 hueco(s)
+   SalCar-335  Carlyle — Lion's Mane  ·  2 hueco(s)
+   SalCar-327  Carlyle — Magnesium Glycinate + Ashwagandha Complex  ·  3 hueco(s)
+   SalCar-299  Carlyle — Oil of Oregano 4000 mg  ·  2 hueco(s)
+   SalCar-363  Carlyle — Turmeric Curcumin Complex 3000 mg  ·  2 hueco(s)
+   SalCar-301  Carlyle — Turmeric Curcumin Complex with Black Pepper 1000 mg  ·  3 hueco(s)
+   SalCel-292  Cellucor — C4 Sport Pre-Workout  ·  1 hueco(s)
+   AliCel-281  Celsius — Sparkling Lemon Lime  ·  1 hueco(s)
+   SalCel-290  Celsius — Sparkling Wild Berry  ·  1 hueco(s)
+   AliCel-280  CELSIUS — On-The-Go Powder Stick (Orange)  ·  1 hueco(s)
+   SalCen-371  Centrum — MultiGummies for Women · 100 gomitas  ·  3 hueco(s)
+   SalCen-369  Centrum — MultiGummies for Women · 170 gomitas  ·  1 hueco(s)
+   SalCen-370  Centrum — MultiGummies Multi + Beauty  ·  2 hueco(s)
+   SalCen-368  Centrum — Silver Adults 50+  ·  1 hueco(s)
+   BelCoe-331  Coera — Niacinamide Serum with Zinc  ·  1 hueco(s)
+   SalDea-195  Deal Supplement — Magnesium Glycinate 1000 mg Plus Vitamin C  ·  3 hueco(s)
+   Bebdes-407  Desitin (Kenvue Brands LLC) — Multi-Purpose Healing Ointment  ·  1 hueco(s)
+   SalDoc-398  Doctor's Way — Collagen Complex  ·  3 hueco(s)
+   SalDoc-397  Doctor's Way — Glucosamina Condroitina MSM Cúrcuma  ·  4 hueco(s)
+   BebDrb-001  Dr. Brown's — Anti-colic Options+ Bottle to Sippy — Kit de Inicio  ·  1 hueco(s)
+   SalDrv-130  Dr. Vitamin Solutions — Nighttime Weight Loss  ·  4 hueco(s)
+   SalDrv-160  Dr. Vitamin Solutions — Thermogenic Fat Burner  ·  3 hueco(s)
+   BebEuc-388  Eucerin — Baby Eczema Relief Cream Body Wash  ·  1 hueco(s)
+   SalFit-518  Fitness Labs — Nitric Oxide Max  ·  1 hueco(s)
+   SalFix-369  Fixodent — Complete Original Denture Adhesive Cream  ·  1 hueco(s)
+   BelDif-001  Galderma — Differin Adapalene Gel 0.1% Acne Treatment  ·  1 hueco(s)
+   Salhor-403  Horbaach — Astaxantina 10 mg  ·  1 hueco(s)
+   SalHor-337  Horbäach — Ashwagandha Root Extract (Max Strength)  ·  1 hueco(s)
+   SalHor-300  Horbäach — Cranberry Concentrate Extract + Vitamin C  ·  1 hueco(s)
+   SalHor-298  Horbäach — DHT Advanced Hair Formula  ·  1 hueco(s)
+   SalHor-332  Horbäach — L-Theanine 400 mg  ·  1 hueco(s)
+   SalHor-404  Horbäach — Maca Root  ·  1 hueco(s)
+   SalHor-396  Horbäach — Magnesium Bisglycinate 750mg  ·  2 hueco(s)
+   SalHor-200  Horbäach — Magnesium Glycinate Buffered 1330 mg  ·  2 hueco(s)
+   SalHor-328  Horbäach — Magnesium Malate 1800 mg  ·  1 hueco(s)
+   SalHor-330  Horbäach — Vitamin K2 MK-7 + D3 Complex  ·  2 hueco(s)
+   SalHor-405  Horbäach — Zinc Picolinate 100 mg  ·  1 hueco(s)
+   BelJus-001  Just For Men (Combe Incorporated) — Mustache & Beard (Color Gel)  ·  1 hueco(s)
+   SalBen-265  Kenvue Brands LLC — BENGAY® Ultra Strength Non-Greasy Topical Pain Relief Cream  ·  1 hueco(s)
+   SalKir-366  Kirkland Signature — CoQ10 300 mg  ·  1 hueco(s)
+   SalKir-367  Kirkland Signature — Extra Strength D3  ·  1 hueco(s)
+   SalKir-84  Kirkland Signature — Sleep Aid  ·  1 hueco(s)
+   SalLac-001  LACTAID® — Fast Act Lactase Enzyme Supplement Caplets  ·  1 hueco(s)
+   BelMaj-001  Majestic Pure Cosmeceuticals — Majestic Pure USDA Organic Castor Oil  ·  1 hueco(s)
+   BebMed-393  Medela — Recolector de leche materna de silicona  ·  1 hueco(s)
+   BebMed-394  Medela — Set Medela Harmony (Extractor manual + Recolector de silicona)  ·  1 hueco(s)
+   AniMil-002  Milk-Bone — Original Biscuits · Large  ·  2 hueco(s)
+   AniMil-001  Milk-Bone — Original Biscuits · Medium  ·  1 hueco(s)
+   BebMom-001  Momcozy — Extractor de Leche Eléctrico Manos Libres Momcozy M5  ·  2 hueco(s)
+   BebMom-003  Momcozy — Juego de colector de repuesto para extractor Momcozy M5  ·  1 hueco(s)
+   BebMom-002  Momcozy — Kit de limpieza de biberones 7 en 1  ·  1 hueco(s)
+   SalNat-227  Natural Vitality — CALM (Línea de suplementos)  ·  1 hueco(s)
+   SalNat-325  Natural Vitality — CALM Magnesium Glycinate · 120 cápsulas  ·  2 hueco(s)
+   SalNat-439  Natural Vitality — CALM Magnesium Orange · 16 oz  ·  1 hueco(s)
+   SalNat-440  Natural Vitality — CALM Plus Calcium Unflavored  ·  2 hueco(s)
+   SalNat-453  Natural Vitality — MaxCalm Magnesium Glycinate Drink Mix  ·  2 hueco(s)
+   SalNat-454  Natural Vitality — MaxCalm Powder Unflavored  ·  2 hueco(s)
+   SalNat-436  NaturalSlim — MagicMag  ·  2 hueco(s)
+   SalNat-441  Nature's Bounty — Biotin 10,000 mcg  ·  1 hueco(s)
+   SalNat-207  Nature's Bounty — Calcium Plus Vitamin D3  ·  1 hueco(s)
+   Belnat-408  Nature's Bounty — Extra Strength Hair, Skin & Nails · 150 cápsulas  ·  1 hueco(s)
+   SalNat-279  Nature's Bounty — Extra Strength Hair, Skin & Nails · 250 cápsulas  ·  3 hueco(s)
+   SalNat-170  Nature's Bounty — Hair, Skin & Nails Gummies  ·  1 hueco(s)
+   SalNat-446  Nature's Products — Cleanse Overnight Herbal & Mineral Formula  ·  7 hueco(s)
+   SalNat-444  Nature's Products — Kids Omega-3 Gummies  ·  6 hueco(s)
+   SalNat-443  Nature's Truth — Organic Apple Cider Vinegar Gummies  ·  3 hueco(s)
+   SalNay-001  Naypiny — Shilajit Pure Himalayan Organic Resin  ·  3 hueco(s)
+   SalNcd-317  NCDUYDE — NAD+ Resveratrol Liposomal 1500 mg  ·  5 hueco(s)
+   SalNeo-321  NeoCell — Super Collagen Peptides  ·  1 hueco(s)
+   SalNew-302  NewRhythm — 50 Billion Probiotics  ·  1 hueco(s)
+   SalNOW-319  NOW Foods — Ultra Omega-3 (Fish Oil)  ·  1 hueco(s)
+   SalNow-329  NOW Foods — Vitamin D-3 High Potency 5,000 IU  ·  1 hueco(s)
+   SalPip-322  Piping Rock — B-Complex Liquid Plus B-12 Sublingual  ·  2 hueco(s)
+   SalPip-458  Piping Rock — Colon Care Probiotic 80 Billion CFU  ·  1 hueco(s)
+   SalPip-459  Piping Rock — Creatine Monohydrate 3500 mg  ·  1 hueco(s)
+   SalPip-268  Piping Rock — DHT Blocker for Men & Women  ·  1 hueco(s)
+   AniPip-316  Piping Rock — Digestive Aid Probiotics for Dogs & Cats  ·  2 hueco(s)
+   SalPip-460  Piping Rock — Fenugreek Tea  ·  1 hueco(s)
+   SalPip-457  Piping Rock — Folic Acid 400 mcg  ·  2 hueco(s)
+   Salpip-410  Piping Rock — GABA 750 mg  ·  2 hueco(s)
+   Salpip-416  Piping Rock — Max Biotin 10,000 mcg  ·  1 hueco(s)
+   SalPip-345  Piping Rock — Mega Multiple for Men  ·  1 hueco(s)
+   SalPip-461  Piping Rock — Melatonin Plus Ashwagandha 10 mg  ·  1 hueco(s)
+   SalPip-323-CLA  Piping Rock — Oil of Oregano (Organic)  ·  5 hueco(s)
+   SalPip-323  Piping Rock — Oil of Oregano (Organic)  ·  1 hueco(s)
+   SalPip-323-ESP  Piping Rock — Oil of Oregano (Organic)  ·  2 hueco(s)
+   SalPip-456  Piping Rock — Oil of Oregano 4000 mg · 150 cápsulas  ·  1 hueco(s)
+   BelPip-297  Piping Rock — Oil of Oregano 4000 mg · 200 cápsulas  ·  1 hueco(s)
+   SalCom-188  Piping Rock — Resveratrol Complex  ·  1 hueco(s)
+   SalPip-321  Piping Rock — Ultra Pet Vitamins  ·  3 hueco(s)
+   SalPur-242  Puritan's Pride — Ultra Mega Biotin 10,000 mcg  ·  1 hueco(s)
+   SalPur-452  Puritan's Pride — Zinc for Acne  ·  1 hueco(s)
+   SalNat-150  Rainbow Light — Probiolicious Probiotic Gummies, Berry Flavor  ·  1 hueco(s)
+   Belrem-421  Remington — Plancha Alisadora Remington S5500  ·  2 hueco(s)
+   BelRev-117  Revlon — One-Step Volumizer PLUS  ·  2 hueco(s)
+   BelSch-304  Schwarzkopf (got2b) — Got2b Glued Blasting Freeze Spray  ·  2 hueco(s)
+   SalSpr-393  Spring Valley — Astaxanthin Dietary Supplement Softgels  ·  2 hueco(s)
+   SalSpr-339  Spring Valley — Extra Strength Biotin Plus Keratin  ·  2 hueco(s)
+   SalSpr-199  Spring Valley — L-Lysine 1000 mg  ·  2 hueco(s)
+   SalSpr-395  Spring Valley — Shilajit 50% Fulvic Acid  ·  2 hueco(s)
+   SalSpr-389  Spring Valley — Ultra Strength Vitamin C 2,000 mg  ·  1 hueco(s)
+   SalSpr-238  Spring Valley — Vitamina E 400 IU  ·  1 hueco(s)
+   BelOrd-210  The Ordinary — Multi-Peptide Lash and Brow Serum  ·  2 hueco(s)
+   BelOrd-217  The Ordinary (DECIEM) — Salicylic Acid 2% Solution  ·  2 hueco(s)
+   BelVic-462  Victoria's Secret — Bare Vanilla Fragrance Lotion  ·  1 hueco(s)
+   BelVic-457  Victoria's Secret — Bare Vanilla Fragrance Mist  ·  1 hueco(s)
+   BelVic-459  Victoria's Secret — Love Spell Fragrance Mist  ·  1 hueco(s)
+   BelVic-461  Victoria's Secret — Velvet Petals Fragrance Mist  ·  3 hueco(s)
+   SalVit-208  Vitafusion — PreNatal Raspberry Lemonade  ·  1 hueco(s)
+   SalVit-280  Vital Proteins — Collagen Peptides Unflavored · 264 g  ·  2 hueco(s)
+   SalWho-001  Wholesome Story — Myo-Inositol & D-Chiro Inositol  ·  1 hueco(s)
+
+## Precio invertido entre dos tamaños  (1)
+   El empaque mas chico cuesta MAS que el grande. Puede ser real (promocion) o un precio mal digitado, pero en camara se lee como un error.
+   Natural Vitality — CALM Magnesium Orange · 8 oz
+        8 oz cuesta $45500  ·  16 oz cuesta $39329
+
+(154 fichas en total, 149 verificadas)

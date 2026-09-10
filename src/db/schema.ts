@@ -162,7 +162,22 @@ export const products = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     /** Identificador operativo: sirve para ubicar la ficha, no como conocimiento para la IA. */
     sku: text("sku"),
+    /** El nombre como esta ROTULADO en el frasco. Casi siempre en ingles. */
     name: text("name").notNull(),
+    /**
+     * El mismo producto dicho en español.
+     *
+     * Campo propio y no un parentesis dentro de `name` porque son dos datos con
+     * dos trabajos: `name` empareja la ficha con el frasco que la asesora tiene
+     * en la mano —y con la caja que la clienta ve— mientras que este contesta
+     * "¿y eso qué es?" a quien no lee ingles. Metidos en el mismo campo daban
+     * nombres de cien caracteres que ningun selector alcanzaba a mostrar.
+     *
+     * Vacio cuando no aporta: las fichas cuyo rotulo ya viene en español
+     * —"Bolsas para almacenar leche materna"— no tienen nada que traducir, y
+     * repetir el nombre seria ruido debajo del nombre.
+     */
+    nameEs: text("name_es").notNull().default(""),
     brand: text("brand").notNull(),
     category: text("category").notNull(),
     presentation: text("presentation").notNull(),

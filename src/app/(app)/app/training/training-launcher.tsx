@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { DEFAULT_PRACTICE_SIZE, PRACTICE_SIZES } from "../../../../lib/practice-sizes.ts";
+import { productOptionLabel } from "../../../../lib/product-label.ts";
 import {
   generateCategoryQuestionsAction,
   generateProductQuestionsAction,
@@ -12,7 +13,14 @@ import {
 } from "./actions.ts";
 
 type TrainingCategory = { category: string; productCount: number; questionCount: number };
-type TrainingProduct = { id: string; name: string; brand: string; questionCount: number };
+type TrainingProduct = {
+  id: string;
+  name: string;
+  nameEs: string;
+  brand: string;
+  presentation: string;
+  questionCount: number;
+};
 type Feedback = { type: "success" | "error"; message: string };
 type Scope = "categoria" | "ficha";
 
@@ -181,7 +189,7 @@ export function TrainingLauncher({
               <option value="">Selecciona una ficha</option>
               {products.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.name} · {item.brand}
+                  {productOptionLabel(item)}
                 </option>
               ))}
             </select>

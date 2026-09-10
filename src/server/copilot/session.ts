@@ -28,7 +28,11 @@ export async function getCopilotSetup(options: CopilotSessionDependencies = {}) 
         .select({
           id: products.id,
           name: products.name,
+          nameEs: products.nameEs,
           brand: products.brand,
+          // La presentacion viaja al selector: dos empaques del mismo producto
+          // comparten nombre y es lo unico que los separa.
+          presentation: products.presentation,
           priceCop: products.priceCop,
         })
         .from(products)

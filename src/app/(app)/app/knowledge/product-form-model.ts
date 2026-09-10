@@ -17,6 +17,8 @@ const optionalText = z.string();
 export const productFormSchema = z.object({
   sku: optionalText,
   name: required,
+  /** Opcional: si el rotulo ya viene en español no hay nada que traducir. */
+  nameEs: z.string().trim(),
   brand: required,
   category: required,
   presentation: required,
@@ -107,6 +109,7 @@ export function productFormDefaults(product?: EditableProduct): ProductFormValue
   return {
     sku: product?.sku ?? "",
     name: product?.name ?? "",
+    nameEs: product?.nameEs ?? "",
     brand: product?.brand ?? "",
     category: product?.category ?? "",
     presentation: product?.presentation ?? "",
@@ -201,6 +204,7 @@ export function toProductInput(values: ProductFormValues, product?: EditableProd
   return {
     sku: values.sku.trim() || undefined,
     name: values.name,
+    nameEs: values.nameEs,
     brand: values.brand,
     category: values.category,
     presentation: values.presentation,
