@@ -39,6 +39,10 @@ function product() {
     sku: value.sku ?? null,
     imageUrl: value.imageUrl ?? null,
     verifiedAt: new Date("2026-08-18T12:00:00Z"),
+    // Columnas de base, no de la ficha: el stock no se escribe en el formulario
+    // del Knowledge Hub, se carga en lote desde el inventario.
+    stockUnits: null,
+    stockUpdatedAt: null,
     createdAt: new Date("2026-08-18T12:00:00Z"),
     updatedAt: new Date("2026-08-18T12:00:00Z"),
     priceCop: value.priceCop ?? null,

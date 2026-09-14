@@ -22,6 +22,8 @@ function product(
     sku: null,
     imageUrl: null,
     verifiedAt: null,
+    stockUnits: null,
+    stockUpdatedAt: null,
     createdAt: NOW,
     updatedAt: NOW,
     ...overrides,

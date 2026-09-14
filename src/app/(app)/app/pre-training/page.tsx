@@ -6,6 +6,7 @@ import { PageSection } from "../../../../components/ui/page-section.tsx";
 import { getSession } from "../../../../lib/auth.ts";
 import { formatCop } from "../../../../lib/pricing.ts";
 import { listProducts } from "../../../../server/products.ts";
+import { StockBadge } from "../../../../components/ui/stock-badge.tsx";
 
 /**
  * Pre-training: la asesora estudia la ficha antes de practicarla.
@@ -201,6 +202,9 @@ export default async function PreTrainingPage({
                     <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
                       {product.brand} · {product.format}
                     </p>
+                    {/* Agotada: se sigue pudiendo estudiar, pero tiene que
+                        notarse antes de abrir la boca en camara. */}
+                    <StockBadge className="mt-1 self-start" stockUnits={product.stockUnits} />
                     <p className="mt-1 font-semibold text-fg">{product.name}</p>
                     {/* El nombre en español, para quien no reconoce el rotulo
                         en ingles. Vacio en las fichas cuyo rotulo ya viene en

@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, isNotNull } from "drizzle-orm";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
@@ -16,6 +16,7 @@ import {
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { writeLlmCall } from "../llm-calls.ts";
 import { readSessionForOwner } from "./session-read.ts";
+import { estaVerificada, sePuedePracticar } from "../../db/product-visibility.ts";
 
 type Product = typeof products.$inferSelect;
 type TrainingDatabase = Pick<typeof db, "delete" | "insert" | "select" | "transaction">;
@@ -259,7 +260,7 @@ export async function listTrainingProducts(options: TrainingDependencies = {}) {
       })
       .from(products)
       .leftJoin(trainingQuestions, eq(trainingQuestions.productId, products.id))
-      .where(isNotNull(products.verifiedAt))
+      .where(sePuedePracticar())
       .groupBy(products.id, products.name, products.brand)
       .orderBy(asc(products.name));
     return { ok: true as const, data: rows };
@@ -321,11 +322,13 @@ export async function generateTrainingQuestions(
     }
 
     // Las fichas hermanas viajan al prompt para que la pregunta nombre la marca
-    // solo cuando el nombre corto no alcanza (ver findSimilarProducts).
+    // solo cuando el nombre corto no alcanza (ver findSimilarProducts). Aqui va
+    // `estaVerificada` y no `sePuedePracticar`: una hermana agotada sigue
+    // existiendo en el catalogo y sigue pudiendose confundir con esta.
     const catalog = await database
       .select({ id: products.id, name: products.name, brand: products.brand })
       .from(products)
-      .where(isNotNull(products.verifiedAt));
+      .where(estaVerificada());
     const rendered = buildGenerateQuestionsPrompt(product, findSimilarProducts(product, catalog));
     const generated = await generate({
       advisorId: authorization.data.id,
@@ -394,7 +397,7 @@ export async function startTrainingSession(
       const [product] = await tx
         .select({ id: products.id })
         .from(products)
-        .where(and(eq(products.id, parsedId.data), isNotNull(products.verifiedAt)))
+        .where(and(eq(products.id, parsedId.data), sePuedePracticar()))
         .limit(1);
       if (!product) {
         return {

@@ -183,6 +183,51 @@ oscuro del manual.
 en verde estan `--confidence-high-fg` con su fondo. Una prueba afirma que `text-success` no aparece
 en el repo.
 
+### Que ficha se puede ofrecer en vivo
+
+Son **dos condiciones separadas**, y estuvieron mezcladas en una sola columna:
+
+| Columna | Significa | La escribe |
+|---|---|---|
+| `verified_at` | El contenido se reviso contra la etiqueta | Quien verifica la ficha |
+| `stock_units` | Cuantas unidades hay en bodega | La carga de inventario |
+
+**Se combinan distinto segun lo que se vaya a hacer** (`src/db/product-visibility.ts`):
+
+| Helper | Exige | Se usa en |
+|---|---|---|
+| `estaVerificada()` | contenido revisado | Copilot, analizador de transcripciones, y **toda lectura de una practica ya empezada** |
+| `sePuedePracticar()` | revisado **y** con stock | Empezar algo: lista de categorias, selector de ficha, simulacro, generacion de preguntas |
+
+La distincion critica: `session-read.ts` y `evaluate.ts` usan `estaVerificada`. Si un producto se
+agota a mitad de una practica, sus preguntas NO pueden desaparecer de la tanda — el resumen mostraria
+un conjunto distinto del que se respondio, y una respuesta ya dada quedaria sin poder evaluarse.
+
+Una ficha agotada **se sigue viendo**: en Pre-training con el distintivo "Sin stock"
+(`src/components/ui/stock-badge.tsx`) y en el selector del Copilot con `· SIN STOCK` al final del
+renglon. Si una clienta pregunta por ella en vivo, la asesora necesita los datos delante para
+responder "ahora no tenemos", no quedarse sin ficha. Lo que desaparece es el boton de practicar.
+
+El prompt del Copilot recibe `en_stock` como **booleano, no el numero**: cuantas unidades quedan es
+dato de bodega, y entregar "quedan 3" invita al modelo a crear urgencia con un dato que se mueve cada
+hora. Con `en_stock: false` responde la pregunta pero dice que no hay y deja `cta_used` en null.
+
+**`NULL` en `stock_units` significa "sin dato", NO "cero".** Por eso la ficha sin inventario cargado
+SE MUESTRA, y solo un cero explicito la esconde. La columna nacio nullable y sin `default 0` justo
+por esto: con cero por defecto, las 154 fichas del catalogo habrian quedado agotadas de un golpe y
+el Copilot se habria quedado sin nada que ofrecer hasta cargar el inventario.
+
+Mezclarlas costaba caro: al bajar una ficha por falta de mercancia se perdia el registro de que su
+contenido estaba revisado, y al reponer habia que acordarse una por una de cuales bajar de nuevo.
+Una ficha agotada hoy **conserva** su verificacion.
+
+`stock_updated_at` guarda cuando se cargo el numero. Un stock sin fecha envejece en silencio, y en
+camara un "si tenemos" equivocado es peor que no saber.
+
+El check `products_verified_needs_price` sigue vigente: **verificar una ficha sin precio es
+imposible**, porque no podria responder la pregunta mas frecuente del live. Por eso las tres
+referencias de Medela sin precio no se pueden activar aunque entre mercancia.
+
 ### Como se nombra una ficha
 
 El nombre viaja SOLO —sin la tarjeta— a tres lugares: el selector del Copilot, el del Training y el

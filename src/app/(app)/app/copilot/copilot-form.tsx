@@ -53,6 +53,7 @@ export function CopilotForm({
     nameEs: string;
     brand: string;
     presentation: string;
+    stockUnits: number | null;
     priceCop: number | null;
   }>;
   productPromos: Array<{ product_id: string; percent: number }>;

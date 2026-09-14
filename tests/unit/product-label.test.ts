@@ -130,6 +130,32 @@ describe("productOptionLabel", () => {
     ).not.toContain("—");
   });
 
+  it("marca la ficha agotada al final del renglón", () => {
+    // La agotada SE PUEDE elegir —hay que poder responder por ella— pero en un
+    // desplegable largo esto es lo unico que la asesora necesita ver antes de
+    // elegir con la camara encendida.
+    const agotada = productOptionLabel({
+      name: "CoQ10 300 mg",
+      brand: "Kirkland Signature",
+      presentation: "100 cápsulas blandas",
+      stockUnits: 0,
+    });
+    expect(agotada.endsWith("SIN STOCK")).toBe(true);
+  });
+
+  it("no marca nada cuando hay unidades o no hay dato", () => {
+    // `null` es "sin dato", no cero: ahi no se afirma nada.
+    for (const stockUnits of [7, null, undefined]) {
+      const etiqueta = productOptionLabel({
+        name: "CoQ10 300 mg",
+        brand: "Kirkland Signature",
+        presentation: "100 cápsulas blandas",
+        stockUnits,
+      });
+      expect(etiqueta).not.toContain("SIN STOCK");
+    }
+  });
+
   it("ignora acentos y ® al comparar", () => {
     expect(
       productOptionLabel({

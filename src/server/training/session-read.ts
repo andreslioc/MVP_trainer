@@ -13,10 +13,11 @@
  * practica de otra persona.
  */
 
-import { and, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import type { db } from "../../db/client.ts";
 import { products, trainingAnswers, trainingQuestions, trainingSessions } from "../../db/schema.ts";
+import { estaVerificada } from "../../db/product-visibility.ts";
 
 /** El subconjunto del cliente que esta lectura necesita: solo `select`. */
 export type SessionReader = Pick<typeof db, "select">;
@@ -50,7 +51,7 @@ export async function readSessionForOwner(
       return { ok: false as const, error: { code: "NOT_FOUND", message: "La sesion no existe." } };
     }
     const scope = session.category
-      ? and(eq(products.category, session.category), isNotNull(products.verifiedAt))
+      ? and(eq(products.category, session.category), estaVerificada())
       : eq(trainingQuestions.productId, session.productId ?? "");
     // El barajado sale del id de la sesion: aleatorio para la asesora y estable
     // entre recargas, que es lo que necesita retomar una practica a medias. Con

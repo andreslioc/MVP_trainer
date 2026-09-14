@@ -12,7 +12,7 @@
  * buscarlas: las inyectamos nosotros.
  */
 
-import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
@@ -25,6 +25,7 @@ import {
 } from "../../lib/simulator/chat-player.ts";
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { logFailure } from "../../lib/log.ts";
+import { sePuedePracticar } from "../../db/product-visibility.ts";
 
 type SimulationDatabase = Pick<typeof db, "select" | "insert" | "update">;
 type AuthorizationResult =
@@ -95,7 +96,7 @@ export async function startSimulation(input: unknown, options: SimulationDepende
       })
       .from(trainingQuestions)
       .innerJoin(products, eq(products.id, trainingQuestions.productId))
-      .where(isNotNull(products.verifiedAt))
+      .where(sePuedePracticar())
       .orderBy(sql`random()`)
       .limit(parsed.data.questionCount);
 

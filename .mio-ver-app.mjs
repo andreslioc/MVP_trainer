@@ -41,7 +41,7 @@ try {
       console.log("texto:", (await page.locator("body").innerText()).slice(0, 400));
       throw new Error("login fallo");
     }
-    for (const [ruta, archivo] of [["/app/training", "training"], ["/app/pre-training", "pre-training"]]) {
+    for (const [ruta, archivo] of [["/app/pre-training?q=vanilla", "pre-training"], ["/app/copilot", "copilot"]]) {
       await page.goto(`http://localhost:3200${ruta}`, { waitUntil: "networkidle" });
       await page.screenshot({ path: `${dir}/${archivo}-${nombre}.png` });
     }

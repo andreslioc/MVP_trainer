@@ -30,6 +30,7 @@ type ProductKnowledge = {
   sources: unknown;
   verifiedAt?: Date | null;
   priceCop?: number | null;
+  stockUnits?: number | null;
 };
 
 export const GENERATE_QUESTIONS_PROMPT = `
@@ -121,6 +122,11 @@ export function productKnowledgeForPrompt(
     // es si la ficha esta verificada, y una marca de tiempo invita al modelo a
     // razonar sobre lo vieja que es, que no es su trabajo.
     verified: Boolean(product.verifiedAt),
+    // Booleano y no el numero: cuantas unidades quedan es dato de bodega y no
+    // se dice en camara. Lo unico que cambia la respuesta es si HAY o no hay, y
+    // entregar "quedan 3" invita al modelo a crear urgencia con un dato que se
+    // mueve cada hora. `null` es "sin dato" y ahi no se afirma nada.
+    en_stock: product.stockUnits === 0 ? false : true,
     // Formateado y no en crudo: pidiendole el numero pelado, el modelo unas
     // veces decia "161000" y otras "170.000". Un precio se lee en voz alta y
     // tiene que sonar igual siempre, asi que se entrega ya escrito.

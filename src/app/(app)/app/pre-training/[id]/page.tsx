@@ -7,6 +7,7 @@ import { getProduct } from "../../../../../server/products.ts";
 import { ProductStudy } from "../product-study.tsx";
 import { Card, cardClasses } from "../../../../../components/ui/card.tsx";
 import { PageSection } from "../../../../../components/ui/page-section.tsx";
+import { StockBadge, StockNotice, estaAgotado } from "../../../../../components/ui/stock-badge.tsx";
 
 export default async function PreTrainingProductPage({
   params,
@@ -84,6 +85,7 @@ export default async function PreTrainingProductPage({
             <p className="mt-2 text-sm text-fg-muted">
               {product.presentation} · {product.format}
             </p>
+            <StockBadge className="mt-2" stockUnits={product.stockUnits} />
           </div>
           <div className="flex flex-1 flex-wrap items-baseline gap-x-4 gap-y-2 px-6 py-4">
             <p className="text-2xl font-semibold tabular-nums tracking-tight text-primary-deep">
@@ -98,6 +100,8 @@ export default async function PreTrainingProductPage({
           </div>
         </div>
       </div>
+
+      <StockNotice stockUnits={product.stockUnits} />
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start">
         <ProductStudy product={product} />
@@ -137,12 +141,16 @@ export default async function PreTrainingProductPage({
             </Card>
           ) : null}
 
-          <Link
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-card bg-primary px-4 font-semibold text-primary-fg hover:bg-primary-deep"
-            href="/app/training"
-          >
-            Practicar esta ficha
-          </Link>
+          {/* Sin stock el Training ya no la ofrece, asi que el enlace llevaria
+              a una lista donde esta ficha no aparece. */}
+          {estaAgotado(product.stockUnits) ? null : (
+            <Link
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-card bg-primary px-4 font-semibold text-primary-fg hover:bg-primary-deep"
+              href="/app/training"
+            >
+              Practicar esta ficha
+            </Link>
+          )}
         </aside>
       </div>
     </PageSection>

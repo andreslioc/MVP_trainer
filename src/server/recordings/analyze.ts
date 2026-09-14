@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
@@ -20,6 +20,7 @@ import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { type ChatCoverageOutcome, collectChatCoverage } from "./chat-coverage.ts";
 import { writeLlmCall } from "../llm-calls.ts";
 import { logFailure } from "../../lib/log.ts";
+import { estaVerificada } from "../../db/product-visibility.ts";
 
 type AnalyzeDatabase = Pick<typeof db, "select" | "update" | "transaction">;
 type AuthorizationResult =
@@ -179,7 +180,7 @@ export async function analyzeRecording(recordingId: string, options: AnalyzeDepe
     const catalog = await database
       .select({ id: products.id, name: products.name, presentation: products.presentation })
       .from(products)
-      .where(isNotNull(products.verifiedAt))
+      .where(estaVerificada())
       .orderBy(asc(products.name));
 
     const activePrompts = await database

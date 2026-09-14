@@ -103,6 +103,8 @@ function cifras(valor: string) {
 }
 
 export type LabeledProduct = {
+  /** Unidades en bodega. `null` es "sin dato", `0` es agotado. */
+  stockUnits?: number | null;
   name: string;
   /**
    * El nombre en español, vacio cuando no aporta.
@@ -123,7 +125,13 @@ export type LabeledProduct = {
  * producto: con la marca de primera, cinco referencias de Kirkland empiezan
  * igual y la parte que distingue se sale del ancho del selector.
  */
-export function productOptionLabel({ name, nameEs, brand, presentation }: LabeledProduct) {
+export function productOptionLabel({
+  name,
+  nameEs,
+  brand,
+  presentation,
+  stockUnits,
+}: LabeledProduct) {
   const corta = shortenPresentation(presentation);
   // TODAS las cifras del nombre, no la primera: "Oil of Oregano 4000 mg · 150
   // cápsulas" tiene dos, y la que discrimina es la segunda.
@@ -134,5 +142,8 @@ export function productOptionLabel({ name, nameEs, brand, presentation }: Labele
   // traduccion DE ese nombre, y con la marca en medio se desemparejarian.
   const partes = [nameEs?.trim() ? `${name} — ${nameEs.trim()}` : name, brand];
   if (!yaLoDice) partes.push(corta);
+  // Al final y en mayusculas: en un desplegable largo es lo unico que la
+  // asesora tiene que ver antes de elegir con la camara encendida.
+  if (stockUnits === 0) partes.push("SIN STOCK");
   return partes.join(" · ");
 }

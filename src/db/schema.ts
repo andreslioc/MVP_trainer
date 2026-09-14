@@ -300,14 +300,40 @@ export const products = pgTable(
       .notNull()
       .default([]),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    /**
+     * Unidades en bodega. NULL no es cero: es "sin dato".
+     *
+     * Nullable y sin `default 0` a proposito. Con cero por defecto las 154
+     * fichas naceriaan agotadas y el catalogo desapareceria del Copilot hasta
+     * cargar el inventario; asi la columna se puede desplegar sin cambiar nada
+     * y llenarse despues.
+     *
+     * Existe para separar dos cosas que estuvieron mezcladas en `verifiedAt`:
+     * "el contenido esta revisado contra la etiqueta" y "hay para vender". Una
+     * ficha agotada sigue verificada — lo que cambia es que no se ofrece.
+     */
+    stockUnits: integer("stock_units"),
+    /**
+     * Cuando se cargo ese numero.
+     *
+     * Un stock sin fecha envejece en silencio, y en camara un "si tenemos"
+     * equivocado es peor que no saber. La pantalla puede avisar que el
+     * inventario es viejo solo si sabe de cuando es.
+     */
+    stockUpdatedAt: timestamp("stock_updated_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("products_verified_at_idx").on(table.verifiedAt),
+    index("products_stock_units_idx").on(table.stockUnits),
     uniqueIndex("products_sku_unique").on(table.sku),
     uniqueIndex("products_natural_key_unique").on(table.brand, table.name, table.presentation),
     check("products_price_positive", sql`${table.priceCop} is null or ${table.priceCop} > 0`),
+    check(
+      "products_stock_not_negative",
+      sql`${table.stockUnits} is null or ${table.stockUnits} >= 0`,
+    ),
     // Verificar una ficha sin precio la deja sin poder responder la pregunta
     // mas frecuente del live.
     check(

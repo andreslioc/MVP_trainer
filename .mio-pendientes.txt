@@ -245,8 +245,8 @@
    SalPip-345  Piping Rock — Mega Multiple for Men  ·  6 de 6
    SalPip-461  Piping Rock — Melatonin Plus Ashwagandha 10 mg  ·  2 de 2
    Salpip-411  Piping Rock — Methylcobalamin B-12 Sublingual 1000 mcg  ·  1 de 1
-   SalPip-323-CLA  Piping Rock — Oil of Oregano (Organic)  ·  1 de 3
    SalPip-323  Piping Rock — Oil of Oregano (Organic)  ·  2 de 2
+   SalPip-323-CLA  Piping Rock — Oil of Oregano (Organic)  ·  1 de 3
    SalPip-323-ESP  Piping Rock — Oil of Oregano (Organic)  ·  2 de 2
    SalPip-456  Piping Rock — Oil of Oregano 4000 mg · 150 cápsulas  ·  2 de 2
    BelPip-297  Piping Rock — Oil of Oregano 4000 mg · 200 cápsulas  ·  3 de 3
@@ -376,8 +376,8 @@
    Salpip-416  Piping Rock — Max Biotin 10,000 mcg  ·  1 hueco(s)
    SalPip-345  Piping Rock — Mega Multiple for Men  ·  1 hueco(s)
    SalPip-461  Piping Rock — Melatonin Plus Ashwagandha 10 mg  ·  1 hueco(s)
-   SalPip-323-CLA  Piping Rock — Oil of Oregano (Organic)  ·  5 hueco(s)
    SalPip-323  Piping Rock — Oil of Oregano (Organic)  ·  1 hueco(s)
+   SalPip-323-CLA  Piping Rock — Oil of Oregano (Organic)  ·  5 hueco(s)
    SalPip-323-ESP  Piping Rock — Oil of Oregano (Organic)  ·  2 hueco(s)
    SalPip-456  Piping Rock — Oil of Oregano 4000 mg · 150 cápsulas  ·  1 hueco(s)
    BelPip-297  Piping Rock — Oil of Oregano 4000 mg · 200 cápsulas  ·  1 hueco(s)
@@ -405,9 +405,11 @@
    SalVit-280  Vital Proteins — Collagen Peptides Unflavored · 264 g  ·  2 hueco(s)
    SalWho-001  Wholesome Story — Myo-Inositol & D-Chiro Inositol  ·  1 hueco(s)
 
-## Precio invertido entre dos tamaños  (1)
+## Precio invertido entre dos tamaños  (2)
    El empaque mas chico cuesta MAS que el grande. Puede ser real (promocion) o un precio mal digitado, pero en camara se lee como un error.
    Natural Vitality — CALM Magnesium Orange · 8 oz
         8 oz cuesta $45500  ·  16 oz cuesta $39329
+   Piping Rock — Oil of Oregano 4000 mg · 150 cápsulas
+        150 cápsulas cuesta $75000  ·  200 cápsulas cuesta $60000
 
 (154 fichas en total, 149 verificadas)

@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, or } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
@@ -21,6 +21,7 @@ import {
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
 import { formatAcceptedPriceRange, readPriceMargin } from "./price-margin.ts";
 import { writeLlmCall } from "../llm-calls.ts";
+import { estaVerificada } from "../../db/product-visibility.ts";
 
 const evaluationInputSchema = z
   .object({
@@ -90,7 +91,7 @@ export async function evaluateTrainingAnswer(input: unknown, options: Evaluation
         and(
           eq(trainingSessions.id, parsed.data.sessionId),
           eq(trainingSessions.advisorId, authorization.data.id),
-          isNotNull(products.verifiedAt),
+          estaVerificada(),
           // La pregunta tiene que caer dentro del alcance de la sesion. Sin
           // esto, el id de cualquier pregunta del Hub se evaluaria contra
           // cualquier sesion propia.

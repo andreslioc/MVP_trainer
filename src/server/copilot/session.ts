@@ -1,9 +1,10 @@
-import { and, asc, desc, eq, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
 import { commercialRules, liveSessions, products } from "../../db/schema.ts";
 import { type AdvisorRole, requireRole } from "../../lib/auth.ts";
+import { estaVerificada } from "../../db/product-visibility.ts";
 
 type SessionDatabase = Pick<typeof db, "insert" | "select" | "update">;
 type AuthorizationResult =
@@ -33,10 +34,13 @@ export async function getCopilotSetup(options: CopilotSessionDependencies = {}) 
           // La presentacion viaja al selector: dos empaques del mismo producto
           // comparten nombre y es lo unico que los separa.
           presentation: products.presentation,
+          // El stock viaja al selector: la ficha agotada se puede elegir —hay
+          // que poder responder por ella— pero tiene que verse que no hay.
+          stockUnits: products.stockUnits,
           priceCop: products.priceCop,
         })
         .from(products)
-        .where(isNotNull(products.verifiedAt))
+        .where(estaVerificada())
         .orderBy(asc(products.name)),
       database
         .select({ key: commercialRules.key, value: commercialRules.value })

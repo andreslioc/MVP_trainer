@@ -1,4 +1,4 @@
-import { and, asc, count, countDistinct, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, count, countDistinct, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { products, trainingAnswers, trainingQuestions, trainingSessions } from "../../db/schema.ts";
@@ -8,6 +8,7 @@ import {
   type TrainingDependencies,
   trainingDependencies,
 } from "./questions.ts";
+import { sePuedePracticar } from "../../db/product-visibility.ts";
 
 const categorySchema = z.string().trim().min(1).max(120);
 
@@ -36,7 +37,7 @@ export async function listTrainingCategories(options: TrainingDependencies = {})
       })
       .from(products)
       .leftJoin(trainingQuestions, eq(trainingQuestions.productId, products.id))
-      .where(isNotNull(products.verifiedAt))
+      .where(sePuedePracticar())
       .groupBy(products.category)
       .orderBy(asc(products.category));
     return { ok: true as const, data: rows };
@@ -89,7 +90,7 @@ export async function generateCategoryTrainingQuestions(
     const targets = await database
       .select({ id: products.id })
       .from(products)
-      .where(and(isNotNull(products.verifiedAt), eq(products.category, parsedCategory.data)))
+      .where(and(sePuedePracticar(), eq(products.category, parsedCategory.data)))
       // Al azar y no por nombre: si la tanda reemplaza a la anterior, ordenar
       // por nombre devolveria siempre las mismas tres fichas de la categoria.
       .orderBy(sql`random()`)
@@ -181,7 +182,7 @@ export async function startCategoryTrainingSession(
         .select({ questionCount: count(trainingQuestions.id) })
         .from(trainingQuestions)
         .innerJoin(products, eq(products.id, trainingQuestions.productId))
-        .where(and(isNotNull(products.verifiedAt), eq(products.category, parsedCategory.data)));
+        .where(and(sePuedePracticar(), eq(products.category, parsedCategory.data)));
       if (!available || available.questionCount === 0) {
         return {
           ok: false as const,
