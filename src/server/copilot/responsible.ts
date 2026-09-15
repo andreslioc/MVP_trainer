@@ -26,8 +26,9 @@ type ResponsibleInput = {
    * Que se esta validando.
    *
    * `live` es una respuesta que va a decirse ahora: si la PREGUNTA toca
-   * embarazo, medicamentos o enfermedad, la respuesta se reemplaza por la ruta
-   * de cautela, porque en camara no hay tiempo de matizar.
+   * embarazo, medicamentos o enfermedad, cada vista debe conservar el dato
+   * seguro y remitir la compatibilidad individual. Si no lo hace, se reemplaza
+   * por la ruta segura determinista.
    *
    * `teaching` es la version mejorada del Simulator. Ahi la pregunta de riesgo
    * es justamente el ejercicio: sustituir la respuesta por la frase enlatada le
@@ -51,8 +52,61 @@ export type ResponsibleResult =
       };
     };
 
+/**
+ * Lo que manda una pregunta a la ruta de cautela en vivo.
+ *
+ * Tres arreglos sobre la version anterior, encontrados probando preguntas
+ * reales del catalogo:
+ *
+ * 1. La TILDE se escapaba. "soy alergica" activaba el patron y "soy alérgica"
+ *    no, porque `\balergia\b` no cubre las formas con acento ni el genero. Se
+ *    normaliza la pregunta antes de probar.
+ * 2. Faltaban enfermedades nombradas. "me sirve si tengo gastritis" pasaba
+ *    derecho: la lista traia diabetes, hipertension y cancer, y nada mas.
+ * 3. La alergia se disparaba de mas. "¿tiene alguna alergia el producto?" es
+ *    una pregunta de ALERGENOS —la ficha la responde, viene declarada— y se
+ *    enlataba como si fuera una condicion de la clienta. Ahora la alergia solo
+ *    cuenta cuando la clienta habla de SI MISMA.
+ */
 const healthRiskPattern =
-  /\b(embaraz(?:o|ada)|gestaci[oó]n|lactancia|amamantando|medicamento|medicina|f[aá]rmaco|enfermedad|diagn[oó]stic[oa]|diabetes|hipertensi[oó]n|c[aá]ncer|alergia|cirug[ií]a|riesgo de salud)\b/i;
+  /\b(embaraz(?:o|ada|adas)|gestacion|lactancia|amamantando|medicamento|medicina|farmaco|remedio|tratamiento medico|enfermedad|diagnostic|diabetes|hipertension|hipotension|cancer|gastritis|colon irritable|tiroides|higado graso|rinon|renal|hepatic|epilepsia|anticoagulante|cirugia|preoperatorio|riesgo de salud)\b/;
+
+/**
+ * La alergia solo es ruta de cautela cuando la clienta habla de la suya.
+ *
+ * "soy alergica al olivo" es una condicion personal y ahi si se remite. "¿que
+ * alergenos tiene?" es un dato de la ficha y se responde.
+ */
+const ownAllergyPattern =
+  /\b(soy|somos|es)\s+alergic|\b(tengo|tiene mi|padezco|sufro de)\s+(una\s+)?alergia|\balergic[oa]\s+a(l)?\b/;
+
+/** Sin tildes y en minuscula: el patron se escribe una vez y cubre las dos formas. */
+function sinTildes(texto: string) {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function tocaRiesgoDeSalud(question: string) {
+  const plano = sinTildes(question);
+  return healthRiskPattern.test(plano) || ownAllergyPattern.test(plano);
+}
+
+const professionalReferralPattern =
+  /\b(consulta|consultalo|consultala|consultar|confirma|confirmalo|confirmala|validar|valida|validalo|validala|validarlo|validarla)\b.{0,120}\b(medico|medica|profesional de (?:la )?salud|profesional)\b/i;
+const affirmativeCompatibilityPattern =
+  /\b(?:sí|claro)[,\s]+(?:puedes|puede)\s+(?:tomarlo|tomarla|usarlo|usarla|consumirlo|consumirla)|\b(?:es seguro|es compatible|te lo recomiendo|puedes tomarlo sin problema|puedes tomarla sin problema)\b/i;
+
+/** Cada vista que la asesora puede abrir conserva el limite clinico. */
+function hasResponsibleClinicalLimit(composition: CopilotComposition) {
+  return (["express", "estandar", "profunda"] as const).every((variant) => {
+    const answer = composition[variant];
+    return (
+      professionalReferralPattern.test(answer) && !affirmativeCompatibilityPattern.test(answer)
+    );
+  });
+}
 const therapeuticClaimPattern =
   /\b(cura|curar|trata|tratar|previene|prevenir|sana|sanar|elimina|reversa|revertir)\b.{0,80}\b(enfermedad|diabetes|hipertensi[oó]n|c[aá]ncer|depresi[oó]n|ansiedad|infecci[oó]n|dolor|diagn[oó]stico|s[ií]ntoma)/i;
 /**
@@ -176,21 +230,33 @@ export function applyResponsibleCommunication(input: ResponsibleInput): Responsi
     };
   }
 
-  if (input.mode !== "teaching" && healthRiskPattern.test(input.question)) {
+  const alerts: ResponsibleAlert[] = [];
+  let checkedComposition = input.composition;
+
+  if (input.mode !== "teaching" && tocaRiesgoDeSalud(input.question)) {
     const alert = {
       code: "HEALTH_CAUTION",
       message: "La consulta requiere precaución y valoración de un profesional de salud.",
     };
-    return {
-      ok: true,
-      data: {
-        composition: safeCautionComposition(input.composition, false),
-        alerts: [alert],
-      },
+    if (!hasResponsibleClinicalLimit(input.composition)) {
+      return {
+        ok: true,
+        data: {
+          composition: safeCautionComposition(input.composition, false),
+          alerts: [alert],
+        },
+      };
+    }
+    checkedComposition = {
+      ...input.composition,
+      confidence: "revisar",
+      cta_used: null,
+      rule_applied: null,
     };
+    alerts.push(alert);
   }
 
-  const combined = answerText(input.composition);
+  const combined = answerText(checkedComposition);
   const normalizedCombined = normalize(combined);
   const forbiddenClaim = input.product.claimsForbidden.find((claim) =>
     normalizedCombined.includes(normalize(claim)),
@@ -245,8 +311,7 @@ export function applyResponsibleCommunication(input: ResponsibleInput): Responsi
     });
   }
 
-  const alerts: ResponsibleAlert[] = [];
-  let confidence = input.composition.confidence;
+  let confidence = checkedComposition.confidence;
   const cautionClaim = input.product.claimsCaution.find((claim) =>
     normalizedCombined.includes(normalize(claim)),
   );
@@ -265,7 +330,7 @@ export function applyResponsibleCommunication(input: ResponsibleInput): Responsi
   if (jargon) {
     alerts.push({
       code: "JARGON_IN_ANSWER",
-      message: `"${jargon}" es palabra de etiqueta, no de una clienta, y aparece en ${whereItAppears(input.composition, jargon)}.`,
+      message: `"${jargon}" es palabra de etiqueta, no de una clienta, y aparece en ${whereItAppears(checkedComposition, jargon)}.`,
     });
   }
 
@@ -273,7 +338,7 @@ export function applyResponsibleCommunication(input: ResponsibleInput): Responsi
   if (emptyPhrase) {
     alerts.push({
       code: "VAGUE_ANSWER",
-      message: `Promete variedad sin nombrarla —"${emptyPhrase}"— en ${whereItAppears(input.composition, emptyPhrase)}.`,
+      message: `Promete variedad sin nombrarla —"${emptyPhrase}"— en ${whereItAppears(checkedComposition, emptyPhrase)}.`,
     });
   }
 
@@ -290,7 +355,7 @@ export function applyResponsibleCommunication(input: ResponsibleInput): Responsi
   return {
     ok: true,
     data: {
-      composition: { ...input.composition, confidence },
+      composition: { ...checkedComposition, confidence },
       alerts,
     },
   };

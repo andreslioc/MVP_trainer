@@ -40,9 +40,38 @@ describe("el prompt de composicion usa la intencion", () => {
     expect(COPILOT_COMPOSE_PROMPT).toContain("VENDER");
   });
 
-  it("prohibe vender en la ruta de seguridad, que es donde la venta cede", () => {
+  it("la comparacion express conserva el beneficio comun respaldado", () => {
+    const comparacion = COPILOT_COMPOSE_PROMPT.slice(
+      COPILOT_COMPOSE_PROMPT.indexOf("- comparacion:"),
+      COPILOT_COMPOSE_PROMPT.indexOf("- confianza:"),
+    );
+    expect(comparacion).toMatch(/TRES VISTAS, INCLUIDA EXPRESS/i);
+    expect(comparacion).toMatch(/para que ayudan ambas/i);
+    expect(comparacion).toMatch(/quita.+CTA antes que el\s+beneficio comun/is);
+    expect(comparacion).toMatch(/solo es comun si aparece respaldada en AMBAS fichas/i);
+  });
+
+  it("en la ruta de seguridad no promete, pero tampoco abandona la conversacion", () => {
+    // Antes decia "NO vendas" a secas y el CTA solo podia ser la consulta. Eso
+    // le enseñaba al Copilot a mandar al medico cualquier pregunta que rozara
+    // salud, incluso las que la ficha si responde — y el evaluador del Training
+    // pasó a penalizar justamente eso. Los tres prompts tienen que coincidir.
     const seguridad = COPILOT_COMPOSE_PROMPT.slice(COPILOT_COMPOSE_PROMPT.indexOf("- seguridad:"));
-    expect(seguridad).toContain("NO vendas");
+    expect(seguridad).toMatch(/no prometas ni afirmes nada sobre una condicion/i);
+    expect(seguridad).toContain('confianza "revisar"');
+    expect(seguridad).toMatch(/primero responde el dato de la ficha/i);
+    expect(seguridad).toMatch(/nunca es\s+automatico ni de urgencia/i);
+  });
+
+  it("una condicion personal no borra el dato y agrega el limite clinico", () => {
+    const seguridad = COPILOT_COMPOSE_PROMPT.slice(COPILOT_COMPOSE_PROMPT.indexOf("- seguridad:"));
+    expect(seguridad).toMatch(/requieren remision SOLO/i);
+    expect(seguridad).toMatch(/analiza las DOS\s+CAPAS/i);
+    expect(seguridad).toMatch(/primero responde el dato/i);
+    expect(seguridad).toMatch(/Nunca ignores la condicion/i);
+    for (const disparador of ["embarazo", "lactancia", "medicamentos"]) {
+      expect(seguridad.toLowerCase()).toContain(disparador);
+    }
   });
 
   it("no presenta las seis piezas como lista de verificacion", () => {

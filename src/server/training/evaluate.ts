@@ -1,4 +1,4 @@
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, ne, desc, eq, or } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../../db/client.ts";
@@ -11,6 +11,7 @@ import {
 } from "../../db/schema.ts";
 import { createAiGateway } from "../../lib/ai/gateway.ts";
 import { buildEvaluateAnswerPrompt } from "../../lib/ai/prompts/evaluate-answer.ts";
+import { findSimilarProducts } from "../../lib/similar-products.ts";
 import { type Evaluation, evaluationSchema } from "../../lib/ai/schemas.ts";
 import { applyResponsibleCommunication } from "../copilot/responsible.ts";
 import {
@@ -125,8 +126,31 @@ export async function evaluateTrainingAnswer(input: unknown, options: Evaluation
       .limit(1);
     if (!prompt) return recoverableError(answer.id);
 
+    // Las hermanas de la misma linea, para poder calificar una comparacion.
+    //
+    // Se usa `findSimilarProducts`, el mismo criterio con el que el generador
+    // decide si hace falta nombrar la marca en la pregunta: si dos fichas se
+    // llaman con las mismas palabras, una clienta las puede confundir y la
+    // comparacion es real. Sin esto el evaluador veia una sola ficha y tenia
+    // que creerle o no a la asesora sobre la otra.
+    const catalogo = await database
+      .select({ id: products.id, name: products.name, brand: products.brand })
+      .from(products)
+      .where(estaVerificada());
+    const parecidas = new Set(
+      findSimilarProducts(context.product, catalogo).map((p) => `${p.brand}|${p.name}`),
+    );
+    const hermanas =
+      parecidas.size === 0
+        ? []
+        : await database
+            .select()
+            .from(products)
+            .where(and(estaVerificada(), ne(products.id, context.product.id)));
+
     const rendered = buildEvaluateAnswerPrompt({
       product: context.product,
+      siblings: hermanas.filter((p) => parecidas.has(`${p.brand}|${p.name}`)),
       question: context.question,
       advisorAnswer: answer.advisorAnswer,
       priceRange: formatAcceptedPriceRange(

@@ -179,6 +179,55 @@ describe("comunicación responsable", () => {
     expect(result.data.alerts).toContainEqual(expect.objectContaining({ code: "HEALTH_CAUTION" }));
   });
 
+  it("conserva el dato y la remision cuando una condicion personal aporta contexto", () => {
+    const answer =
+      "Trae 200 cápsulas blandas y rinde 100 tomas. La compatibilidad con diabetes debes validarla con un profesional de salud. Escríbenos por WhatsApp y te ayudamos a comparar ingredientes y opciones.";
+    const result = applyResponsibleCommunication({
+      question: "Tengo diabetes, ¿cuántas cápsulas trae?",
+      composition: composition({ express: answer, estandar: answer, profunda: answer }),
+      product: product(),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.composition.express).toBe(answer);
+    expect(result.data.composition.confidence).toBe("revisar");
+    expect(result.data.alerts).toContainEqual(expect.objectContaining({ code: "HEALTH_CAUTION" }));
+  });
+
+  const enCautela = (question: string) => {
+    const result = applyResponsibleCommunication({
+      question,
+      composition: composition(),
+      product: product(),
+    });
+    if (!result.ok) throw new Error("el gate bloqueo la respuesta");
+    return result.data.alerts.some((a) => a.code === "HEALTH_CAUTION");
+  };
+
+  it.each([
+    // La tilde se escapaba: `\balergia\b` no cubria "alérgica" ni el genero.
+    "soy alérgica al olivo, puedo tomarlo?",
+    "soy alergica al olivo, puedo tomarlo?",
+    // Enfermedades nombradas que no estaban en la lista.
+    "me sirve si tengo gastritis?",
+    "tengo problemas de tiroides, puedo?",
+  ])("manda a cautela una condicion personal que antes se escapaba: %s", (question) => {
+    expect(enCautela(question)).toBe(true);
+  });
+
+  it.each([
+    // Preguntas de ALERGENOS: el dato viene declarado en la ficha y se responde.
+    // Antes se enlataban como si fueran una condicion de la clienta.
+    "tiene alguna alergia el producto?",
+    "qué alérgenos tiene?",
+    // Una molestia o un objetivo no son una consulta medica: son descubrimiento.
+    "tengo problemas para dormir, este magnesio me sirve?",
+    "quiero más energía, cuál me recomiendas?",
+  ])("NO enlata lo que la ficha si puede responder: %s", (question) => {
+    expect(enCautela(question)).toBe(false);
+  });
+
   it("bloquea un claim expresamente prohibido con una alerta nombrada", () => {
     const result = applyResponsibleCommunication({
       question: "¿Qué hace?",

@@ -37,6 +37,8 @@ import { asksSingleFact } from "../../lib/copilot/single-fact.ts";
 import { availableCtasFromRules, orchestrateCopilot } from "./orchestrator.ts";
 import { promoPercentFor } from "./session.ts";
 import { applyResponsibleCommunication, type ResponsibleAlert } from "./responsible.ts";
+import { findSimilarProducts } from "../../lib/similar-products.ts";
+import { estaVerificada } from "../../db/product-visibility.ts";
 
 const composeInputSchema = z
   .object({
@@ -256,6 +258,24 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
     });
     if (!classified.ok) return copilotFailure(classified.error);
 
+    // Clasificar primero permite pagar esta consulta solo cuando la clienta
+    // realmente esta comparando. La composicion necesita ambas fichas para
+    // explicar el beneficio comun, atribuir bien cada diferencia y ayudar a
+    // elegir; con solo la seleccionada tenia que adivinar la otra referencia.
+    let relatedProducts: Array<typeof products.$inferSelect> = [];
+    if (classified.data.value.intent === "comparacion") {
+      const verifiedCatalog = await database.select().from(products).where(estaVerificada());
+      const similarKeys = new Set(
+        findSimilarProducts(product, verifiedCatalog).map(
+          (candidate) => `${candidate.brand}|${candidate.name}`,
+        ),
+      );
+      relatedProducts = verifiedCatalog.filter(
+        (candidate) =>
+          candidate.id !== product.id && similarKeys.has(`${candidate.brand}|${candidate.name}`),
+      );
+    }
+
     // La orquestacion va DESPUES de clasificar y no antes: elegir el CTA sin
     // saber que pregunto la clienta es como termino respondiendo "sigue la
     // cuenta" a alguien que pregunto el precio.
@@ -286,6 +306,7 @@ export async function composeCopilotAnswer(input: unknown, options: ComposeDepen
     } else {
       const rendered = buildCopilotComposePrompt({
         product,
+        siblings: relatedProducts,
         // El descuento sale de ESTA sesion de live, no de la ficha.
         promoPercent: promoPercentFor(session.productPromos, product.id),
         activeRules: rulesForPrompt,

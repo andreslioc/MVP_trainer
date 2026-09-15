@@ -228,6 +228,60 @@ El check `products_verified_needs_price` sigue vigente: **verificar una ficha si
 imposible**, porque no podria responder la pregunta mas frecuente del live. Por eso las tres
 referencias de Medela sin precio no se pueden activar aunque entre mercancia.
 
+### Como se evalua una respuesta de practica
+
+El evaluador (`src/lib/ai/prompts/evaluate-answer.ts`) califica nueve dimensiones de 1 a 5. Tres
+reglas de arquitectura que no son obvias:
+
+**El orden de prioridad es explicito.** Cuando dos reglas del prompt se contradicen manda la de mas
+arriba: seguridad → hechos de la ficha → comparacion y orientacion comercial → criterios de la
+pregunta → respuesta ideal. Antes mandaban los CRITERIOS, y una `ideal_answer` mal escrita bastaba
+para castigar una respuesta correcta: la del aceite de oregano decia "No, son muy distintos" cuando
+la ficha solo sostiene que cambia la forma de uso, y cualquier "si" bien fundamentado perdia puntos.
+
+**El evaluador recibe las fichas HERMANAS, separadas de la seleccionada.** Una comparacion no se
+puede calificar viendo una sola ficha. Van en un bloque aparte —`OTRAS REFERENCIAS DE LA MISMA
+LINEA`— y no mezcladas en una lista, para que el evaluador pueda decir "esa caracteristica es de la
+otra referencia". Salen de `findSimilarProducts`, el mismo criterio con el que el generador decide
+si hace falta nombrar la marca.
+
+**Comparar no es mezclar.** Nombrar las dos presentaciones cuando la pregunta las compara es
+correcto; prestarle un dato de una a la otra no. Y "misma funcion general" no es "mismo efecto
+exacto": si las fichas respaldan el mismo ingrediente o finalidad, la respuesta empieza en SI y
+enseguida dice que cambia.
+
+El CTA tiene cuatro tipos y los cuatro cuentan: cierre, eleccion, descubrimiento ("¿para que lo
+estas buscando?") y asesoria (seguir por WhatsApp). Preguntar por la necesidad es avance comercial,
+no relleno — pero sigue sin ir pegado a un dato suelto que ya quedo contestado.
+
+**La seguridad dice que NO se puede afirmar; no obliga a dejar de vender.** Es la regla maestra de la
+seccion de evidencia. La ruta de cautela del no negociable 4 —embarazo, lactancia, medicamentos,
+enfermedad diagnosticada— **sigue intacta y sigue remitiendo a un profesional**; lo que cambio es que
+la remision no puede ser TODA la respuesta. Antes de derivar hay que contestar lo que la ficha si
+responde, entender que busca la clienta y dejar abierta la via comercial.
+
+Y se penaliza la **derivacion medica prematura**: mandar al medico una pregunta que la ficha si podia
+resolver. "Consulta a tu medico" puede sacar 5 en evidencia responsable y 1 en persuasion, manejo de
+objecion y CTA. Que una clienta nombre una molestia —"no duermo bien"— no es una consulta medica: es
+lo que necesita, y es material de descubrimiento.
+
+Los tres prompts comparten `ANSWER_FRAMEWORK` (`answer-framework.ts`) a proposito: el Copilot
+compone, el generador escribe la respuesta ideal y el evaluador califica, y con tres textos
+parecidos el simulador premiaba respuestas que el Copilot no habria dado. **Toda regla de COMO se
+responde va ahi**; en `evaluate-answer.ts` solo queda como se PUNTUA.
+
+**Donde el Copilot y el Training si difieren, y por que.** El gate
+(`applyResponsibleCommunication`) tiene dos modos. En `live`, si la PREGUNTA toca embarazo,
+lactancia, medicamentos o una enfermedad nombrada, la respuesta compuesta **se descarta** y se
+reemplaza por la ruta de cautela: en camara no hay tiempo de matizar. En `teaching` no se reemplaza
+—ahi la pregunta de riesgo es el ejercicio, y enlatar la respuesta enseñaria a recitar en vez de a
+responder—. La diferencia es deliberada y esta en el codigo, no en el prompt.
+
+El detector de riesgo normaliza tildes y distingue la alergia PROPIA de una pregunta de alergenos:
+"soy alérgica al olivo" remite, "¿que alergenos tiene?" se responde con la ficha. Antes la tilde se
+escapaba, faltaban enfermedades nombradas como gastritis o tiroides, y las preguntas de alergenos se
+enlataban aunque la ficha las declarara.
+
 ### Como se nombra una ficha
 
 El nombre viaja SOLO —sin la tarjeta— a tres lugares: el selector del Copilot, el del Training y el

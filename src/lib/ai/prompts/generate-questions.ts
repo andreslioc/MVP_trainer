@@ -63,7 +63,18 @@ Reglas obligatorias:
   FORMA DE LA RESPUESTA que aparece abajo: es la misma que usa el Copilot en camara. Una respuesta
   ideal de una linea que no usa la ficha no es ideal, es una salida.
 - Si falta un dato EN LA FICHA, la respuesta ideal lo dice y ademas aporta lo que si esta.
-- Embarazo, lactancia, medicamentos o enfermedades requieren consulta profesional y nunca una recomendacion afirmativa.
+- COMPARACIONES: la respuesta ideal NO exagera la diferencia. Si la ficha dice que lo que cambia es
+  la forma de tomarlo, la dosificacion o los usos que admite —y no el ingrediente ni la finalidad—
+  entonces la respuesta ideal empieza en SI, no en "no, son muy distintos". Afirmar una diferencia
+  mas grande de la que la ficha sostiene es tan incorrecto como negarla: las dos desinforman, y la
+  ideal es la vara con la que despues se califica a la asesora.
+- Y los criterios de una comparacion no pueden exigir negar una equivalencia que la ficha si
+  respalda. Un criterio mal escrito se convierte despues en una nota injusta.
+- Embarazo, lactancia, medicamentos o enfermedades requieren consulta profesional SOLO cuando la
+  pregunta exige determinar seguridad, compatibilidad, contraindicacion, tratamiento o una decision
+  clinica individual, incluso cuando esa duda esta implicita como contexto personal. En una pregunta
+  como "tengo diabetes, ¿cuantas capsulas trae?", la ideal responde primero la cantidad y despues
+  remite la compatibilidad individual; nunca cambia todo por "consulta a tu medico".
 - Los criterios deben ser observables en una buena respuesta y nombran las piezas de la FORMA DE LA
   RESPUESTA que esa pregunta exige.
 
@@ -126,7 +137,7 @@ export function productKnowledgeForPrompt(
     // se dice en camara. Lo unico que cambia la respuesta es si HAY o no hay, y
     // entregar "quedan 3" invita al modelo a crear urgencia con un dato que se
     // mueve cada hora. `null` es "sin dato" y ahi no se afirma nada.
-    en_stock: product.stockUnits === 0 ? false : true,
+    en_stock: product.stockUnits !== 0,
     // Formateado y no en crudo: pidiendole el numero pelado, el modelo unas
     // veces decia "161000" y otras "170.000". Un precio se lee en voz alta y
     // tiene que sonar igual siempre, asi que se entrega ya escrito.

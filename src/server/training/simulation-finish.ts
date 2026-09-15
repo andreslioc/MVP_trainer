@@ -22,6 +22,8 @@ import { formatAcceptedPriceRange, readPriceMargin } from "./price-margin.ts";
 import { mapWithConcurrency } from "../../lib/concurrency.ts";
 import { logFailure } from "../../lib/log.ts";
 import { AI_PROVIDER } from "../../lib/ai/config.ts";
+import { findSimilarProducts } from "../../lib/similar-products.ts";
+import { estaVerificada } from "../../db/product-visibility.ts";
 import { collectChatCoverage } from "../recordings/chat-coverage.ts";
 import { writeLlmCall } from "../llm-calls.ts";
 
@@ -163,6 +165,12 @@ export async function finishSimulation(
         ),
       );
 
+    // El simulacro tambien puede contener preguntas comparativas. La ficha de
+    // la pregunta no basta para verificar lo que la asesora dijo sobre la otra
+    // presentacion, asi que se carga el catalogo verificado una vez y se pasan
+    // solo las referencias realmente parecidas en cada evaluacion.
+    const verifiedCatalog = await database.select().from(products).where(estaVerificada());
+
     const [evaluatePrompt] = await database
       .select({ id: prompts.id })
       .from(prompts)
@@ -190,8 +198,18 @@ export async function finishSimulation(
         let scores: Evaluation["scores"] | null = null;
         let feedback: string | null = null;
         if (answered && row?.evidenceQuote && question && product && evaluatePrompt) {
+          const similarKeys = new Set(
+            findSimilarProducts(product, verifiedCatalog).map(
+              (candidate) => `${candidate.brand}|${candidate.name}`,
+            ),
+          );
           const rendered = buildEvaluateAnswerPrompt({
             product,
+            siblings: verifiedCatalog.filter(
+              (candidate) =>
+                candidate.id !== product.id &&
+                similarKeys.has(`${candidate.brand}|${candidate.name}`),
+            ),
             question: {
               text: question.text,
               idealAnswer: question.idealAnswer,

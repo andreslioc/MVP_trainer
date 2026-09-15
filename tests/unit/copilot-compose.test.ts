@@ -108,6 +108,33 @@ describe("Copilot composition", () => {
     expect(compose.system).toContain(ficha.description);
   });
 
+  it("entrega las referencias relacionadas separadas para poder comparar", () => {
+    const selected = product();
+    const related = {
+      ...product(),
+      id: "22222222-2222-4222-8222-222222222222",
+      name: "Magnesio de prueba en polvo",
+      presentation: "Polvo de 300 g",
+    };
+    const compose = buildCopilotComposePrompt({
+      product: selected,
+      siblings: [related],
+      activeRules: [],
+      customerQuestion: "¿Cuál es la diferencia entre las cápsulas y el polvo?",
+      intent: "comparacion",
+      objective: "orientar",
+      tone: "cercano",
+      orchestration: { cta: null, incentive: null, ruleApplied: null },
+    });
+
+    expect(compose.system).toContain("FICHA SELECCIONADA");
+    expect(compose.system).toContain("OTRAS REFERENCIAS RELACIONADAS");
+    expect(compose.system).toContain("Magnesio de prueba en polvo");
+    expect(compose.system.indexOf("FICHA SELECCIONADA")).toBeLessThan(
+      compose.system.lastIndexOf("OTRAS REFERENCIAS RELACIONADAS"),
+    );
+  });
+
   it("uses a cautious fallback instead of completing absent facts", () => {
     const sinPrecio = { ...product(), priceCop: null };
     expect(asksForMissingSensitiveFact("¿Cuál es el precio?", sinPrecio)).toBe(true);

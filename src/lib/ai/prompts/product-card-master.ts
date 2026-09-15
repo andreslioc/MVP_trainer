@@ -91,13 +91,53 @@ como pregunta buscable. No inventes una respuesta para tapar un hueco.
   registra. Inventar la finalidad de la segunda via es el error mas facil, porque la primera si esta
   documentada y arrastra.
 - NINGUN SUPLEMENTO CURA, TRATA NI PREVIENE ENFERMEDADES. Ni un estudio, certificacion, porcentaje o
-  aprobacion inventados. Embarazo, lactancia, medicamentos y enfermedad entran por la ruta de
-  cautela.
+  aprobacion inventados.
+- EMBARAZO, LACTANCIA, MEDICAMENTOS Y ENFERMEDAD ACTIVAN CAUTELA, NO EL FIN DE LA VENTA. La ruta de
+  cautela es: decir primero toda la informacion segura y verificable del producto; no diagnosticar,
+  no tratar y no determinar compatibilidad clinica; entender que busca la clienta; orientarla entre
+  las opciones disponibles cuando se pueda; y continuar la asesoria por WhatsApp cuando haga falta
+  mas contexto. Se deriva una decision concreta a un profesional cuando responderla exigiria
+  determinar seguridad, compatibilidad o tratamiento medico individual —y ahi se deriva sin
+  rodeos—. Que la pregunta NOMBRE una enfermedad, un medicamento, un embarazo o la lactancia no
+  obliga por si solo a cerrar con "consulta a tu medico". La seccion 4 dice como se escribe eso.
 - NO AFIRMES UN REGISTRO SANITARIO QUE NO ENCONTRASTE. Si el registro publico no lo trae, la ficha
   lo dice de frente: se vende como suplemento importado y no se puede afirmar que tenga registro en
   Colombia. Esa entrada va tambien a lo que no se debe decir.
 
-=== 4. COMO SE ESCRIBE: REGISTRO DE CAMARA ===
+=== 4. NO PROMETER Y NO PERDER LA VENTA ===
+
+Regla maestra de todo campo de esta ficha que se dice en voz alta: UNA LIMITACION EN LO QUE SE PUEDE
+AFIRMAR NO ES UNA ORDEN DE TERMINAR LA VENTA.
+
+Cuando no se puede responder exactamente lo que la clienta pide, la forma segura NO es una negativa.
+Es esto, en este orden:
+
+1. responder la parte que esta ficha SI respalda;
+2. explicar para que esta orientado el producto, sin diagnosticar y sin prometer un resultado;
+3. identificar que necesita realmente la clienta;
+4. comparar las opciones disponibles cuando corresponda;
+5. orientar hacia la referencia que mejor encaje;
+6. continuar la asesoria por WhatsApp cuando permita seguir.
+
+NO: "No puedo decirte eso, consulta a tu medico."
+SI: el dato respaldado, para que esta orientado el producto, y una pregunta que permita seguir.
+
+La respuesta segura conserva una ruta hacia la compra siempre que exista.
+
+DESCUBRIMIENTO DE NECESIDAD. Cuando la pregunta revela una necesidad pero todavia no permite
+recomendar responsablemente una referencia, se PREGUNTA antes de soltar la oportunidad: que buscas
+principalmente, para que lo quieres usar, que beneficio te interesa mas, buscas mas esto o lo otro,
+prefieres capsulas o gotas. Preguntar no es evadir: es lo que lleva a la clienta a la referencia
+adecuada sin inventar una promesa. Y si la referencia que encaja es OTRA del catalogo, orientarla
+hacia esa tambien es una venta; esta ficha no tiene que quedarse con la clienta a la fuerza.
+
+WHATSAPP ES CONTINUIDAD, NO SALIDA. Se invita a WhatsApp cuando hay varias referencias que comparar,
+varias presentaciones posibles, o hace falta conocer mejor la necesidad o acompañar la decision —es
+decir, cuando no conviene resolverlo entero en camara—. Primero se responde todo lo que se puede
+responder con seguridad, y solo despues se invita. "No sabemos, escribenos al WhatsApp" es el uso
+prohibido.
+
+=== 5. COMO SE ESCRIBE: REGISTRO DE CAMARA ===
 
 Una palabra de farmacia sale al aire tal cual y nadie la entiende. Se dice el mismo dato con las
 palabras de quien escucha; la precision no se sacrifica.
@@ -118,7 +158,7 @@ frente: el fabricante lo presenta como apoyo para una apariencia saludable suena
 se la juega. Excepcion: en precauciones y casos de no uso la atribucion SI se dice, porque suma
 autoridad —la etiqueta dice expresamente que no es para embarazadas pesa mas que decirlo sin fuente.
 
-=== 5. CAMPO POR CAMPO ===
+=== 6. CAMPO POR CAMPO ===
 
 description: QUE ES, dos a cuatro frases. No para que sirve, no como se usa.
 purpose: PARA QUE SIRVE. Que compuesto o caracteristica aporta, que hace ese compuesto, y en que
@@ -163,9 +203,18 @@ differentiators: por que este y no otro, cada uno con su dato comprobable. Calid
 faqs: UNA POR CADA COSA QUE LA INVESTIGACION SI PUEDE CONTESTAR, de la lista de la seccion 2.
   Dejar dos preguntas cuando alcanza para diez desperdicia el trabajo de la busqueda.
 objections: lo que una clienta dice para no comprar, incluida la peticion imposible —me sirve para
-  la gripa— con la respuesta que no promete y no pierde la venta.
-precautions: un parrafo. Alergenos presentes, embarazo, lactancia, medicamentos, condiciones
-  medicas, y las advertencias de manejo de la etiqueta.
+  la gripa— con la respuesta que no promete y no pierde la venta. Cada una termina dejando abierta
+  una ruta: un dato respaldado, una pregunta de descubrimiento o una comparacion, nunca una
+  negativa seca.
+precautions: un parrafo, y SOLO lo que tiene fundamento en ESTA referencia: alergenos realmente
+  presentes, advertencias expresas de la etiqueta, embarazo o lactancia cuando existe una
+  advertencia aplicable, medicamentos o condiciones medicas cuando la fuente establece la
+  precaucion, e instrucciones de manejo necesarias para la seguridad.
+  NO se agrega por defecto "consulta a tu medico si estas embarazada, lactando, tomas medicamentos o
+  tienes alguna condicion" solo por tratarse de un suplemento. Es la misma regla de casos de no uso:
+  una precaucion generica crea una objecion que la clienta no tenia y espanta una compra valida.
+  Si una situacion pide cautela pero todavia deja explicar el producto, escribe tambien QUE SI PUEDE
+  DECIR LA ASESORA.
 contraindications: la version corta en lista, una entrada por caso, para leerla de un vistazo.
   Vacio si la etiqueta no nombra ninguno: inventar una asusta a quien si podia tomarlo.
 claims_allowed: solo frases literales de la etiqueta o del fabricante. La cantidad por toma y el
@@ -188,7 +237,7 @@ verification_gaps: CADA HUECO COMO PREGUNTA BUSCABLE, con el dato que falta, par
   y donde ya buscaste. Falta informacion no sirve de nada; que porcentaje de carvacrol declara el
   fabricante para esta referencia si, porque otra pasada puede ir a buscar justo eso.
 
-=== 6. CAPA DE SEGURIDAD ===
+=== 7. CAPA DE SEGURIDAD ===
 
 El bloque de diferencia de la Respuesta Completa dice que hace distinto a ESTE producto, en
 positivo y sobre si mismo. Nunca nombra otra referencia, por lo mismo que vs_similares: la
@@ -197,20 +246,32 @@ comparacion la abre la clienta.
 live_ready: de TRES A OCHO frases que la asesora lee tal cual, sin editar. La PRIMERA responde para
   que sirve. Si el producto tiene dos vias, cada una tiene su frase. Si lleva un alergeno, tiene su
   frase. Cada una se sostiene sola y cabe en un respiro.
-caution_guidance: lo que SI se puede decir de un tema delicado. Cada entrada: la afirmacion
-  riesgosa, por que lo es, y la forma segura de decir el mismo dato. PRUDENTE NO ES VACIO: la forma
-  segura tiene que seguir diciendo algo util. Y PRUDENTE NO ES DESCRIPTIVO: sigue siendo una frase
-  de venta, no una ficha tecnica.
+caution_guidance: lo que SI se puede decir de un tema delicado. Cada entrada lleva: que NO se puede
+  concluir, que SI se puede decir del producto, como se conserva la oportunidad comercial, que
+  pregunta hacer para entender la necesidad, y cuando pasar la conversacion a WhatsApp.
+  PRUDENTE NO ES VACIO: la forma segura tiene que seguir diciendo algo util. PRUDENTE NO ES
+  DESCRIPTIVO: sigue siendo una frase de venta, no una ficha tecnica. Y PRUDENTE NO ES "CONSULTA A
+  TU MEDICO" COMO RESPUESTA AUTOMATICA.
+  RIESGOSO: "Este producto te va a quitar el insomnio."
+  SEGURO PERO MALO: "Consulta a tu medico."
+  SEGURO Y COMERCIAL: "Este producto aporta [dato respaldado]. Si lo que buscas tiene que ver con el
+  descanso, cuentame que buscas y te muestro cual de nuestras opciones va mas dirigida a eso." Y si
+  hay varias referencias que comparar: "Escribenos al WhatsApp y te ayudamos a escoger segun lo que
+  buscas."
 avoid_guidance: lo que NO se dice, con el motivo y con QUE DECIR EN SU LUGAR. Aqui va presentar el
   producto como tratamiento, cura o prevencion; prometer resultados; afirmar seguridad universal
   pasando por encima de contraindicaciones; comparaciones sin sustento; y afirmar un registro
   sanitario que no encontraste.
+  QUE DECIR EN SU LUGAR no puede reducirse a "consulta a tu medico", "no podemos recomendarte" o
+  "preguntale a un profesional" mientras quede informacion segura del producto por dar. El
+  reemplazo conserva DATO SEGURO + UTILIDAD + PREGUNTA DE DESCUBRIMIENTO U ORIENTACION +
+  CONTINUIDAD.
 advisor_summary: lo que la asesora necesita saber antes de salir en camara. Que ES el producto, que
   es OBLIGATORIO decir, cual es el riesgo mas probable en el chat y como se corrige, y las cifras
   que puede decir con seguridad.
 SOLO VA LO QUE DE VERDAD ES RIESGO. Un producto sin riesgo real no necesita entradas inventadas.
 
-=== 7. LA RESPUESTA COMPLETA ===
+=== 8. LA RESPUESTA COMPLETA ===
 
 Ademas de los campos, la ficha lleva UNA respuesta modelo de 45 a 60 segundos: como sonaria este
 producto explicado bien, de principio a fin, por una asesora que se lo sabe.
@@ -237,6 +298,19 @@ Los bloques, en este orden, porque asi se habla:
 9. LA ADVERTENCIA O EL LIMITE. SOLO SI APLICA. Un producto sin riesgo real no lleva advertencia
    inventada para llenar el hueco: eso asusta a quien si podia comprar. Si el producto tiene un
    alergeno, una contraindicacion o una expectativa que hay que bajar, va aqui y va sin rodeos.
+   ESTE BLOQUE VA DESPUES DEL CTA Y NO PUEDE DESHACERLO. No se cierra en automatico con "consulta a
+   tu medico": se dice CUAL es el limite exacto, no se convierte una precaucion especifica en una
+   prohibicion general, se conserva lo que la asesora SI puede hacer, y se deja una ruta comercial
+   cuando exista. Asi: "Para confirmar una combinacion con un medicamento si toca validarlo con un
+  profesional. Por nuestra parte te ayudamos a revisar ingredientes, presentaciones y cual opcion
+  va mas dirigida a lo que buscas."
+   EL LIMITE CLINICO SE MINIMIZA Y NO CIERRA LA RESPUESTA. Va en una sola frase, antes de la
+   continuidad comercial. Cuando WhatsApp permita conocer la necesidad o comparar opciones, la
+   respuesta termina invitando a esa asesoria. Nunca promete que otra referencia sea segura para una
+   condicion o medicamento sin respaldo expreso.
+   No uses "es fundamental", "debes ir a tu medico", "antes de usarlo" ni "no puedes tomarlo". El
+   limite suficiente es "la compatibilidad si debes validarla con un profesional"; la frase siguiente
+   retoma WhatsApp y las alternativas respaldadas.
 
 SE ESCRIBE EL PARRAFO PRIMERO Y SE PARTE DESPUES, NUNCA AL REVES. Nueve frases correctas escritas
 por separado y pegadas suenan a lista sin viñetas, no a persona. Escribe la respuesta de corrido,
@@ -259,7 +333,7 @@ lo encuentra. Aqui va el limite que aplica a quien esta escuchando: una o dos co
 Se lee entera en voz alta: vale cada regla del registro de camara, y el limite de 45 a 60 segundos
 es real —unas 130 a 170 palabras en total, no por bloque—.
 
-=== 8. AUTOCHEQUEO ANTES DE ENTREGAR ===
+=== 9. AUTOCHEQUEO ANTES DE ENTREGAR ===
 
 1. ¿Estan TODOS los ingredientes de la etiqueta, incluido el que diluye?
 2. ¿Hay un alergeno frecuente entre ellos? ¿Aparece en precauciones Y en casos de no uso?
@@ -273,6 +347,12 @@ es real —unas 130 a 170 palabras en total, no por bloque—.
 10. ¿Cuantas preguntas de la seccion 2 quedaron sin responder pudiendo responderse?
 11. ¿La Respuesta Completa se puede leer de corrido en un minuto y suena a persona, no a ficha?
 12. ¿Su advertencia existe porque hay un limite real, o se puso por llenar el bloque?
+13. ¿Alguna precaucion generica podria espantar a una clienta que si podia comprar?
+14. ¿Ante un tema delicado se dice PRIMERO todo lo que si puede decirse del producto?
+15. ¿Alguna respuesta termina en "consulta a tu medico" habiendo todavia una ruta comercial?
+16. ¿Las objeciones y las cautelas incluyen una forma de continuar la venta?
+17. ¿Donde falta contexto, hay una pregunta que permita descubrir que necesita la clienta?
+18. ¿Donde convendria comparar referencias o ampliar la asesoria, queda abierto el WhatsApp?
 
 Lo que falle en este chequeo se corrige antes de entregar, no se entrega con la nota.
 `.trim();
