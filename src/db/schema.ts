@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -354,6 +355,41 @@ export const commercialRules = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [uniqueIndex("commercial_rules_key_unique").on(table.key)],
+);
+
+/**
+ * Tiempo activo que una asesora dedica a estudiar una ficha en Pre-training.
+ *
+ * Una fila por asesora, ficha y dia del negocio permite responder directamente
+ * "cuanto estudie hoy" sin atribuir a ayer una lectura que cruzo medianoche.
+ * Los pulsos los suma el servidor; `study_date` tambien lo decide el servidor
+ * en la zona de Bogota, nunca el reloj del navegador.
+ */
+export const pretrainingActivity = pgTable(
+  "pretraining_activity",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    advisorId: uuid("advisor_id")
+      .notNull()
+      .references(() => advisors.id, { onDelete: "cascade" }),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    studyDate: date("study_date", { mode: "string" }).notNull(),
+    activeSeconds: integer("active_seconds").notNull().default(0),
+    lastActivityAt: timestamp("last_activity_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("pretraining_activity_advisor_product_day_unique").on(
+      table.advisorId,
+      table.productId,
+      table.studyDate,
+    ),
+    index("pretraining_activity_advisor_day_idx").on(table.advisorId, table.studyDate.desc()),
+    index("pretraining_activity_product_id_idx").on(table.productId),
+    check("pretraining_activity_seconds_sane", sql`${table.activeSeconds} between 0 and 86400`),
+  ],
 );
 
 export const trainingQuestions = pgTable(

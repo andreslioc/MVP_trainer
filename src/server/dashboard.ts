@@ -1,4 +1,4 @@
-import { count, eq, sql, sum } from "drizzle-orm";
+import { and, count, eq, gte, sql, sum } from "drizzle-orm";
 
 import { db } from "../db/client.ts";
 import {
@@ -7,9 +7,11 @@ import {
   liveRecordings,
   liveSessions,
   llmCalls,
+  pretrainingActivity,
   trainingAnswers,
   trainingSessions,
 } from "../db/schema.ts";
+import { businessToday, periodStart } from "../lib/analytics-period.ts";
 import { type AdvisorRole, requireRole } from "../lib/auth.ts";
 
 type DashboardDatabase = Pick<typeof db, "select">;
@@ -25,6 +27,8 @@ export type DashboardDependencies = {
 export type DashboardMetrics = {
   scope: "propio" | "organizacion";
   trainingSessions: number;
+  todayTrainingMinutes: number;
+  todayPretrainingMinutes: number;
   answers: number;
   liveSessions: number;
   copilotAnswers: number;
@@ -63,6 +67,9 @@ export async function getDashboardMetrics(
     const scoped = <T extends { advisorId: unknown }>(table: T) =>
       isAdmin ? undefined : eq(table.advisorId as never, advisorId);
 
+    const today = businessToday();
+    const todayStartedAt = periodStart("dia");
+
     const [training] = await database
       .select({ value: count() })
       .from(trainingSessions)
@@ -72,6 +79,19 @@ export async function getDashboardMetrics(
       .from(trainingAnswers)
       .innerJoin(trainingSessions, eq(trainingSessions.id, trainingAnswers.sessionId))
       .where(scoped(trainingSessions));
+    const [todayTraining] = await database
+      .select({ seconds: sql<number>`coalesce(sum(${trainingSessions.activeSeconds}), 0)::int` })
+      .from(trainingSessions)
+      .where(
+        and(
+          scoped(trainingSessions),
+          todayStartedAt ? gte(trainingSessions.startedAt, todayStartedAt) : undefined,
+        ),
+      );
+    const [todayPretraining] = await database
+      .select({ seconds: sql<number>`coalesce(sum(${pretrainingActivity.activeSeconds}), 0)::int` })
+      .from(pretrainingActivity)
+      .where(and(scoped(pretrainingActivity), eq(pretrainingActivity.studyDate, today)));
     const [live] = await database
       .select({ value: count() })
       .from(liveSessions)
@@ -106,6 +126,8 @@ export async function getDashboardMetrics(
       data: {
         scope: isAdmin ? ("organizacion" as const) : ("propio" as const),
         trainingSessions: training?.value ?? 0,
+        todayTrainingMinutes: Math.round(Number(todayTraining?.seconds ?? 0) / 60),
+        todayPretrainingMinutes: Math.round(Number(todayPretraining?.seconds ?? 0) / 60),
         answers: answers?.value ?? 0,
         liveSessions: live?.value ?? 0,
         copilotAnswers: copilot?.value ?? 0,

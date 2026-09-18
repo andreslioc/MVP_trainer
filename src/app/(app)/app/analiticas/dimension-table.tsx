@@ -1,17 +1,5 @@
 import type { DimensionScore } from "../../../../server/advisor-analytics.ts";
-
-/** La rubrica escribe llaves con guion bajo; en pantalla se leen en español. */
-const nombres: Record<string, string> = {
-  conocimiento_producto: "Conocimiento del producto",
-  claridad_explicacion: "Claridad de la explicación",
-  naturalidad_cercania: "Naturalidad y cercanía",
-  uso_responsable_evidencia: "Uso responsable de la evidencia",
-  manejo_objeciones: "Manejo de objeciones",
-  capacidad_persuasion: "Capacidad de persuasión",
-  uso_cta: "Uso del cierre",
-  duracion: "Duración",
-  cumplimiento_reglas_marca: "Cumplimiento de reglas de marca",
-};
+import { dimensionLabel } from "../../../../lib/dimension-labels.ts";
 
 /**
  * Las nueve dimensiones como tabla escalonada.
@@ -54,7 +42,7 @@ export function DimensionTable({ dimensions }: { dimensions: DimensionScore[] })
           {dimensions.map((dimension) => (
             <tr className="border-b border-border last:border-b-0" key={dimension.dimension}>
               <th className="px-4 py-3 text-sm font-normal text-fg" scope="row">
-                {nombres[dimension.dimension] ?? dimension.dimension}
+                {dimensionLabel(dimension.dimension)}
               </th>
               <td className="px-4 py-3">
                 <div

@@ -6,6 +6,7 @@ import { PageSection } from "../../../../components/ui/page-section.tsx";
 import { getSession } from "../../../../lib/auth.ts";
 import { formatCop } from "../../../../lib/pricing.ts";
 import { listProducts } from "../../../../server/products.ts";
+import { listTodayPretrainingTime } from "../../../../server/pretraining-time.ts";
 import { StockBadge } from "../../../../components/ui/stock-badge.tsx";
 
 /**
@@ -30,7 +31,10 @@ export default async function PreTrainingPage({
   const session = await getSession();
   if (!session.ok) return null;
   const { categoria, q } = await searchParams;
-  const result = await listProducts({ authorize: async () => session });
+  const [result, activity] = await Promise.all([
+    listProducts({ authorize: async () => session }),
+    listTodayPretrainingTime({ authorize: async () => session }),
+  ]);
 
   if (!result.ok) {
     return (
@@ -51,6 +55,9 @@ export default async function PreTrainingPage({
   }
 
   const verified = result.data.filter((product) => product.verifiedAt !== null);
+  const studiedToday = new Map(
+    activity.ok ? activity.data.map((item) => [item.productId, item.activeSeconds]) : [],
+  );
   const categories = [...new Set(verified.map((product) => product.category))].sort();
   const selected = categoria && categories.includes(categoria) ? categoria : null;
   const search = normalize(q ?? "");
@@ -205,6 +212,12 @@ export default async function PreTrainingPage({
                     {/* Agotada: se sigue pudiendo estudiar, pero tiene que
                         notarse antes de abrir la boca en camara. */}
                     <StockBadge className="mt-1 self-start" stockUnits={product.stockUnits} />
+                    {(studiedToday.get(product.id) ?? 0) > 0 ? (
+                      <p className="mt-2 text-xs font-semibold tabular-nums text-mint-ink">
+                        Estudiada hoy ·{" "}
+                        {Math.max(1, Math.round((studiedToday.get(product.id) ?? 0) / 60))} min
+                      </p>
+                    ) : null}
                     <p className="mt-1 font-semibold text-fg">{product.name}</p>
                     {/* El nombre en español, para quien no reconoce el rotulo
                         en ingles. Vacio en las fichas cuyo rotulo ya viene en

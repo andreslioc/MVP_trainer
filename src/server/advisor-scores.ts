@@ -38,6 +38,7 @@ export async function readDimensionScores(
   database: typeof db,
   advisorId: string,
   desde: Date | null,
+  hasta: Date | null = null,
 ) {
   // Las dimensiones salen del jsonb de notas: son las mismas nueve que escribe
   // la rubrica, y se leen de los datos en vez de repetirse aca, para que una
@@ -57,6 +58,7 @@ export async function readDimensionScores(
         // el tipo a Postgres.
         desde ? sql`AND ta.created_at >= ${desde.toISOString()}::timestamptz` : sql``
       }
+      ${hasta ? sql`AND ta.created_at < ${hasta.toISOString()}::timestamptz` : sql``}
     GROUP BY d.key
     ORDER BY avg((d.value->>\'score\')::numeric) ASC`);
 

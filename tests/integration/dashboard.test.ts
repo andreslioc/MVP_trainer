@@ -10,12 +10,14 @@ import {
   liveRecordings,
   liveSessions,
   llmCalls,
+  pretrainingActivity,
   products,
   trainingAnswers,
   trainingQuestions,
   trainingSessions,
 } from "../../src/db/schema.ts";
 import { productInputSchema } from "../../src/lib/validation/product.ts";
+import { businessToday } from "../../src/lib/analytics-period.ts";
 import { getDashboardMetrics } from "../../src/server/dashboard.ts";
 import { validProductInput } from "../fixtures/product.ts";
 
@@ -32,7 +34,7 @@ async function seedAdvisorActivity(advisorId: string, sessions: number) {
   for (let index = 0; index < sessions; index += 1) {
     const [session] = await connection.db
       .insert(trainingSessions)
-      .values({ advisorId, productId })
+      .values({ advisorId, productId, activeSeconds: 60 })
       .returning();
     if (!session) throw new Error("no se creo la sesion");
     const [question] = await connection.db
@@ -73,6 +75,12 @@ async function seedAdvisorActivity(advisorId: string, sessions: number) {
     text: `hallazgo ${advisorId.slice(0, 8)}`,
     productId,
     frequency: 1,
+  });
+  await connection.db.insert(pretrainingActivity).values({
+    advisorId,
+    productId,
+    studyDate: businessToday(),
+    activeSeconds: advisorId === mineId ? 180 : 300,
   });
 }
 
@@ -135,6 +143,8 @@ describe("getDashboardMetrics", () => {
     if (!result.ok) return;
     expect(result.data.scope).toBe("propio");
     expect(result.data.trainingSessions).toBe(2);
+    expect(result.data.todayTrainingMinutes).toBe(2);
+    expect(result.data.todayPretrainingMinutes).toBe(3);
     expect(result.data.answers).toBe(2);
     expect(result.data.liveSessions).toBe(1);
     expect(result.data.recordingsAnalyzed).toBe(1);
@@ -155,6 +165,8 @@ describe("getDashboardMetrics", () => {
     expect(result.data.scope).toBe("organizacion");
     // Suma de las dos asesoras: 2 + 3.
     expect(result.data.trainingSessions).toBeGreaterThanOrEqual(5);
+    expect(result.data.todayTrainingMinutes).toBeGreaterThanOrEqual(5);
+    expect(result.data.todayPretrainingMinutes).toBeGreaterThanOrEqual(8);
     expect(result.data.recordingsAnalyzed).toBeGreaterThanOrEqual(2);
     expect(result.data.costUsd).toBeGreaterThanOrEqual(1.5);
   });

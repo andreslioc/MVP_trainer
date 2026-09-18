@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, isNotNull, sql } from "drizzle-orm";
+import { and, count, eq, gte, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../db/client.ts";
@@ -16,9 +16,15 @@ import {
   periodDayKeys,
   periodStart,
 } from "../lib/analytics-period.ts";
+import {
+  buildProgressComparison,
+  comparisonWindow,
+  type ProgressComparison,
+} from "../lib/analytics-progress.ts";
 import { type AdvisorRole, requireRole } from "../lib/auth.ts";
 import { businessDayColumn as diaDelNegocio } from "./business-day.ts";
 import { CALIBRATION_ANSWERS, type DimensionScore, readDimensionScores } from "./advisor-scores.ts";
+import { readAdvisorUsage, type UsageDay } from "./advisor-usage.ts";
 
 /**
  * Analiticas de UNA asesora, para que el administrador vea donde ayudarla.
@@ -53,6 +59,10 @@ export type AdvisorAnalytics = {
   /** Los dias que dibuja la grafica de columnas, del mas antiguo al ultimo. */
   windowDays: string[];
   practiceMinutes: number;
+  pretrainingMinutes: number;
+  totalLearningMinutes: number;
+  productsStudied: number;
+  activeDays: number;
   practicesStarted: number;
   practicesFinished: number;
   answers: number;
@@ -63,6 +73,8 @@ export type AdvisorAnalytics = {
   dimensions: DimensionScore[];
   productsPracticed: number;
   activityByDay: Array<{ day: string; practices: number; minutes: number }>;
+  usageByDay: UsageDay[];
+  progress: ProgressComparison;
   /**
    * Respuestas acumuladas por dia, para la linea que crece.
    *
@@ -87,6 +99,7 @@ type AuthorizationResult =
 type Dependencies = {
   authorize?: (role: AdvisorRole) => Promise<AuthorizationResult>;
   database?: typeof db;
+  now?: () => Date;
 };
 
 export async function getAdvisorAnalytics(input: unknown, options: Dependencies = {}) {
@@ -108,10 +121,12 @@ export async function getAdvisorAnalytics(input: unknown, options: Dependencies 
     };
   }
   const { advisorId, period } = parsed.data;
+  const now = (options.now ?? (() => new Date()))();
   // `undefined` cuando la ventana es "todo": `and()` de drizzle lo descarta, asi
   // que la misma consulta sirve con filtro y sin el.
-  const desde = periodStart(period);
+  const desde = periodStart(period, now);
   const dentro = (columna: Parameters<typeof gte>[0]) => (desde ? gte(columna, desde) : undefined);
+  const diasVentana = periodDayKeys(period, now);
 
   const [advisor] = await database
     .select({
@@ -126,15 +141,6 @@ export async function getAdvisorAnalytics(input: unknown, options: Dependencies 
   if (!advisor) {
     return { ok: false as const, error: { code: "NOT_FOUND", message: "La asesora no existe." } };
   }
-
-  const [practica] = await database
-    .select({
-      started: count(),
-      finished: sql<number>`count(${trainingSessions.finishedAt})::int`,
-      seconds: sql<number>`coalesce(sum(${trainingSessions.activeSeconds}), 0)::int`,
-    })
-    .from(trainingSessions)
-    .where(and(eq(trainingSessions.advisorId, advisorId), dentro(trainingSessions.startedAt)));
 
   // CALIFICADAS, no enviadas. La tarjeta dice "Respuestas evaluadas" y esta
   // justo encima de la tabla que promedia la rubrica: contar tambien las que
@@ -156,29 +162,28 @@ export async function getAdvisorAnalytics(input: unknown, options: Dependencies 
       ),
     );
 
-  const puntuacion = await readDimensionScores(database, advisorId, desde);
+  const comparison = comparisonWindow(period, now);
+  const [puntuacion, previousScores, recentScores, usage] = await Promise.all([
+    readDimensionScores(database, advisorId, desde),
+    readDimensionScores(database, advisorId, comparison.previousStart, comparison.currentStart),
+    period === "todo"
+      ? readDimensionScores(database, advisorId, comparison.currentStart)
+      : Promise.resolve(null),
+    readAdvisorUsage(database, advisorId, {
+      selectedStart: desde,
+      selectedDay: period === "todo" ? null : (diasVentana[0] as string),
+      graphDays: diasVentana,
+    }),
+  ]);
   const { dimensions, scoredAnswers, accuracyPercent } = puntuacion;
+  const progress = buildProgressComparison(
+    recentScores ?? puntuacion,
+    previousScores,
+    comparison.label,
+  );
 
   // Las columnas cubren la ventana elegida; con "todo" se quedan en 30 dias,
   // que es lo que cabe legible en una grafica pequeña.
-  const diasVentana = periodDayKeys(period);
-  const desdeColumnas = new Date(`${diasVentana[0]}T00:00:00-05:00`);
-  const dias = await database
-    .select({
-      day: diaDelNegocio(trainingSessions.startedAt),
-      practices: count(),
-      minutes: sql<number>`round(coalesce(sum(${trainingSessions.activeSeconds}), 0) / 60.0)::int`,
-    })
-    .from(trainingSessions)
-    .where(
-      and(
-        eq(trainingSessions.advisorId, advisorId),
-        gte(trainingSessions.startedAt, desdeColumnas),
-      ),
-    )
-    .groupBy(diaDelNegocio(trainingSessions.startedAt))
-    .orderBy(desc(diaDelNegocio(trainingSessions.startedAt)));
-
   // Doce puntos: los que caben en una linea pequeña sin volverse ruido.
   const historial = await database
     .select({
@@ -220,20 +225,26 @@ export async function getAdvisorAnalytics(input: unknown, options: Dependencies 
       advisor,
       period,
       windowDays: diasVentana,
-      practiceMinutes: Math.round(Number(practica?.seconds ?? 0) / 60),
-      practicesStarted: Number(practica?.started ?? 0),
-      practicesFinished: Number(practica?.finished ?? 0),
+      practiceMinutes: usage.trainingMinutes,
+      pretrainingMinutes: usage.pretrainingMinutes,
+      totalLearningMinutes: usage.totalLearningMinutes,
+      productsStudied: usage.productsStudied,
+      activeDays: usage.activeDays,
+      practicesStarted: usage.practicesStarted,
+      practicesFinished: usage.practicesFinished,
       answers,
       accuracyPercent,
       calibrating: scoredAnswers > 0 && scoredAnswers < CALIBRATION_ANSWERS,
       answersToCalibrate: Math.max(CALIBRATION_ANSWERS - scoredAnswers, 0),
       dimensions,
       productsPracticed: Number(respuestas?.products ?? 0),
-      activityByDay: dias.map((d) => ({
-        day: d.day,
-        practices: Number(d.practices),
-        minutes: Number(d.minutes),
+      activityByDay: usage.usageByDay.map((day) => ({
+        day: day.day,
+        practices: day.practices,
+        minutes: day.trainingMinutes,
       })),
+      usageByDay: usage.usageByDay,
+      progress,
       answerHistory,
       liveSessions: Number(vivo?.sessions ?? 0),
       copilotAnswers: Number(vivo?.answers ?? 0),

@@ -7,11 +7,13 @@ import { openDirectDatabase } from "../../src/db/client.ts";
 import { type AdvisorRole, hasRole } from "../../src/lib/roles.ts";
 import {
   advisors,
+  pretrainingActivity,
   products,
   trainingAnswers,
   trainingQuestions,
   trainingSessions,
 } from "../../src/db/schema.ts";
+import { businessToday } from "../../src/lib/analytics-period.ts";
 import { productInputSchema } from "../../src/lib/validation/product.ts";
 import { CALIBRATION_ANSWERS, getAdvisorAnalytics } from "../../src/server/advisor-analytics.ts";
 import {
@@ -82,6 +84,12 @@ beforeAll(async () => {
     .returning();
   if (!session) throw new Error("no se creo la sesion");
   sessionId = session.id;
+  await connection.db.insert(pretrainingActivity).values({
+    advisorId,
+    productId,
+    studyDate: businessToday(),
+    activeSeconds: 300,
+  });
 });
 
 /**
@@ -296,6 +304,13 @@ describe("analiticas de la asesora", () => {
     expect(result.data.advisor.displayName).toBe("Asesora de prueba");
     // 55 segundos redondean a 1 minuto.
     expect(result.data.practiceMinutes).toBe(1);
+    expect(result.data.pretrainingMinutes).toBe(5);
+    expect(result.data.totalLearningMinutes).toBe(6);
+    expect(result.data.productsStudied).toBe(1);
+    expect(result.data.activeDays).toBe(1);
+    expect(result.data.usageByDay.at(-1)).toEqual(
+      expect.objectContaining({ trainingMinutes: 1, pretrainingMinutes: 5, totalMinutes: 6 }),
+    );
     expect(result.data.practicesStarted).toBe(1);
     expect(result.data.practicesFinished).toBe(1);
     expect(result.data.answers).toBe(2);
@@ -303,6 +318,7 @@ describe("analiticas de la asesora", () => {
     // exacta del recorrido, o sea 50%. Con una division ingenua por 5 daria 60.
     expect(result.data.accuracyPercent).toBe(50);
     expect(result.data.productsPracticed).toBe(1);
+    expect(result.data.progress.focus).not.toBeNull();
   });
 
   it("avisa que esta calibrando cuando hay pocas respuestas", async () => {

@@ -8,6 +8,7 @@ import { ProductStudy } from "../product-study.tsx";
 import { Card, cardClasses } from "../../../../../components/ui/card.tsx";
 import { PageSection } from "../../../../../components/ui/page-section.tsx";
 import { StockBadge, StockNotice, estaAgotado } from "../../../../../components/ui/stock-badge.tsx";
+import { PretrainingTimer } from "./pretraining-timer.tsx";
 
 export default async function PreTrainingProductPage({
   params,
@@ -28,9 +29,12 @@ export default async function PreTrainingProductPage({
   return (
     <PageSection
       before={
-        <Link className="text-sm font-semibold text-primary" href="/app/pre-training">
-          ← Volver a Pre-training
-        </Link>
+        <>
+          <PretrainingTimer productId={product.id} />
+          <Link className="text-sm font-semibold text-primary" href="/app/pre-training">
+            ← Volver a Pre-training
+          </Link>
+        </>
       }
       width="panel"
     >

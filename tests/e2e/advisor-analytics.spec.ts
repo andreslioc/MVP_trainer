@@ -126,6 +126,17 @@ test("las analiticas de una asesora se ven y solo las abre administracion", asyn
         createdAt: dia(0),
       },
     ]);
+    await connection.db.insert(schema.pretrainingActivity).values({
+      advisorId: asesoraId,
+      productId: ficha.id,
+      studyDate: new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Bogota",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date()),
+      activeSeconds: 300,
+    });
 
     await page.goto("/login?next=/app/analiticas");
     await page.getByLabel("Correo").fill(email);
@@ -138,6 +149,18 @@ test("las analiticas de una asesora se ven y solo las abre administracion", asyn
     await expect(page.getByText("Prácticas", { exact: true })).toBeVisible();
     // 480 segundos son 8 minutos: el tiempo sale del acumulado activo.
     await expect(page.getByText("8 min en los últimos 30 días")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tiempo de uso" })).toBeVisible();
+    await expect(page.getByText("Pre-training", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("1 ficha estudiada")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Línea de tiempo" })).toBeVisible();
+    const franjas = page.getByRole("button", { name: /minutos en Training/ });
+    await expect(franjas).toHaveCount(30);
+    await franjas.last().hover();
+    const detalle = page.getByRole("tooltip");
+    await expect(detalle).toBeVisible();
+    await expect(detalle).toContainText("Training8 min");
+    await expect(detalle).toContainText("Pre-training5 min");
+    await expect(detalle).toContainText("Total13 min");
 
     // El selector de ventana: cuatro opciones y la activa marcada para quien
     // usa lector de pantalla, no solo por color.

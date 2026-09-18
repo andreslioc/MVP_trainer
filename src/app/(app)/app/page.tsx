@@ -53,6 +53,21 @@ export default async function AppPage() {
               ? "Agregados de toda la organización."
               : "Solo tus números: nadie más los ve, y tú no ves los de las demás."}
           </p>
+          <h2 className="mt-8 font-display text-xl font-medium text-fg">Actividad de hoy</h2>
+          <CardGrid className="mt-3" columns={2}>
+            <Metric
+              href="/app/training"
+              label="Tiempo en Training"
+              value={`${result.data.todayTrainingMinutes} min`}
+            />
+            <Metric
+              href="/app/pre-training"
+              label="Tiempo en Pre-training"
+              value={`${result.data.todayPretrainingMinutes} min`}
+            />
+          </CardGrid>
+
+          <h2 className="mt-8 font-display text-xl font-medium text-fg">Acumulado</h2>
           <CardGrid className="mt-8" columns={3}>
             <Metric
               href="/app/training"
