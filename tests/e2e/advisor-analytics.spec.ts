@@ -146,6 +146,13 @@ test("las analiticas de una asesora se ven y solo las abre administracion", asyn
 
     await page.getByRole("link", { name: /Asesora Medida/ }).click();
     await expect(page.getByRole("heading", { name: "Asesora Medida" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Evolución general de sus respuestas" }),
+    ).toBeVisible();
+    await expect(page.getByText("Conocimiento de los productos", { exact: true })).toBeVisible();
+    await expect(page.getByText("75/100").first()).toBeVisible();
+    await page.getByText("Ver avance por producto").click();
+    await expect(page.getByText("3 respuestas evaluadas")).toBeVisible();
     await expect(page.getByText("Prácticas", { exact: true })).toBeVisible();
     // 480 segundos son 8 minutos: el tiempo sale del acumulado activo.
     await expect(page.getByText("8 min en los últimos 30 días")).toBeVisible();

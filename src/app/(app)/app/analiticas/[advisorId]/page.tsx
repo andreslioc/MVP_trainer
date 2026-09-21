@@ -13,6 +13,7 @@ import { MetricCard } from "../metric-card.tsx";
 import { UsageTimeline } from "../../../../../components/analytics/usage-timeline.tsx";
 import { PeriodTabs } from "../period-tabs.tsx";
 import { ProgressSummary } from "../progress-summary.tsx";
+import { ProductKnowledgeCard } from "../product-knowledge-card.tsx";
 import { ScoreMeter } from "../score-meter.tsx";
 import { Sparkline } from "../sparkline.tsx";
 
@@ -58,7 +59,9 @@ export default async function AdvisorAnalyticsPage({
     >
       <PeriodTabs advisorId={advisorId} period={data.period} />
 
-      <h2 className="mt-8 font-display text-xl font-medium text-fg">Resumen de progreso</h2>
+      <h2 className="mt-8 font-display text-xl font-medium text-fg">
+        Evolución general de sus respuestas
+      </h2>
       <p className="mt-1 max-w-3xl text-sm text-fg-muted">
         Compara desempeño contra el periodo anterior y señala una mejora comprobable y la prioridad
         que todavía necesita acompañamiento.
@@ -114,6 +117,9 @@ export default async function AdvisorAnalyticsPage({
         El tiempo dice cuánto entrenó; las respuestas evaluadas muestran si ese esfuerzo se está
         convirtiendo en mejores respuestas.
       </p>
+      <div className="mt-4">
+        <ProductKnowledgeCard knowledge={data.productKnowledge} />
+      </div>
       <div className="mt-4">
         <ScoreMeter
           answersToCalibrate={data.answersToCalibrate}

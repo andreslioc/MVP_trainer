@@ -20,6 +20,7 @@ describe("database schema", () => {
       "products",
       "commercial_rules",
       "pretraining_activity",
+      "weekly_training_goals",
       "training_questions",
       "training_sessions",
       "training_answers",
@@ -123,6 +124,9 @@ describe("database schema", () => {
       "training_questions_source_idx",
       "training_sessions_advisor_started_idx",
       "training_sessions_product_id_idx",
+      "weekly_training_goals_advisor_week_unique",
+      "weekly_training_goals_created_by_idx",
+      "weekly_training_goals_week_idx",
     ];
     const rows = await connection.db.execute<{ indexname: string }>(sql`
       select indexname
@@ -158,6 +162,8 @@ describe("database schema", () => {
       ["training_questions_product_id_products_id_fk", "c"],
       ["training_sessions_advisor_id_advisors_id_fk", "c"],
       ["training_sessions_product_id_products_id_fk", "r"],
+      ["weekly_training_goals_advisor_id_advisors_id_fk", "c"],
+      ["weekly_training_goals_created_by_advisors_id_fk", "n"],
     ]);
     const rows = await connection.db.execute<{
       constraint_name: string;

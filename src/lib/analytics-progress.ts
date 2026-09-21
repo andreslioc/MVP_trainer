@@ -26,6 +26,8 @@ export type ProgressComparison = {
   previousAnswers: number;
   improved: DimensionTrend | null;
   focus: DimensionTrend | null;
+  /** Todas las dimensiones comparables, para explicar como cambio la respuesta. */
+  trends: DimensionTrend[];
 };
 
 /** Dos ventanas contiguas; `Todo` compara los 30 días recientes con los 30 anteriores. */
@@ -83,5 +85,6 @@ export function buildProgressComparison(
     previousAnswers: previous.scoredAnswers,
     improved,
     focus,
+    trends,
   };
 }

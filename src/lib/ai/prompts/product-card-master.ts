@@ -100,6 +100,10 @@ como pregunta buscable. No inventes una respuesta para tapar un hueco.
   determinar seguridad, compatibilidad o tratamiento medico individual —y ahi se deriva sin
   rodeos—. Que la pregunta NOMBRE una enfermedad, un medicamento, un embarazo o la lactancia no
   obliga por si solo a cerrar con "consulta a tu medico". La seccion 4 dice como se escribe eso.
+- UNA CONTRAINDICACION EXPRESA SE DICE DE FRENTE. Si la etiqueta o una fuente confiable establece
+  que no es apto para diabetes u otra condicion, contraindications y caution_guidance deben decirlo
+  sin ambiguedad y ofrecer WhatsApp para revisar alternativas. Si la fuente no lo establece, no
+  inventes ni seguridad ni prohibicion: registra el limite de compatibilidad individual.
 - NO AFIRMES UN REGISTRO SANITARIO QUE NO ENCONTRASTE. Si el registro publico no lo trae, la ficha
   lo dice de frente: se vende como suplemento importado y no se puede afirmar que tenga registro en
   Colombia. Esa entrada va tambien a lo que no se debe decir.

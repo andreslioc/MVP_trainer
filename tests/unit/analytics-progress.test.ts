@@ -29,6 +29,7 @@ describe("buildProgressComparison", () => {
     expect(progress.improved).toEqual(
       expect.objectContaining({ dimension: "claridad_explicacion", delta: 1.2 }),
     );
+    expect(progress.trends).toHaveLength(2);
     expect(progress.focus).toEqual(expect.objectContaining({ dimension: "uso_cta", average: 2.4 }));
   });
 

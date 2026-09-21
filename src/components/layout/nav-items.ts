@@ -70,6 +70,13 @@ const navItems = [
     minRole: "supervisor",
   },
   {
+    href: "/app/metas-semanales",
+    label: "Metas semanales",
+    description: "Plan de capacitación",
+    glyph: "MS",
+    minRole: "admin",
+  },
+  {
     href: "/app/cuentas",
     label: "Cuentas",
     description: "Personas y accesos",

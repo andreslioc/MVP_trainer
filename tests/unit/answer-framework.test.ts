@@ -97,4 +97,10 @@ describe("forma de la respuesta", () => {
     expect(ANSWER_FRAMEWORK).toMatch(/TERMINA en ella, no en "consulta a tu medico"/i);
     expect(ANSWER_FRAMEWORK).toMatch(/EL LIMITE CLINICO SE MINIMIZA/i);
   });
+
+  it("dice la contraindicacion expresa y solo deriva cuando la ficha no la resuelve", () => {
+    expect(ANSWER_FRAMEWORK).toMatch(/ANTES DE REMITIR, REVISA LA FICHA/i);
+    expect(ANSWER_FRAMEWORK).toMatch(/CONTRAINDICACION EXPRESA/i);
+    expect(ANSWER_FRAMEWORK).toMatch(/SIN CONTRAINDICACION EXPRESA/i);
+  });
 });

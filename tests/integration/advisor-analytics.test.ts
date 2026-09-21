@@ -319,6 +319,9 @@ describe("analiticas de la asesora", () => {
     expect(result.data.accuracyPercent).toBe(50);
     expect(result.data.productsPracticed).toBe(1);
     expect(result.data.progress.focus).not.toBeNull();
+    expect(result.data.productKnowledge).toEqual(
+      expect.objectContaining({ score: 50, delta: null, answers: 2, products: 1 }),
+    );
   });
 
   it("avisa que esta calibrando cuando hay pocas respuestas", async () => {

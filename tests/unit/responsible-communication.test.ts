@@ -195,6 +195,21 @@ describe("comunicación responsable", () => {
     expect(result.data.alerts).toContainEqual(expect.objectContaining({ code: "HEALTH_CAUTION" }));
   });
 
+  it("conserva una contraindicación expresa sin exigir una remision generica", () => {
+    const answer =
+      "Trae 200 cápsulas. La etiqueta indica que no es apto para personas con diabetes. Escríbenos por WhatsApp y te ayudamos a revisar alternativas respaldadas.";
+    const result = applyResponsibleCommunication({
+      question: "Tengo diabetes, ¿cuántas cápsulas trae?",
+      composition: composition({ express: answer, estandar: answer, profunda: answer }),
+      product: product({ contraindications: ["No apto para personas con diabetes"] }),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.data.composition.express).toBe(answer);
+    expect(result.data.composition.confidence).toBe("revisar");
+  });
+
   const enCautela = (question: string) => {
     const result = applyResponsibleCommunication({
       question,

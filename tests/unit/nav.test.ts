@@ -41,6 +41,7 @@ describe("visibleNavItems", () => {
       "Knowledge",
       "Reglas",
       "Analíticas",
+      "Metas semanales",
       "Cuentas",
     ]);
   });

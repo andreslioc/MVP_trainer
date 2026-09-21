@@ -392,6 +392,43 @@ export const pretrainingActivity = pgTable(
   ],
 );
 
+/**
+ * Compromiso semanal de capacitacion de una asesora.
+ *
+ * Una fila por persona y semana conserva la meta historica aunque cambie la
+ * plantilla del equipo. El progreso no se guarda aqui: se calcula desde la
+ * actividad real para que no existan dos verdades que puedan desincronizarse.
+ */
+export const weeklyTrainingGoals = pgTable(
+  "weekly_training_goals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    advisorId: uuid("advisor_id")
+      .notNull()
+      .references(() => advisors.id, { onDelete: "cascade" }),
+    weekStart: date("week_start", { mode: "string" }).notNull(),
+    trainingSessionsTarget: integer("training_sessions_target").notNull().default(0),
+    pretrainingMinutesTarget: integer("pretraining_minutes_target").notNull().default(0),
+    productsTarget: integer("products_target").notNull().default(0),
+    createdBy: uuid("created_by").references(() => advisors.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("weekly_training_goals_advisor_week_unique").on(table.advisorId, table.weekStart),
+    index("weekly_training_goals_week_idx").on(table.weekStart),
+    index("weekly_training_goals_created_by_idx").on(table.createdBy),
+    check(
+      "weekly_training_goals_targets_sane",
+      sql`${table.trainingSessionsTarget} between 0 and 100 and ${table.pretrainingMinutesTarget} between 0 and 10080 and ${table.productsTarget} between 0 and 500`,
+    ),
+    check(
+      "weekly_training_goals_has_target",
+      sql`${table.trainingSessionsTarget} > 0 or ${table.pretrainingMinutesTarget} > 0 or ${table.productsTarget} > 0`,
+    ),
+  ],
+);
+
 export const trainingQuestions = pgTable(
   "training_questions",
   {

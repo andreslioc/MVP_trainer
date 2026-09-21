@@ -107,6 +107,30 @@ function hasResponsibleClinicalLimit(composition: CopilotComposition) {
     );
   });
 }
+
+const explicitRestrictionPattern =
+  /\b(no (?:es )?(?:apto|apta|adecuado|adecuada|recomendado|recomendada)|no (?:debe|deben) (?:tomar|usar|consumir)|contraindicado|contraindicada)\b/i;
+
+function hasMatchingExplicitContraindication(
+  product: typeof products.$inferSelect,
+  question: string,
+) {
+  const normalizedQuestion = normalize(question);
+  return product.contraindications.some((restriction) =>
+    normalize(restriction)
+      .split(/[^a-z0-9]+/)
+      .filter((token) => token.length >= 5)
+      .some((token) => normalizedQuestion.includes(token)),
+  );
+}
+
+function statesRestrictionInEveryView(composition: CopilotComposition) {
+  return (["express", "estandar", "profunda"] as const).every(
+    (variant) =>
+      explicitRestrictionPattern.test(composition[variant]) &&
+      !affirmativeCompatibilityPattern.test(composition[variant]),
+  );
+}
 const therapeuticClaimPattern =
   /\b(cura|curar|trata|tratar|previene|prevenir|sana|sanar|elimina|reversa|revertir)\b.{0,80}\b(enfermedad|diabetes|hipertensi[oó]n|c[aá]ncer|depresi[oó]n|ansiedad|infecci[oó]n|dolor|diagn[oó]stico|s[ií]ntoma)/i;
 /**
@@ -238,7 +262,10 @@ export function applyResponsibleCommunication(input: ResponsibleInput): Responsi
       code: "HEALTH_CAUTION",
       message: "La consulta requiere precaución y valoración de un profesional de salud.",
     };
-    if (!hasResponsibleClinicalLimit(input.composition)) {
+    const hasBackedRestriction =
+      hasMatchingExplicitContraindication(input.product, input.question) &&
+      statesRestrictionInEveryView(input.composition);
+    if (!hasBackedRestriction && !hasResponsibleClinicalLimit(input.composition)) {
       return {
         ok: true,
         data: {

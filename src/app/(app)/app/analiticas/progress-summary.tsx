@@ -21,10 +21,33 @@ export function ProgressSummary({ progress }: { progress: ProgressComparison }) 
     );
   }
 
+  const regressed = [...progress.trends]
+    .filter((item) => item.delta !== null && item.delta < 0)
+    .sort((a, b) => (a.delta ?? 0) - (b.delta ?? 0))[0];
+  const headline =
+    progress.accuracyDelta === null
+      ? "Ya hay una medición actual; falta el período anterior para describir el cambio."
+      : progress.accuracyDelta > 2
+        ? "En general, ahora responde mejor que en el período anterior."
+        : progress.accuracyDelta < -2
+          ? "En general, sus respuestas bajaron y conviene reforzar antes del próximo live."
+          : "Su forma de responder se mantiene estable frente al período anterior.";
+
   return (
     <Card className="mt-4" density="compacta">
+      <p className="font-semibold text-fg">{headline}</p>
+      {progress.improved || regressed ? (
+        <p className="mt-1 text-sm text-fg-muted">
+          {progress.improved
+            ? `Mejoró especialmente en ${dimensionLabel(progress.improved.dimension).toLocaleLowerCase("es-CO")}.`
+            : "No aparece todavía una mejora puntual."}{" "}
+          {regressed
+            ? `El cambio que más necesita atención está en ${dimensionLabel(regressed.dimension).toLocaleLowerCase("es-CO")}.`
+            : "No hubo retrocesos medibles en la rúbrica."}
+        </p>
+      ) : null}
       <div className="grid gap-5 md:grid-cols-3">
-        <div>
+        <div className="mt-5 border-t border-border pt-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">Evolución</p>
           {progress.accuracyDelta === null ? (
             <p className="mt-2 font-semibold text-fg">Sin base anterior comparable</p>
@@ -36,7 +59,7 @@ export function ProgressSummary({ progress }: { progress: ProgressComparison }) 
           <p className="mt-1 text-sm text-fg-muted">{progress.label}</p>
         </div>
 
-        <div className="border-t border-border pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+        <div className="border-t border-border pt-4 md:mt-5 md:border-l md:pl-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
             Mayor avance
           </p>
@@ -56,7 +79,7 @@ export function ProgressSummary({ progress }: { progress: ProgressComparison }) 
           )}
         </div>
 
-        <div className="border-t border-border pt-4 md:border-l md:border-t-0 md:pl-5 md:pt-0">
+        <div className="border-t border-border pt-4 md:mt-5 md:border-l md:pl-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-fg-muted">
             Prioridad actual
           </p>

@@ -186,6 +186,12 @@ describe("continuidad comercial frente a la derivacion medica", () => {
     }
   });
 
+  it("exige decir una contraindicacion disponible antes que remitir", () => {
+    expect(EVALUATE_ANSWER_PROMPT).toMatch(/ANTES DE PUNTUAR UNA REMISION/i);
+    expect(EVALUATE_ANSWER_PROMPT).toMatch(/no es apto.+decirlo de frente/is);
+    expect(EVALUATE_ANSWER_PROMPT).toMatch(/ficha NO declara esa contraindicación/i);
+  });
+
   it("evalua solo las rutas comerciales relevantes, no una lista obligatoria", () => {
     expect(EVALUATE_ANSWER_PROMPT).toMatch(/cuales de estas rutas son RELEVANTES/i);
     expect(EVALUATE_ANSWER_PROMPT).toMatch(/NO es obligatorio ejecutar las cinco/i);

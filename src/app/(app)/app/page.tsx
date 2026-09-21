@@ -5,8 +5,11 @@ import { CardGrid } from "../../../components/ui/card-grid.tsx";
 import { PageSection } from "../../../components/ui/page-section.tsx";
 import { getSession } from "../../../lib/auth.ts";
 import { AiCostCard } from "../../../components/analytics/ai-cost-card.tsx";
+import { WeeklyGoalCard } from "../../../components/goals/weekly-goal-card.tsx";
+import { Card } from "../../../components/ui/card.tsx";
 import { readAiCostByDay } from "../../../server/ai-cost.ts";
 import { getDashboardMetrics } from "../../../server/dashboard.ts";
+import { getMyCurrentWeeklyGoal } from "../../../server/weekly-goals.ts";
 
 const currency = new Intl.NumberFormat("es-CO", {
   style: "currency",
@@ -28,7 +31,12 @@ function Metric({ href, label, value }: { href: string; label: string; value: st
 export default async function AppPage() {
   const session = await getSession();
   if (!session.ok) return null;
-  const result = await getDashboardMetrics({ authorize: async () => session });
+  const [result, weeklyGoal] = await Promise.all([
+    getDashboardMetrics({ authorize: async () => session }),
+    session.data.role === "asesor"
+      ? getMyCurrentWeeklyGoal({ authorize: async () => session })
+      : Promise.resolve(null),
+  ]);
   // Solo para admin, igual que el acumulado: el costo es de la organizacion. Se
   // pide en paralelo con las metricas porque son dos lecturas independientes y
   // encadenarlas suma su latencia sin ninguna razon.
@@ -53,6 +61,23 @@ export default async function AppPage() {
               ? "Agregados de toda la organización."
               : "Solo tus números: nadie más los ve, y tú no ves los de las demás."}
           </p>
+          {weeklyGoal?.ok ? (
+            <div className="mt-8">
+              <h2 className="font-display text-xl font-medium text-fg">Mi meta semanal</h2>
+              <div className="mt-3">
+                {weeklyGoal.data ? (
+                  <WeeklyGoalCard goal={weeklyGoal.data} />
+                ) : (
+                  <Card>
+                    <p className="font-semibold text-fg">Aún no tienes una meta asignada.</p>
+                    <p className="mt-1 text-sm text-fg-muted">
+                      Cuando administración defina la semana, aquí verás el avance de cada objetivo.
+                    </p>
+                  </Card>
+                )}
+              </div>
+            </div>
+          ) : null}
           <h2 className="mt-8 font-display text-xl font-medium text-fg">Actividad de hoy</h2>
           <CardGrid className="mt-3" columns={2}>
             <Metric

@@ -119,9 +119,47 @@ test("shows the administration entries to an admin", async ({ page }) => {
     // Cuentas y Analiticas. Se afirman las tres: son las que separan un rango
     // del otro, y una sola dejaria pasar media regresion.
     const navegacion = page.getByRole("navigation", { name: "Navegación principal" });
-    for (const label of [/Reglas/, /Cuentas/, /Analíticas/]) {
+    for (const label of [/Reglas/, /Cuentas/, /Analíticas/, /Metas semanales/]) {
       await expect(navegacion.getByRole("link", { name: label })).toBeVisible();
     }
+  } finally {
+    await admin.cleanup();
+  }
+});
+
+test("mantiene fija la barra lateral y recuerda si esta minimizada", async ({ page }) => {
+  const admin = await createActiveAdvisor("admin");
+  try {
+    await signIn(page, admin.email, admin.password);
+    const navigation = page.getByRole("navigation", { name: "Navegación principal" });
+    const sidebar = page.locator("aside").filter({ has: navigation });
+
+    await expect(sidebar).toHaveAttribute("data-collapsed", "false");
+    const placement = await sidebar.evaluate((element) => ({
+      position: getComputedStyle(element).position,
+      top: getComputedStyle(element).top,
+      height: element.getBoundingClientRect().height,
+      viewport: window.innerHeight,
+    }));
+    expect(placement.position).toBe("sticky");
+    expect(placement.top).toBe("0px");
+    expect(placement.height).toBe(placement.viewport);
+
+    const expandedWidth = (await sidebar.boundingBox())?.width ?? 0;
+    await page.getByRole("button", { name: "Minimizar menú lateral" }).click();
+    await expect(sidebar).toHaveAttribute("data-collapsed", "true");
+    await expect(navigation.getByRole("link", { name: /Inicio/ })).toHaveAttribute(
+      "title",
+      "Inicio: Resumen del equipo",
+    );
+    await expect
+      .poll(async () => (await sidebar.boundingBox())?.width ?? 0)
+      .toBeLessThan(expandedWidth);
+
+    await page.reload();
+    await expect(sidebar).toHaveAttribute("data-collapsed", "true");
+    await page.getByRole("button", { name: "Expandir menú lateral" }).click();
+    await expect(sidebar).toHaveAttribute("data-collapsed", "false");
   } finally {
     await admin.cleanup();
   }

@@ -25,6 +25,7 @@ import { type AdvisorRole, requireRole } from "../lib/auth.ts";
 import { businessDayColumn as diaDelNegocio } from "./business-day.ts";
 import { CALIBRATION_ANSWERS, type DimensionScore, readDimensionScores } from "./advisor-scores.ts";
 import { readAdvisorUsage, type UsageDay } from "./advisor-usage.ts";
+import { readProductKnowledge, type ProductKnowledgeProgress } from "./product-knowledge.ts";
 
 /**
  * Analiticas de UNA asesora, para que el administrador vea donde ayudarla.
@@ -75,6 +76,7 @@ export type AdvisorAnalytics = {
   activityByDay: Array<{ day: string; practices: number; minutes: number }>;
   usageByDay: UsageDay[];
   progress: ProgressComparison;
+  productKnowledge: ProductKnowledgeProgress;
   /**
    * Respuestas acumuladas por dia, para la linea que crece.
    *
@@ -163,7 +165,7 @@ export async function getAdvisorAnalytics(input: unknown, options: Dependencies 
     );
 
   const comparison = comparisonWindow(period, now);
-  const [puntuacion, previousScores, recentScores, usage] = await Promise.all([
+  const [puntuacion, previousScores, recentScores, usage, productKnowledge] = await Promise.all([
     readDimensionScores(database, advisorId, desde),
     readDimensionScores(database, advisorId, comparison.previousStart, comparison.currentStart),
     period === "todo"
@@ -174,6 +176,7 @@ export async function getAdvisorAnalytics(input: unknown, options: Dependencies 
       selectedDay: period === "todo" ? null : (diasVentana[0] as string),
       graphDays: diasVentana,
     }),
+    readProductKnowledge(database, advisorId, comparison.currentStart, comparison.previousStart),
   ]);
   const { dimensions, scoredAnswers, accuracyPercent } = puntuacion;
   const progress = buildProgressComparison(
@@ -245,6 +248,7 @@ export async function getAdvisorAnalytics(input: unknown, options: Dependencies 
       })),
       usageByDay: usage.usageByDay,
       progress,
+      productKnowledge,
       answerHistory,
       liveSessions: Number(vivo?.sessions ?? 0),
       copilotAnswers: Number(vivo?.answers ?? 0),
