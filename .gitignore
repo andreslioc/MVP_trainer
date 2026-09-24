@@ -43,5 +43,5 @@ supabase/.branches/
 .vercel
 
 # Scripts de trabajo desechables para escribir fichas a mano. Nunca se versionan.
-.mio-*.ts
+.mio-*
 .tmp-*.ts

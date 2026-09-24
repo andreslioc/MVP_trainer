@@ -98,6 +98,18 @@ describe("forma de la respuesta", () => {
     expect(ANSWER_FRAMEWORK).toMatch(/EL LIMITE CLINICO SE MINIMIZA/i);
   });
 
+  it("no deja subir de grado el verbo ni la intensidad de la ficha", () => {
+    // La ficha de curcuma decia "soporte antioxidante" en description, purpose,
+    // live_ready y faqs, y la respuesta salio como "actua como un potente
+    // antioxidante". "Potente" aparecia en esa ficha en un solo lugar: dentro
+    // de avoid_guidance, en la frase que hay que evitar.
+    expect(ANSWER_FRAMEWORK).toMatch(/EL VERBO DE LA FICHA NO SE SUBE DE GRADO/i);
+    expect(ANSWER_FRAMEWORK).toMatch(/lo que el producto OFRECE.+lo que el cuerpo VA A HACER/is);
+    expect(ANSWER_FRAMEWORK).toMatch(/adverbio de intensidad/i);
+    expect(ANSWER_FRAMEWORK).toMatch(/salvo que este literal en claims_allowed/i);
+    expect(ANSWER_FRAMEWORK).toMatch(/NO fuente de redaccion/i);
+  });
+
   it("dice la contraindicacion expresa y solo deriva cuando la ficha no la resuelve", () => {
     expect(ANSWER_FRAMEWORK).toMatch(/ANTES DE REMITIR, REVISA LA FICHA/i);
     expect(ANSWER_FRAMEWORK).toMatch(/CONTRAINDICACION EXPRESA/i);

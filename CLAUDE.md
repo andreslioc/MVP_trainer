@@ -270,6 +270,16 @@ compone, el generador escribe la respuesta ideal y el evaluador califica, y con 
 parecidos el simulador premiaba respuestas que el Copilot no habria dado. **Toda regla de COMO se
 responde va ahi**; en `evaluate-answer.ts` solo queda como se PUNTUA.
 
+**El verbo de la ficha no se sube de grado.** La ficha describe lo que el producto OFRECE; la
+respuesta no puede convertirlo en lo que el cuerpo VA A HACER. `soporte` / `apoya` / `esta disenado
+para` no se reescriben como `actua` / `hace` / `logra`, y ningun adjetivo de intensidad —*potente,
+maximo, altamente, mucho mejor*— entra si no esta literal en `claims_allowed`. Lo aprendimos con la
+curcuma: `description`, `purpose`, `live_ready` y `faqs` decian "soporte antioxidante" y la respuesta
+salio como "actua como un **potente** antioxidante". La palabra "potente" aparecia en esa ficha en un
+solo lugar —dentro de `avoid_guidance`, en la frase prohibida— asi que **el vocabulario de lo que no
+se dice se estaba filtrando a lo que si**. Por eso la regla cierra tambien esa puerta:
+`avoid_guidance` y `technical_note` son material de referencia, no fuente de redaccion.
+
 **Donde el Copilot y el Training si difieren, y por que.** El gate
 (`applyResponsibleCommunication`) tiene dos modos. En `live`, si la PREGUNTA toca embarazo,
 lactancia, medicamentos o una enfermedad nombrada, la respuesta compuesta **se descarta** y se
